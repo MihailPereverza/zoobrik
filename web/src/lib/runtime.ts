@@ -6,6 +6,9 @@ export const RUNTIME = String.raw`(function () {
   var $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
   var answered = false, hints = 0, started = performance.now();
   var media = {};
+  var tail = function (u) { var i = String(u).indexOf('/deck/'); return i >= 0 ? String(u).slice(i + 6).replace(/^topics\//, '') : String(u).slice(0, 40); };
+  window.addEventListener('error', function (e) { post('log', { msg: 'frame error', data: { message: e.message, line: e.lineno } }); });
+  window.addEventListener('unhandledrejection', function (e) { post('log', { msg: 'frame rejection', data: String(e.reason) }); });
   var audio = new Audio();
   var ms = function () { return Math.round(performance.now() - started); };
   function reveal() { $$('[data-zb-back]').forEach(function (e) { e.hidden = false; }); $$('[data-zb="flip"]').forEach(function (b) { b.disabled = true; }); }
@@ -22,13 +25,18 @@ export const RUNTIME = String.raw`(function () {
     play: function (src, rate) {
       // Play inside this frame, synchronously within the tap: mobile browsers block audio started after async hops.
       var local = media[src];
-      if (!local) { post('play', { src: src, rate: rate || 1 }); return; }
+      zb.log('play tapped', { src: tail(src), local: !!local, loaded: Object.keys(media).length });
+      if (!local) { zb.log('no local audio yet, asking app to play'); post('play', { src: src, rate: rate || 1 }); return; }
       audio.pause();
       audio.src = local;
       audio.playbackRate = rate || 1;
       post('stop-audio');
-      audio.play().catch(function () { post('play', { src: src, rate: rate || 1 }); });
+      audio.play().then(function () { zb.log('playing in frame', tail(src)); }, function (e) {
+        zb.log('frame play failed, asking app', { src: tail(src), error: e && e.name, message: e && e.message });
+        post('play', { src: src, rate: rate || 1 });
+      });
     },
+    log: function (msg, data) { post('log', { msg: msg, data: data }); },
     next: function () { post('next'); },
     get answered() { return answered; }
   };
@@ -103,7 +111,10 @@ export const RUNTIME = String.raw`(function () {
     var m = e.data || {};
     if (!m.zb) return;
     if (m.type === 'theme') document.documentElement.dataset.theme = m.theme;
-    if (m.type === 'media') (m.files || []).forEach(function (f) { media[f.url] = URL.createObjectURL(new Blob([f.buffer], { type: f.type || 'audio/mpeg' })); });
+    if (m.type === 'media') (m.files || []).forEach(function (f) {
+      media[f.url] = URL.createObjectURL(new Blob([f.buffer], { type: f.type || 'audio/mpeg' }));
+      zb.log('media received', { src: tail(f.url), bytes: f.buffer && f.buffer.byteLength, type: f.type });
+    });
     if (m.type === 'focus') { var first = inputs[0]; if (first && !answered) first.focus(); else document.body.focus(); }
     if (m.type === 'graded') {
       answered = true; lock(); reveal();
@@ -122,7 +133,7 @@ export const RUNTIME = String.raw`(function () {
   window.addEventListener('load', report);
   document.body.tabIndex = -1;
   var sources = $$('[data-zb="play"]').map(function (b) { return b.dataset.src; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; });
-  if (sources.length) post('need-media', { urls: sources });
+  if (sources.length) { post('need-media', { urls: sources }); zb.log('requested media', sources.map(tail)); }
   if (document.body.dataset.autoplay) { var p = $('[data-zb="play"]'); if (p) post('play', { src: p.dataset.src, rate: 1, auto: true }); }
   setTimeout(function () { if (inputs[0]) inputs[0].focus(); else document.body.focus(); report(); }, 30);
 })();`;

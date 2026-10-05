@@ -2,6 +2,7 @@
   import { onMount, tick } from 'svelte';
   import { fly } from 'svelte/transition';
   import { renderMarkdown } from '../lib/md';
+  import { log, mediaName } from '../lib/log';
   import ExerciseFrame from './ExerciseFrame.svelte';
   import Ring from './Ring.svelte';
   import { dayStats, plural } from '../lib/activity';
@@ -52,7 +53,11 @@
     const current = queue[index];
     result = null; practice = false; hints = 0; phase = 'answer';
     rendered = current ? render(data, current.card, current.exercise, current.mode, app.effectiveTheme, String(index)) : null;
-    if (current) prefetch([current]);
+    if (current) {
+      prefetch([current]);
+      log('session', 'show', { n: index + 1, of: queue.length, card: current.card.id, exercise: current.exercise.id, template: current.exercise.template, mode: current.mode, skills: current.skills });
+      if ('error' in (rendered ?? {})) log('session', 'render error', (rendered as { error: string }).error);
+    }
   }
 
   function start(aheadMs = 0) {
@@ -99,6 +104,7 @@
     result = res;
     suggested = grade;
     practice = res.correct && isPrimed(current);
+    log('session', 'answer', { correct: res.correct, typo: res.typo, suggested: grade, ms, hints, practice: res.correct && isPrimed(current) });
     navigator.vibrate?.(res.correct ? 12 : [20, 40, 20]);
     reveal(res, 'graded');
   }
@@ -116,6 +122,7 @@
 
   function flipNow() {
     if (phase !== 'reveal' || flipping) return;
+    log('session', 'flip', { to: target });
     flipping = true;
     setTimeout(() => { flipping = false; phase = target; }, FLIP_MS);
   }
@@ -137,13 +144,14 @@
   function persist(updates: { cardPath: string; progress: any }[], lines: string[]) {
     backend().saveAnswer(app.device, updates, lines)
       .then(() => { saveError = ''; refreshPending(); scheduleSync(); })
-      .catch((e) => { saveError = `Прогресс не сохранён: ${e.message}`; });
+      .catch((e) => { log('save', 'failed', String(e.message)); saveError = `Прогресс не сохранён: ${e.message}`; });
   }
 
   async function grade(g: Grade) {
     const current = item;
     if (!current || (phase !== 'graded' && phase !== 'flipped')) return;
     const now = new Date();
+    log('session', 'grade', { card: current.card.id, exercise: current.exercise.id, grade: g, practice });
     const members = current.topicCards ?? [current.card];
     const updates = [];
     const lines: string[] = [];
@@ -170,6 +178,7 @@
   function introDone() {
     const current = item;
     if (!current) return;
+    log('session', 'intro done', current.card.id);
     const effect = applyIntro(current.card, new Date(), app.device);
     current.card.progress = effect.progress;
     persist([{ cardPath: current.card.path, progress: $state.snapshot(effect.progress) }], effect.lines);
@@ -180,9 +189,10 @@
 
   async function play(src: string, rate = 1, auto = false) {
     if (!src) return;
-    try { audio.src = await backend().media(src); } catch { if (!auto) saveError = 'Аудио ещё не загружено — нужна сеть.'; return; }
+    log('audio', auto ? 'autoplay in app' : 'play in app', mediaName(src));
+    try { audio.src = await backend().media(src); } catch (e) { log('audio', 'media unavailable', { src: mediaName(src), error: String((e as Error).message) }); if (!auto) saveError = 'Аудио ещё не загружено — нужна сеть.'; return; }
     audio.playbackRate = rate;
-    audio.play().catch(() => { if (!auto) saveError = 'Браузер не дал воспроизвести звук — нажмите кнопку ещё раз.'; });
+    audio.play().then(() => log('audio', 'playing in app', mediaName(src)), (e) => { log('audio', 'app play failed', { src: mediaName(src), error: e?.name, message: e?.message }); if (!auto) saveError = 'Браузер не дал воспроизвести звук — нажмите кнопку ещё раз.'; });
   }
 
   function prefetch(items: QueueItem[]) {
@@ -291,7 +301,7 @@
             <p class="err">{rendered.error}</p>
             <button class="btn small ghost" type="button" onclick={advance}>Пропустить</button>
           {:else if rendered}
-            <ExerciseFrame bind:this={frame} srcdoc={rendered.srcdoc} {onevent} />
+            <ExerciseFrame bind:this={frame} srcdoc={rendered.srcdoc} {onevent} name="exercise" />
           {/if}
         </article>{/if}
       </div>
@@ -316,7 +326,7 @@
         </div>
       {/if}
       {#if backRendered && 'srcdoc' in backRendered}
-        <section class="back surface" in:flipIn={{ duration: 340, delay: 60 }}>{#key item.key}<ExerciseFrame srcdoc={backRendered.srcdoc} onevent={onBackEvent} autofocus={false} />{/key}</section>
+        <section class="back surface" in:flipIn={{ duration: 340, delay: 60 }}>{#key item.key}<ExerciseFrame srcdoc={backRendered.srcdoc} onevent={onBackEvent} autofocus={false} name="back" />{/key}</section>
       {/if}
       <div class="grades" in:fly={{ y: 24, duration: 300, opacity: 1 }}>
         {#each GRADES as { g, label, cls } (g)}

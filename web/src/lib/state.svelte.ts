@@ -1,6 +1,7 @@
 import { GitHubBackend, serverBackend, type Backend } from './backend';
 import type { RepoConfig } from './github';
 import type { DeckData } from './types';
+import { log } from './log';
 
 type Theme = 'system' | 'light' | 'dark';
 export const STANDALONE = import.meta.env.VITE_STANDALONE === '1';
@@ -87,8 +88,10 @@ export async function reload() {
     app.error = '';
     app.version += 1;
     await refreshPending();
+    log('deck', 'loaded', { mode: backend().kind, topics: app.data.topics.length, cards: app.data.topics.reduce((n, t) => n + t.cards.length, 0), pending: app.pending });
   } catch (error) {
     app.error = (error as Error).message;
+    log('deck', 'load failed', app.error);
   }
 }
 
@@ -96,7 +99,9 @@ export async function sync(): Promise<string> {
   if (app.syncing || needsSetup()) return '';
   app.syncing = true;
   try {
+    log('sync', 'start', { pending: app.pending, device: app.device });
     const res = await backend().sync(app.device);
+    log('sync', res.ok ? 'done' : 'failed', res.log);
     app.syncMessage = res.log;
     if (res.ok && backend().kind === 'github') app.data = await backend().load();
     app.version += 1;
@@ -104,6 +109,7 @@ export async function sync(): Promise<string> {
     return res.log;
   } catch (error) {
     app.syncMessage = `Синхронизация не удалась: ${(error as Error).message}`;
+    log('sync', 'error', String((error as Error).message));
     return app.syncMessage;
   } finally {
     app.syncing = false;

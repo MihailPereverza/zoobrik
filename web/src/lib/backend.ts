@@ -5,6 +5,7 @@ import { CORE } from './core';
 import { buildDeck, isTextFile, type FileMap } from './deckfs';
 import { createBlob, createCommit, createTree, getBlob, getHead, getTextBlob, getTextBlobs, getTree, GitHubError, pool, updateRef, type RepoConfig } from './github';
 import { mergeProgress } from './progress';
+import { log } from './log';
 import type { DeckData, Progress } from './types';
 
 export interface SyncResult { ok: boolean; log: string }
@@ -80,7 +81,9 @@ export class GitHubBackend implements Backend {
 
   async load(): Promise<DeckData> {
     let snap: Snapshot | undefined;
-    try { snap = await this.refresh(); } catch (error) {
+    const started = performance.now();
+    try { snap = await this.refresh(); log('deck', 'refreshed from GitHub', { commit: snap.commit.slice(0, 7), ms: Math.round(performance.now() - started) }); } catch (error) {
+      log('deck', 'offline, using cached deck', String((error as Error).message));
       snap = await this.snapshot();
       if (!snap) throw error;
     }
@@ -188,9 +191,11 @@ export class GitHubBackend implements Backend {
     const path = decodeURIComponent(url.slice(at + MEDIA_PREFIX.length));
     const cached = this.mediaUrls.get(path);
     if (cached) return cached;
+    const started = performance.now();
     const sha = (await this.snapshot())?.shas[path];
     if (!sha) throw new Error(`Нет файла ${path}`);
     let blob: Blob | undefined = await get(`media:${sha}`, store);
+    const fromCache = Boolean(blob);
     if (!blob) {
       const bytes = await getBlob(this.cfg, sha);
       blob = new Blob([bytes as BlobPart], { type: path.endsWith('.mp3') ? 'audio/mpeg' : 'application/octet-stream' });
@@ -198,6 +203,7 @@ export class GitHubBackend implements Backend {
     }
     const objectUrl = URL.createObjectURL(blob);
     this.mediaUrls.set(path, objectUrl);
+    log('media', fromCache ? 'from device cache' : 'downloaded', { path: path.replace(/^topics\//, ''), bytes: blob.size, ms: Math.round(performance.now() - started) });
     return objectUrl;
   }
 

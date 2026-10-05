@@ -2,6 +2,8 @@
   import Connect from './Connect.svelte';
   import { app, backend, setDevice, setGoal, setRepo, setTheme, STANDALONE, sync, reload } from '../lib/state.svelte';
   import { mediaUrl } from '../lib/render';
+  import { onMount } from 'svelte';
+  import { clearLog, logEntries, logText, onLog } from '../lib/log';
 
   let device = $state(app.device);
   let log = $state('');
@@ -18,6 +20,20 @@
       downloading = `${done}/${urls.length}`;
     }
     downloading = `Скачано ${urls.length} файлов — аудио доступно офлайн.`;
+  }
+
+  let logLines = $state(logEntries().slice(-150));
+  let copied = $state('');
+  onMount(() => onLog(() => { logLines = logEntries().slice(-150); }));
+
+  async function copyLog() {
+    const text = `build ${__BUILD__}\n${navigator.userAgent}\n\n${logText()}`;
+    try { await navigator.clipboard.writeText(text); copied = 'Скопировано'; }
+    catch {
+      const area = document.getElementById('log-text') as HTMLTextAreaElement | null;
+      if (area) { area.value = text; area.hidden = false; area.select(); }
+      copied = 'Выделено — скопируйте вручную';
+    }
   }
 
   let updating = $state(false);
@@ -110,6 +126,19 @@
   </section>
 
   <section class="panel box">
+    <h2>Журнал отладки</h2>
+    <p class="muted">Что происходило в приложении: показ заданий, ответы, звук, синхронизация, ошибки. Если что-то не работает, скопируйте журнал и пришлите его.</p>
+    <div class="row-btns">
+      <button class="btn small" type="button" onclick={copyLog}>Скопировать</button>
+      <button class="btn small ghost" type="button" onclick={() => { clearLog(); copied = ''; }}>Очистить</button>
+      {#if copied}<span class="muted status">{copied}</span>{/if}
+    </div>
+    <textarea id="log-text" class="logbox" hidden readonly></textarea>
+    <pre class="logview mono">{#each logLines as e, i (i)}<span class:err={/fail|error|rejection/.test(e.msg)}>{e.t} [{e.area}] {e.msg}{e.data === undefined ? '' : ` ${typeof e.data === 'string' ? e.data : JSON.stringify(e.data)}`}</span>
+{/each}</pre>
+  </section>
+
+  <section class="panel box">
     <h2>Проверка колоды</h2>
     <p class="muted">Отрендерить каждое задание, решить его эталонным ответом и проверить аудиофайлы.</p>
     <a class="btn ghost" href="#/lint">Проверить колоду</a>
@@ -126,6 +155,10 @@
   .seg button.on { background: var(--card); color: var(--ink); }
   .row { display: flex; gap: 8px; width: 100%; }
   input { flex: 1; min-width: 0; padding: 9px 11px; border-radius: 8px; border: 1px solid var(--rule-strong); background: var(--paper); color: var(--ink); font-size: 14px; }
+  .row-btns { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .logview { width: 100%; max-height: 320px; overflow: auto; margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--soft); font-size: 11px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+  .logview .err { color: var(--again); }
+  .logbox { width: 100%; height: 120px; font: 11px/1.4 var(--font-mono); background: var(--soft); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; }
   .log { white-space: pre-wrap; font-size: 12px; background: var(--soft); padding: 10px; border-radius: 8px; margin: 0; width: 100%; }
   .switch { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
   .btn.active { border-color: var(--ink); background: var(--soft); }
