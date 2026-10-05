@@ -11,7 +11,9 @@
   import { buildSession, LEARN_AHEAD, manifestOf, replacementItem } from '../lib/scheduler';
   import type { CheckResult, Grade, QueueItem, Skill } from '../lib/types';
 
-  type Phase = 'answer' | 'graded' | 'flipped' | 'wait' | 'done';
+  type Phase = 'answer' | 'reveal' | 'graded' | 'flipped' | 'wait' | 'done';
+  const REVEAL_MS = 1000;
+  const FLIP_MS = 220;
   const data = app.data!;
   const GRADES: { g: Grade; label: string; cls: string }[] = [
     { g: 1, label: 'Снова', cls: 'again' }, { g: 2, label: 'Трудно', cls: 'hard' },
@@ -95,15 +97,35 @@
     result = res;
     suggested = grade;
     practice = res.correct && isPrimed(current);
-    phase = 'graded';
     navigator.vibrate?.(res.correct ? 12 : [20, 40, 20]);
+    reveal(res, 'graded');
+  }
+
+  let revealTimer: ReturnType<typeof setTimeout> | undefined;
+  let flipping = $state(false);
+  let target: Phase = 'graded';
+
+  // Show the right/wrong outline for a moment, then flip the card to the explanation.
+  function reveal(res: CheckResult, next: Phase) {
+    phase = 'reveal';
+    target = next;
+    frame?.send({ type: 'graded', correct: res.correct, expected: res.expected, marks: res.marks });
+    revealTimer = setTimeout(flipNow, REVEAL_MS);
+  }
+
+  function flipNow() {
+    if (phase !== 'reveal' || flipping) return;
+    clearTimeout(revealTimer);
+    flipping = true;
+    setTimeout(() => { flipping = false; phase = target; }, FLIP_MS);
   }
 
   function giveUp() {
     if (phase !== 'answer' || !item) return;
     const expected = String(item.exercise.params?.answer ?? '');
     result = { correct: false, typo: false, expected, suggested: 1 };
-    suggested = 1; phase = 'graded';
+    suggested = 1;
+    reveal(result, 'graded');
   }
 
   function skip() {
@@ -174,6 +196,7 @@
   }
 
   function handleKey(key: string) {
+    if (phase === 'reveal') { if (key === 'Enter' || key === ' ') flipNow(); return; }
     if (phase === 'graded' || phase === 'flipped') {
       if (/^[1-4]$/.test(key)) grade(Number(key) as Grade);
       else if (key === 'Enter' || key === ' ') grade(phase === 'flipped' ? 3 : suggested);
@@ -182,12 +205,13 @@
 
   function onevent(type: string, d: any) {
     if (type === 'answer') onAnswer(d.value, d.ms, d.hints);
-    else if (type === 'flip') { answerMs = d.ms; hints = d.hints; suggested = 3; phase = 'flipped'; }
+    else if (type === 'flip') { answerMs = d.ms; hints = d.hints; suggested = 3; phase = 'reveal'; target = 'flipped'; flipNow(); }
     else if (type === 'next') introDone();
     else if (type === 'play') play(d.src, d.rate, d.auto);
     else if (type === 'skip') skip();
     else if (type === 'grade') grade(d.grade);
     else if (type === 'key') handleKey(d.key);
+    else if (type === 'tap' && phase === 'reveal') flipNow();
   }
 
   onMount(() => {
@@ -218,6 +242,10 @@
     return { explanation, translation: p.translation ?? '', sentence };
   });
 
+  function flipIn(_node: Element, { duration = 300, delay = 0 } = {}) {
+    return { duration, delay, css: (t: number) => { const e = 1 - Math.pow(1 - t, 3); return `transform: perspective(1400px) rotateX(${(1 - e) * -70}deg); transform-origin: 50% 0; opacity: ${e}`; } };
+  }
+
   const modeLabel = $derived(item ? ({ intro: 'Новое', learn: 'Изучение', review: 'Повторение', practice: 'Практика' } as const)[item.mode] : '');
   const progressPct = $derived(queue.length ? `${(index / queue.length) * 100}%` : '0%');
   const timeTo = (d: Date) => formatInterval(new Date(), d);
@@ -245,7 +273,7 @@
     {#key item.key}
       <div class="step" in:fly={{ y: 14, duration: 320, opacity: 0 }}>
         <p class="meta">{[modeLabel, topicOf(data, item.card).title, item.skills.map((s) => SKILL_LABEL[s]).join(', ')].filter(Boolean).join(' · ')}</p>
-        {#if phase === 'answer'}<article class="exercise surface">
+        {#if phase === 'answer' || phase === 'reveal'}<article class="exercise surface" class:flipping>
           {#if rendered && 'error' in rendered}
             <p class="err">{rendered.error}</p>
             <button class="btn small ghost" type="button" onclick={advance}>Пропустить</button>
@@ -258,7 +286,7 @@
 
     {#if phase === 'graded' || phase === 'flipped'}
       {#if phase === 'graded' && result}
-        <div class="verdict" class:ok={result.correct} class:bad={!result.correct} in:fly={{ y: 8, duration: 260 }}>
+        <div class="verdict" class:ok={result.correct} class:bad={!result.correct} in:flipIn={{ duration: 300 }}>
           <span class="icon" aria-hidden="true">{#if result.correct}<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>{:else}<svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17" /></svg>{/if}</span>
           <div>
             <b>{result.correct ? (result.typo ? 'Верно, но с опечаткой' : 'Верно') : 'Пока неверно'}</b>
@@ -268,14 +296,14 @@
         </div>
       {/if}
       {#if extra && (extra.explanation || extra.translation || (extra.sentence && (phase === 'flipped' || result?.correct)))}
-        <div class="explain surface" in:fly={{ y: 8, duration: 280, delay: 40 }}>
+        <div class="explain surface" in:flipIn={{ duration: 320, delay: 30 }}>
           {#if extra.sentence && (phase === 'flipped' || result?.correct)}<p class="sentence">{extra.sentence}</p>{/if}
           {#if extra.translation}<p class="muted">{extra.translation}</p>{/if}
           {#if extra.explanation}<div class="md">{@html extra.explanation}</div>{/if}
         </div>
       {/if}
       {#if backRendered && 'srcdoc' in backRendered}
-        <section class="back surface" in:fly={{ y: 10, duration: 320, delay: 80 }}>{#key item.key}<ExerciseFrame srcdoc={backRendered.srcdoc} onevent={onBackEvent} autofocus={false} />{/key}</section>
+        <section class="back surface" in:flipIn={{ duration: 340, delay: 60 }}>{#key item.key}<ExerciseFrame srcdoc={backRendered.srcdoc} onevent={onBackEvent} autofocus={false} />{/key}</section>
       {/if}
       <div class="grades" in:fly={{ y: 24, duration: 300 }}>
         {#each GRADES as { g, label, cls } (g)}
@@ -284,7 +312,7 @@
           </button>
         {/each}
       </div>
-    {:else if item.mode !== 'intro'}
+    {:else if item.mode !== 'intro' && phase === 'answer'}
       <div class="tools" in:fade={{ duration: 200 }}>
         <button class="link" type="button" onclick={giveUp}>Не знаю</button>
         <button class="link" type="button" onclick={skip}>Пропустить</button>
@@ -304,7 +332,9 @@
   .progress i { display: block; height: 100%; border-radius: 3px; background: var(--good); transition: width .5s var(--ease); }
   .count { font-size: 13px; color: var(--ink-3); min-width: 40px; text-align: right; }
   .meta { margin: 14px 4px 10px; font-size: 13px; color: var(--ink-3); }
-  .exercise { padding: 26px 24px 22px; min-height: 240px; }
+  .exercise { padding: 26px 24px 22px; min-height: 240px; transform-origin: 50% 100%; }
+  .exercise.flipping { animation: flip-out .22s cubic-bezier(.4, 0, 1, 1) forwards; }
+  @keyframes flip-out { to { transform: perspective(1400px) rotateX(75deg); opacity: 0; } }
   @media (max-width: 520px) { .exercise { padding: 22px 18px 18px; } }
   .err { color: var(--again); }
   .tools { display: flex; justify-content: space-between; margin: 14px 4px 0; }

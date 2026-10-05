@@ -62,6 +62,7 @@ export const RUNTIME = String.raw`(function () {
     });
   });
   document.addEventListener('click', function (e) {
+    if (answered && !e.target.closest('button, input, a')) { post('tap'); return; }
     var el = e.target.closest('[data-zb]');
     if (!el || el.disabled) return;
     var action = el.dataset.zb;
