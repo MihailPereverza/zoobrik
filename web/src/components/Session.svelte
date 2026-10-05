@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
-  import { fly, fade } from 'svelte/transition';
+  import { fly, fade, slide } from 'svelte/transition';
+  import { renderMarkdown } from '../lib/md';
   import ExerciseFrame from './ExerciseFrame.svelte';
   import { app, backend, refreshPending, scheduleSync, sync, touch } from '../lib/state.svelte';
   import { check } from '../lib/check';
@@ -202,12 +203,22 @@
     return () => { window.removeEventListener('keydown', onKey); audio.pause(); };
   });
 
+  $effect(() => { if (phase === 'graded' || phase === 'flipped') window.scrollTo({ top: 0, behavior: 'smooth' }); });
   $effect(() => { if (phase === 'graded' || phase === 'flipped') tick().then(() => document.querySelector<HTMLButtonElement>('.grades .suggested')?.focus({ preventScroll: true })); });
 
   const BACK = { id: 'back', template: 'back', status: 'ready', params: {} } as const;
   const showBack = $derived((phase === 'graded' || phase === 'flipped') && !!item && !item.topicCards && item.mode !== 'intro');
   const backRendered = $derived(showBack && item ? render(data, item.card, { ...BACK }, 'review', app.effectiveTheme, `b${index}`) : null);
   const onBackEvent = (type: string, d: any) => { if (type === 'play') play(d.src, d.rate); else if (type === 'key') handleKey(d.key); };
+
+  const extra = $derived.by(() => {
+    if (!item || (phase !== 'graded' && phase !== 'flipped')) return null;
+    const p = item.exercise.params ?? {};
+    const md = rendered && 'md' in rendered ? rendered.md : undefined;
+    const explanation = p.explanation ? renderMarkdown(p.explanation) : md?.back ?? '';
+    const sentence = phase === 'flipped' && p.back ? String(p.back) : typeof p.answer === 'string' && p.answer !== item.card.content.en && /\s/.test(p.answer) && /[a-z]/i.test(p.answer) ? p.answer : '';
+    return { explanation, translation: p.translation ?? '', sentence };
+  });
 
   const modeLabel = $derived(item ? ({ intro: 'Новое', learn: 'Изучение', review: 'Повторение', practice: 'Практика' } as const)[item.mode] : '');
   const progressPct = $derived(queue.length ? `${(index / queue.length) * 100}%` : '0%');
@@ -236,14 +247,14 @@
     {#key item.key}
       <div class="step" in:fly={{ y: 14, duration: 320, opacity: 0 }}>
         <p class="meta">{[modeLabel, topicOf(data, item.card).title, item.skills.map((s) => SKILL_LABEL[s]).join(', ')].filter(Boolean).join(' · ')}</p>
-        <article class="exercise surface">
+        {#if phase === 'answer'}<article class="exercise surface" out:slide={{ duration: 260 }}>
           {#if rendered && 'error' in rendered}
             <p class="err">{rendered.error}</p>
             <button class="btn small ghost" type="button" onclick={advance}>Пропустить</button>
           {:else if rendered}
             <ExerciseFrame bind:this={frame} srcdoc={rendered.srcdoc} {onevent} />
           {/if}
-        </article>
+        </article>{/if}
       </div>
     {/key}
 
@@ -253,9 +264,16 @@
           <span class="icon" aria-hidden="true">{#if result.correct}<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>{:else}<svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17" /></svg>{/if}</span>
           <div>
             <b>{result.correct ? (result.typo ? 'Верно, но с опечаткой' : 'Верно') : 'Пока неверно'}</b>
-            {#if result.typo && result.expected}<span>Правильно: {result.expected}</span>{/if}
+            {#if (result.typo || !result.correct) && result.expected}<span>Правильно: <b class="exp">{result.expected}</b></span>{/if}
             {#if practice}<span>Ответ уже встречался в этом цикле — засчитано как практика</span>{/if}
           </div>
+        </div>
+      {/if}
+      {#if extra && (extra.explanation || extra.translation || (extra.sentence && (phase === 'flipped' || result?.correct)))}
+        <div class="explain surface" in:fly={{ y: 8, duration: 280, delay: 40 }}>
+          {#if extra.sentence && (phase === 'flipped' || result?.correct)}<p class="sentence">{extra.sentence}</p>{/if}
+          {#if extra.translation}<p class="muted">{extra.translation}</p>{/if}
+          {#if extra.explanation}<div class="md">{@html extra.explanation}</div>{/if}
         </div>
       {/if}
       {#if backRendered && 'srcdoc' in backRendered}
@@ -294,7 +312,7 @@
   .tools { display: flex; justify-content: space-between; margin: 14px 4px 0; }
   .link { background: none; border: 0; color: var(--ink-3); font-size: 14px; cursor: pointer; padding: 8px 4px; border-radius: 8px; transition: color .2s; }
   .link:hover { color: var(--ink); }
-  .verdict { margin-top: 12px; display: flex; gap: 12px; align-items: center; padding: 12px 16px; border-radius: 16px; }
+  .verdict { margin-top: 4px; display: flex; gap: 12px; align-items: center; padding: 12px 16px; border-radius: 16px; }
   .verdict.ok { background: var(--good-bg); color: var(--good); }
   .verdict.bad { background: var(--again-bg); color: var(--again); }
   .verdict div { display: grid; gap: 2px; }
@@ -303,6 +321,12 @@
   .icon { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: currentColor; flex: none; }
   .icon svg { width: 16px; height: 16px; fill: none; stroke: var(--card); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
   .back { margin-top: 12px; padding: 22px 24px; }
+  .exp { font-weight: 500; }
+  .explain { margin-top: 12px; padding: 18px 24px; display: grid; gap: 6px; font-size: 15px; }
+  .explain p { margin: 0; }
+  .explain .sentence { font-size: 18px; font-weight: 500; }
+  .explain .md { color: var(--ink-2); }
+  @media (max-width: 520px) { .explain { padding: 16px 18px; } }
   @media (max-width: 520px) { .back { padding: 18px; } }
   .grades { position: sticky; bottom: 0; z-index: 5; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(to bottom, transparent, var(--paper) 22%); }
   .grades button { display: grid; gap: 2px; padding: 12px 4px 10px; border-radius: 14px; border: 1.5px solid transparent; background: var(--card); box-shadow: var(--shadow); cursor: pointer; font-size: 15px; font-weight: 500; transition: transform .15s var(--ease), border-color .2s; }
