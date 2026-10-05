@@ -1,0 +1,12 @@
+import { chromium } from 'playwright';
+const [,, shots, url = 'http://localhost:5190/zoobrik/'] = process.argv;
+const browser = await chromium.launch();
+const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+const errors = [];
+page.on('pageerror', (e) => errors.push(e.message));
+await page.goto(url);
+await page.waitForSelector('form.connect', { timeout: 10000 });
+await page.screenshot({ path: `${shots}/connect-390.png`, fullPage: true });
+const sw = await page.evaluate(async () => { const r = await navigator.serviceWorker.getRegistration(); return !!r; });
+console.log('service worker registered:', sw, 'errors:', errors);
+await browser.close();

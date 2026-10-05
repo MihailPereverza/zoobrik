@@ -1,19 +1,28 @@
 <script lang="ts">
-  import { app, reload, setDevice, setTheme } from '../lib/state.svelte';
-  import { syncDeck } from '../lib/api';
+  import Connect from './Connect.svelte';
+  import { app, backend, setDevice, setRepo, setTheme, STANDALONE, sync, reload } from '../lib/state.svelte';
+  import { mediaUrl } from '../lib/render';
 
   let device = $state(app.device);
-  let syncing = $state(false);
   let log = $state('');
+  let downloading = $state('');
 
-  async function sync() {
-    syncing = true; log = '';
-    try {
-      const res = await syncDeck(app.device);
-      log = res.log || 'Готово.';
-      await reload();
-    } catch (e) { log = (e as Error).message; }
-    syncing = false;
+  async function runSync() { log = await sync(); }
+
+  async function downloadAudio() {
+    const urls = app.data!.topics.flatMap((t) => t.cards).flatMap((c) => [c.content.audio, ...(c.content.examples ?? []).map((e) => e.audio)].filter(Boolean).map((f) => mediaUrl(c, f!)));
+    let done = 0;
+    for (const u of urls) {
+      await backend().media(u).catch(() => '');
+      done += 1;
+      downloading = `${done}/${urls.length}`;
+    }
+    downloading = `Скачано ${urls.length} файлов — аудио доступно офлайн.`;
+  }
+
+  function useServer(server: boolean) {
+    setRepo(app.repo, server ? 'server' : 'github');
+    reload();
   }
 </script>
 
@@ -31,8 +40,40 @@
   </section>
 
   <section class="panel box">
+    <h2>Синхронизация</h2>
+    {#if backend().kind === 'github'}
+      <p class="muted">Колода <span class="mono">{app.repo?.owner}/{app.repo?.repo}</span>. Прогресс сохраняется на устройстве и отправляется коммитом: автоматически через пару минут после ответов, при сворачивании приложения и по кнопке.</p>
+      <p class="mono status">{app.pending ? `Ждут отправки: ${app.pending} файлов` : 'Всё отправлено'}{app.online ? '' : ' · нет сети'}</p>
+    {:else}
+      <p class="muted">Локальный режим: прогресс пишется в файлы колоды на этом компьютере. Кнопка делает коммит, <span class="mono">pull --rebase</span> и <span class="mono">push</span>, если у колоды настроен remote.</p>
+    {/if}
+    <button class="btn" type="button" onclick={runSync} disabled={app.syncing}>{app.syncing ? 'Синхронизирую…' : 'Синхронизировать сейчас'}</button>
+    {#if log}<pre class="mono log">{log}</pre>{/if}
+  </section>
+
+  <section class="panel box">
+    <h2>GitHub</h2>
+    <Connect compact />
+    {#if !STANDALONE && app.repo}
+      <p class="muted switch">Источник колоды:
+        <button class="btn small ghost" class:active={app.mode === 'server'} type="button" onclick={() => useServer(true)}>файлы на этом Mac</button>
+        <button class="btn small ghost" class:active={app.mode === 'github'} type="button" onclick={() => useServer(false)}>GitHub</button>
+      </p>
+    {/if}
+  </section>
+
+  {#if backend().kind === 'github'}
+    <section class="panel box">
+      <h2>Офлайн</h2>
+      <p class="muted">Тексты колоды уже на устройстве. Аудио скачивается по мере занятий — или всё сразу:</p>
+      <button class="btn ghost" type="button" onclick={downloadAudio}>Скачать всё аудио</button>
+      {#if downloading}<p class="mono status">{downloading}</p>{/if}
+    </section>
+  {/if}
+
+  <section class="panel box">
     <h2>Имя устройства</h2>
-    <p class="muted">Каждое устройство пишет свой журнал ответов: <span class="mono">journal/&lt;месяц&gt;/{app.device}.tsv</span>. Так синхронизация не даёт конфликтов.</p>
+    <p class="muted">Каждое устройство пишет свой журнал: <span class="mono">journal/&lt;месяц&gt;/{app.device}.tsv</span>, поэтому синхронизация не даёт конфликтов.</p>
     <div class="row">
       <input id="device" class="mono" bind:value={device} aria-label="Имя устройства" />
       <button class="btn small" type="button" onclick={() => setDevice(device)} disabled={device === app.device}>Сохранить</button>
@@ -41,27 +82,23 @@
 
   <section class="panel box">
     <h2>Проверка колоды</h2>
-    <p class="muted">Отрендерить каждое задание, решить его эталонным ответом и проверить, что все аудиофайлы на месте.</p>
+    <p class="muted">Отрендерить каждое задание, решить его эталонным ответом и проверить аудиофайлы.</p>
     <a class="btn ghost" href="#/lint">Проверить колоду</a>
-  </section>
-
-  <section class="panel box">
-    <h2>Синхронизация через GitHub</h2>
-    <p class="muted">Колода — git-репозиторий. Кнопка делает коммит с прогрессом и журналом, затем <span class="mono">pull --rebase</span> и <span class="mono">push</span>, если настроен remote.</p>
-    <button class="btn" type="button" onclick={sync} disabled={syncing}>{syncing ? 'Синхронизирую…' : 'Синхронизировать'}</button>
-    {#if log}<pre class="mono log">{log}</pre>{/if}
   </section>
 </div>
 
 <style>
-  .box { padding: 18px; margin-top: 14px; }
-  h2 { font: 600 16px/1.3 var(--font-body); margin: 0 0 8px; }
-  p { font-size: 14px; margin: 0 0 12px; }
+  .box { padding: 18px; margin-top: 14px; display: grid; gap: 10px; justify-items: start; }
+  h2 { font: 600 16px/1.3 var(--font-body); margin: 0; }
+  p { font-size: 14px; margin: 0; }
+  .status { font-size: 12px; color: var(--ink-3); }
   .seg { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 9px; overflow: hidden; }
   .seg button { border: 0; background: var(--card); padding: 9px 14px; cursor: pointer; font-size: 14px; }
   .seg button + button { border-left: 1px solid var(--rule-strong); }
   .seg button.on { background: var(--ink); color: var(--card); }
-  .row { display: flex; gap: 8px; }
+  .row { display: flex; gap: 8px; width: 100%; }
   input { flex: 1; min-width: 0; padding: 9px 11px; border-radius: 8px; border: 1px solid var(--rule-strong); background: var(--paper); color: var(--ink); font-size: 14px; }
-  .log { white-space: pre-wrap; font-size: 12px; background: var(--soft); padding: 10px; border-radius: 8px; margin: 12px 0 0; }
+  .log { white-space: pre-wrap; font-size: 12px; background: var(--soft); padding: 10px; border-radius: 8px; margin: 0; width: 100%; }
+  .switch { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .btn.active { border-color: var(--ink); background: var(--soft); }
 </style>

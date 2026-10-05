@@ -10,6 +10,7 @@
     "check": "svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
+    "idb-keyval": "^6.3.0",
     "marked": "^18.0.14",
     "nunjucks": "^3.2.4",
     "ts-fsrs": "^5.4.2",
@@ -23,6 +24,8 @@
     "svelte": "^5.57.1",
     "svelte-check": "^4.7.6",
     "typescript": "~5.9",
-    "vite": "^8.3.2"
+    "vite": "^8.3.2",
+    "vite-plugin-pwa": "^2.0.0",
+    "workbox-window": "^7.4.1"
   }
 }

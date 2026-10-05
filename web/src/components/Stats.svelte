@@ -1,14 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { app } from '../lib/state.svelte';
-  import { loadActivity } from '../lib/api';
+  import { app, backend } from '../lib/state.svelte';
   import { forecast, STAGE_LABEL, stageOf } from '../lib/summary';
   import type { Skill, Stage } from '../lib/types';
 
   const data = $derived(app.data!);
   const now = $derived.by(() => { void app.version; return new Date(); });
   let activity = $state<Record<string, number>>({});
-  onMount(() => { loadActivity().then((a) => (activity = a)).catch(() => {}); });
+  onMount(() => { backend().activity().then((a) => (activity = a)).catch(() => {}); });
 
   const cards = $derived(data.topics.flatMap((t) => t.cards));
   const stages = $derived.by(() => {

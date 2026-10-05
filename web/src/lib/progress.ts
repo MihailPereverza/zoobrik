@@ -83,3 +83,32 @@ export function applyAnswer(input: ApplyInput): AnswerEffect {
   progress.stage = computeStage(progress);
   return { progress, lines };
 }
+
+function laterSkill<T extends { last?: string; reps: number }>(a: T | undefined, b: T | undefined): T | undefined {
+  if (!a || !b) return a ?? b;
+  if ((a.last ?? '') !== (b.last ?? '')) return (a.last ?? '') > (b.last ?? '') ? a : b;
+  return a.reps >= b.reps ? a : b;
+}
+
+// Two devices may review the same card between syncs: keep the freshest state per skill and the widest counters.
+export function mergeProgress(local: Progress | null | undefined, remote: Progress | null | undefined): Progress | null {
+  if (!local || !remote) return local ?? remote ?? null;
+  const merged: Progress = JSON.parse(JSON.stringify(remote));
+  for (const skill of new Set([...Object.keys(local.skills ?? {}), ...Object.keys(remote.skills ?? {})]) as Set<keyof Progress['skills']>) {
+    merged.skills[skill] = laterSkill(local.skills?.[skill], remote.skills?.[skill]);
+  }
+  for (const id of new Set([...Object.keys(local.exercises ?? {}), ...Object.keys(remote.exercises ?? {})])) {
+    const a = local.exercises?.[id], b = remote.exercises?.[id];
+    merged.exercises[id] = !a || !b ? (a ?? b)! : (a.shown >= b.shown ? a : b);
+  }
+  merged.totals = {
+    answers: Math.max(local.totals?.answers ?? 0, remote.totals?.answers ?? 0),
+    correct: Math.max(local.totals?.correct ?? 0, remote.totals?.correct ?? 0),
+    lapses: Math.max(local.totals?.lapses ?? 0, remote.totals?.lapses ?? 0),
+  };
+  merged.recent = [...new Set([...(local.recent ?? []), ...(remote.recent ?? [])])].sort().reverse().slice(0, 20);
+  merged.introduced = [local.introduced, remote.introduced].filter(Boolean).sort()[0];
+  merged.as_of = [local.as_of, remote.as_of].filter(Boolean).sort((x, y) => (x!.split(':').slice(1).join(':') > y!.split(':').slice(1).join(':') ? -1 : 1))[0];
+  merged.stage = local.stage === 'suspended' || remote.stage === 'suspended' ? 'suspended' : computeStage(merged);
+  return merged;
+}

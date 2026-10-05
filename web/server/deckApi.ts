@@ -5,6 +5,7 @@ import { promisify } from 'node:util';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
 import YAML from 'yaml';
+import { patchCardExercise, patchMdExercise, splitFrontmatter, withProgress } from '../src/lib/cardyaml.ts';
 
 const run = promisify(execFile);
 
@@ -50,12 +51,6 @@ async function loadTemplatesIn(dir: string, scope: string) {
     if (tpl) result.push(tpl);
   }
   return result;
-}
-
-function splitFrontmatter(text: string): { meta: any; body: string } {
-  const match = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/.exec(text);
-  if (!match) return { meta: {}, body: text };
-  return { meta: YAML.parse(match[1]) ?? {}, body: match[2] };
 }
 
 async function loadMdExercises(cardDir: string) {
@@ -132,22 +127,9 @@ function safeJoin(root: string, rel: string): string {
   return full;
 }
 
-function compactProgress(doc: YAML.Document, progress: any) {
-  const node = doc.createNode(progress) as YAML.YAMLMap;
-  for (const key of ['skills', 'exercises']) {
-    const map = node.get(key) as YAML.YAMLMap | undefined;
-    map?.items.forEach((item) => { (item.value as YAML.YAMLMap).flow = true; });
-  }
-  const totals = node.get('totals') as YAML.YAMLMap | undefined;
-  if (totals) totals.flow = true;
-  return node;
-}
-
 async function writeProgress(deckDir: string, cardPath: string, progress: any) {
   const file = safeJoin(deckDir, path.join(cardPath, 'card.yaml'));
-  const doc = YAML.parseDocument(await fs.readFile(file, 'utf8'));
-  doc.set('progress', compactProgress(doc, progress));
-  await fs.writeFile(file, doc.toString({ lineWidth: 0 }));
+  await fs.writeFile(file, withProgress(await fs.readFile(file, 'utf8'), progress));
 }
 
 async function appendJournal(deckDir: string, device: string, lines: string[]) {
@@ -161,23 +143,9 @@ async function appendJournal(deckDir: string, device: string, lines: string[]) {
 
 async function patchExercise(deckDir: string, body: any) {
   const cardDir = safeJoin(deckDir, body.cardPath);
-  if (body.file) {
-    const file = safeJoin(cardDir, body.file);
-    const text = await fs.readFile(file, 'utf8');
-    const { meta, body: md } = splitFrontmatter(text);
-    Object.assign(meta, body.patch.status ? { status: body.patch.status } : {});
-    const markdown = body.patch.params?.markdown ?? md;
-    await fs.writeFile(file, `---\n${YAML.stringify(meta).trim()}\n---\n${markdown}`);
-    return;
-  }
-  const file = path.join(cardDir, 'card.yaml');
-  const doc = YAML.parseDocument(await fs.readFile(file, 'utf8'));
-  const list = doc.get('exercises') as YAML.YAMLSeq<YAML.YAMLMap>;
-  const item = list.items.find((ex) => ex.get('id') === body.exerciseId);
-  if (!item) throw new Error(`exercise ${body.exerciseId} not found`);
-  if (body.patch.status) item.set('status', body.patch.status);
-  if (body.patch.params) item.set('params', doc.createNode(body.patch.params));
-  await fs.writeFile(file, doc.toString({ lineWidth: 0 }));
+  const file = body.file ? safeJoin(cardDir, body.file) : path.join(cardDir, 'card.yaml');
+  const text = await fs.readFile(file, 'utf8');
+  await fs.writeFile(file, body.file ? patchMdExercise(text, body.patch) : patchCardExercise(text, body.exerciseId, body.patch));
 }
 
 async function activity(deckDir: string) {

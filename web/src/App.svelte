@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { app, reload, setTheme } from './lib/state.svelte';
+  import { app, needsSetup, reload, setTheme, sync } from './lib/state.svelte';
+  import Connect from './components/Connect.svelte';
   import Home from './components/Home.svelte';
   import Session from './components/Session.svelte';
   import TopicView from './components/TopicView.svelte';
@@ -34,6 +35,12 @@
       <a href="#/stats" class:on={section === 'stats'}>Статистика</a>
       <a href="#/settings" class:on={section === 'settings'}>Настройки</a>
     </nav>
+    {#if app.mode === 'github' && app.repo}
+      <button class="sync" type="button" onclick={() => sync()} title={app.syncMessage || 'Синхронизировать'} aria-label="Синхронизировать" class:busy={app.syncing}>
+        <svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-14.3 4.9M4 12a8 8 0 0 1 14.3-4.9M18 3v4.5h-4.5M6 21v-4.5h4.5" /></svg>
+        {#if app.pending}<i class="dot" class:offline={!app.online}></i>{/if}
+      </button>
+    {/if}
     <button class="theme" type="button" onclick={nextTheme} title="Тема: {themes.find((t) => t[0] === app.theme)?.[1]}" aria-label="Сменить тему">
       {#if app.effectiveTheme === 'dark'}
         <svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" /></svg>
@@ -46,7 +53,9 @@
 </header>
 
 <main>
-  {#if app.error}
+  {#if needsSetup()}
+    <div class="narrow"><Connect /></div>
+  {:else if app.error}
     <div class="narrow error panel">
       <b>Не удалось загрузить колоду.</b>
       <p class="mono">{app.error}</p>
@@ -82,6 +91,12 @@
   nav a.on { color: var(--ink); background: var(--card); box-shadow: inset 0 -2px 0 var(--accent); }
   .theme { position: relative; width: 36px; height: 36px; border-radius: 9px; border: 1px solid var(--rule-strong); background: var(--card); display: grid; place-items: center; cursor: pointer; }
   .theme svg { width: 18px; height: 18px; fill: none; stroke: var(--ink); stroke-width: 1.8; stroke-linecap: round; }
+  .sync { position: relative; width: 36px; height: 36px; border-radius: 9px; border: 1px solid var(--rule-strong); background: var(--card); display: grid; place-items: center; cursor: pointer; }
+  .sync svg { width: 18px; height: 18px; fill: none; stroke: var(--ink); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .sync.busy svg { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .sync .dot { position: absolute; top: 5px; right: 5px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+  .sync .dot.offline { background: var(--ink-3); }
   .theme small { position: absolute; right: 2px; bottom: 1px; font: 600 8px/1 var(--font-mono); color: var(--ink-3); }
   main { padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
   .error, .loading { margin-top: 40px; padding: 18px; }

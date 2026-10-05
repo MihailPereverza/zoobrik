@@ -11,6 +11,6 @@ export const loadDeck = () => request<DeckData>('/api/deck');
 export const loadActivity = () => request<Record<string, number>>('/api/activity');
 export const saveAnswer = (device: string, updates: { cardPath: string; progress: Progress }[], lines: string[]) =>
   request('/api/answer', { device, updates, lines });
-export const patchExercise = (body: { cardPath: string; exerciseId: string; file?: string; patch: Record<string, unknown> }) =>
+export const patchExercise = (body: { cardPath: string; exerciseId: string; file?: string; patch: { status?: string; params?: Record<string, unknown> } }) =>
   request('/api/exercise', body);
 export const syncDeck = (device: string) => request<{ ok: boolean; log: string }>('/api/sync', { device });

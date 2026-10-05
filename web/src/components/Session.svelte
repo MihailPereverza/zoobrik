@@ -1,12 +1,11 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
   import ExerciseFrame from './ExerciseFrame.svelte';
-  import { app, touch } from '../lib/state.svelte';
-  import { saveAnswer } from '../lib/api';
+  import { app, backend, refreshPending, scheduleSync, sync, touch } from '../lib/state.svelte';
   import { check } from '../lib/check';
   import { formatInterval, preview } from '../lib/fsrs';
   import { applyAnswer, applyIntro } from '../lib/progress';
-  import { render, topicOf, type Rendered } from '../lib/render';
+  import { mediaUrl, render, topicOf, type Rendered } from '../lib/render';
   import { buildSession, LEARN_AHEAD, manifestOf, replacementItem } from '../lib/scheduler';
   import type { CheckResult, Grade, QueueItem, Skill } from '../lib/types';
 
@@ -53,8 +52,13 @@
   function start(aheadMs = 0) {
     const plan = buildSession(data, new Date(), true, aheadMs);
     nextDue = plan.nextDue;
-    if (!plan.queue.length) { phase = nextDue && nextDue.getTime() - Date.now() < LEARN_AHEAD ? 'wait' : 'done'; return; }
+    if (!plan.queue.length) {
+      phase = nextDue && nextDue.getTime() - Date.now() < LEARN_AHEAD ? 'wait' : 'done';
+      if (answered) sync();
+      return;
+    }
     queue = plan.queue; index = 0;
+    prefetch(plan.queue);
     revealed.clear();
     show();
   }
@@ -108,7 +112,9 @@
   }
 
   function persist(updates: { cardPath: string; progress: any }[], lines: string[]) {
-    saveAnswer(app.device, updates, lines).then(() => { saveError = ''; }).catch((e) => { saveError = `Прогресс не сохранён: ${e.message}`; });
+    backend().saveAnswer(app.device, updates, lines)
+      .then(() => { saveError = ''; refreshPending(); scheduleSync(); })
+      .catch((e) => { saveError = `Прогресс не сохранён: ${e.message}`; });
   }
 
   async function grade(g: Grade) {
@@ -149,11 +155,21 @@
     advance();
   }
 
-  function play(src: string, rate = 1, auto = false) {
+  async function play(src: string, rate = 1, auto = false) {
     if (!src) return;
-    audio.src = src;
+    try { audio.src = await backend().media(src); } catch { if (!auto) saveError = 'Аудио ещё не загружено — нужна сеть.'; return; }
     audio.playbackRate = rate;
     audio.play().catch(() => { if (!auto) saveError = 'Браузер не дал воспроизвести звук — нажмите кнопку ещё раз.'; });
+  }
+
+  function prefetch(items: QueueItem[]) {
+    if (backend().kind !== 'github') return;
+    const urls = new Set<string>();
+    for (const { card } of items) {
+      if (card.content.audio) urls.add(mediaUrl(card, card.content.audio));
+      card.content.examples?.forEach((e) => e.audio && urls.add(mediaUrl(card, e.audio)));
+    }
+    (async () => { for (const u of urls) await backend().media(u).catch(() => ''); })();
   }
 
   function handleKey(key: string) {

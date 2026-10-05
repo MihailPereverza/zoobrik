@@ -1,5 +1,6 @@
 import { check } from './check';
 import { mediaUrl, render } from './render';
+import { backend } from './state.svelte';
 import type { Answer, Card, DeckData, Exercise } from './types';
 import type { MdExercise } from './md';
 
@@ -71,7 +72,7 @@ export async function lintDeck(data: DeckData, onProgress: (done: number, total:
     }
     const files = audioFiles(card);
     audio += files.length;
-    const missing = await Promise.all(files.map(async (f) => ((await fetch(mediaUrl(card, f), { method: 'HEAD' })).ok ? null : f)));
+    const missing = await Promise.all(files.map(async (f) => ((await backend().mediaExists(mediaUrl(card, f))) ? null : f)));
     missing.filter(Boolean).forEach((f) => issues.push({ card, message: `нет аудиофайла ${f}` }));
     onProgress(i + 1, cards.length);
   }

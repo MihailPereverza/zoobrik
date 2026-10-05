@@ -1,8 +1,7 @@
 <script lang="ts">
   import YAML from 'yaml';
   import ExerciseFrame from './ExerciseFrame.svelte';
-  import { app, touch } from '../lib/state.svelte';
-  import { patchExercise } from '../lib/api';
+  import { app, backend, refreshPending, scheduleSync, touch } from '../lib/state.svelte';
   import { check } from '../lib/check';
   import { formatInterval, retrievability } from '../lib/fsrs';
   import { renderMarkdown } from '../lib/md';
@@ -28,12 +27,22 @@
   const selected = $derived(card?.exercises.find((e) => e.id === selectedId) ?? card?.exercises[0]);
   const rendered = $derived<Rendered | { error: string } | null>(card && selected ? render(data, card, selected, selected.template === 'intro' ? 'intro' : 'review', app.effectiveTheme, `p${salt}`) : null);
 
+  async function playUrl(url: string, rate = 1) {
+    try { audio.src = await backend().media(url); audio.playbackRate = rate; await audio.play(); } catch { message = 'Не удалось воспроизвести аудио.'; }
+  }
+
+  async function patch(body: Parameters<ReturnType<typeof backend>['patchExercise']>[0]) {
+    await backend().patchExercise(body);
+    await refreshPending();
+    scheduleSync();
+  }
+
   function select(ex: Exercise) { selectedId = ex.id; verdict = null; editing = false; message = ''; }
   function replay() { salt += 1; verdict = null; }
 
   function onevent(type: string, d: any) {
     if (!card || !selected || !rendered || !('template' in rendered)) return;
-    if (type === 'play') { audio.src = d.src; audio.playbackRate = d.rate ?? 1; audio.play().catch(() => {}); }
+    if (type === 'play') playUrl(d.src, d.rate ?? 1);
     if (type === 'answer') {
       verdict = check(selected, rendered.template.manifest, d.value, rendered.md);
       frame?.send({ type: 'graded', correct: verdict.correct, expected: verdict.expected, marks: verdict.marks });
@@ -43,7 +52,7 @@
   async function setStatus(ex: Exercise, status: ExerciseStatus) {
     if (!card) return;
     try {
-      await patchExercise({ cardPath: card.path, exerciseId: ex.id, file: ex.file, patch: { status } });
+      await patch({ cardPath: card.path, exerciseId: ex.id, file: ex.file, patch: { status } });
       ex.status = status; touch(); message = '';
     } catch (e) { message = (e as Error).message; }
   }
@@ -58,7 +67,7 @@
     if (!card || !selected) return;
     try {
       const params = selected.file ? { markdown: draft } : YAML.parse(draft);
-      await patchExercise({ cardPath: card.path, exerciseId: selected.id, file: selected.file, patch: { params } });
+      await patch({ cardPath: card.path, exerciseId: selected.id, file: selected.file, patch: { params } });
       selected.params = params; editing = false; salt += 1; touch(); message = 'Сохранено';
     } catch (e) { message = `Не сохранено: ${(e as Error).message}`; }
   }
@@ -75,7 +84,7 @@
       <section class="content">
         <div class="eyebrow">{card.kind} · <span class="chip {stageOf(card)}">{STAGE_LABEL[stageOf(card)]}</span></div>
         <div class="title">
-          {#if card.content.audio}<button class="play" type="button" aria-label="Прослушать" onclick={() => { audio.src = mediaUrl(card, card.content.audio!); audio.play(); }}><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z" /></svg></button>{/if}
+          {#if card.content.audio}<button class="play" type="button" aria-label="Прослушать" onclick={() => playUrl(mediaUrl(card, card.content.audio!))}><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z" /></svg></button>{/if}
           <h1 class="display">{card.content.en ?? card.content.title}</h1>
         </div>
         {#if card.content.ipa}<div class="mono muted">/{card.content.ipa}/ {card.content.pos ? `· ${card.content.pos}` : ''}</div>{/if}
@@ -88,7 +97,7 @@
         <ul class="examples">
           {#each card.content.examples ?? [] as ex (ex.id)}
             <li>
-              <button class="play small" type="button" aria-label="Прослушать" onclick={() => { audio.src = mediaUrl(card, ex.audio ?? ''); audio.play(); }}><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z" /></svg></button>
+              <button class="play small" type="button" aria-label="Прослушать" onclick={() => playUrl(mediaUrl(card, ex.audio ?? ''))}><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z" /></svg></button>
               <div><div>{ex.en}</div><div class="muted small">{ex.ru}</div></div>
             </li>
           {/each}
