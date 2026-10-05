@@ -18,8 +18,8 @@ from voice_judge import Judge, Verdict
 
 DEFAULT_ENGINES = ['qwen', 'turbo', 'melo', 'piper']
 ATTEMPTS = 3
-TARGET_RMS_DB = -20.0
-PEAK_LIMIT_DB = -1.0
+TARGET_LUFS = -16
+TRUE_PEAK_DB = -1.5
 PAD_SECONDS = 0.15
 
 
@@ -101,24 +101,16 @@ def variant_path(*, clip: Clip, engine: str) -> Path:
     return clip.target.with_name(f'{clip.target.stem}.{engine}{clip.target.suffix}')
 
 
-def levelled(audio: np.ndarray) -> np.ndarray:
-    voiced = audio[np.abs(audio) > 0.01]
-    rms = float(np.sqrt(np.mean(voiced**2))) if voiced.size else 0.0
-    if rms == 0:
-        return audio
-    gain = 10 ** (TARGET_RMS_DB / 20) / rms
-    peak_gain = 10 ** (PEAK_LIMIT_DB / 20) / max(float(np.max(np.abs(audio))), 1e-9)
-    return (audio * min(gain, peak_gain)).astype(np.float32)
-
-
 def encode_mp3(*, audio: np.ndarray, target: Path) -> None:
     silence = np.zeros(int(SAMPLE_RATE * PAD_SECONDS), dtype=np.float32)
-    padded = np.concatenate([silence, levelled(audio), silence])
+    padded = np.concatenate([silence, audio, silence])
+    # Phones play speech around -16 LUFS; the limiter only catches the rare peaks the gain would push past full scale.
+    level = f'loudnorm=I={TARGET_LUFS}:TP={TRUE_PEAK_DB}:LRA=11,alimiter=limit={10 ** (TRUE_PEAK_DB / 20):.3f}'
     with tempfile.NamedTemporaryFile(suffix='.wav') as wav:
         soundfile.write(wav.name, padded, SAMPLE_RATE)
-        command = ['ffmpeg', '-loglevel', 'error', '-y', '-i', wav.name, '-ac', '1', '-c:a', 'libmp3lame']
-        command += ['-b:a', '64k']
-        command.append(str(target))
+        command = ['ffmpeg', '-loglevel', 'error', '-y', '-i', wav.name, '-af', level]
+        command += ['-ar', str(SAMPLE_RATE), '-ac', '1']
+        command += ['-c:a', 'libmp3lame', '-b:a', '64k', str(target)]
         subprocess.run(command, check=True)
 
 
