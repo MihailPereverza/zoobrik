@@ -13,7 +13,7 @@ for (let i = 0; i < 10; i++) {
 await page.waitForTimeout(300);
 console.log('at 300ms: exercise shown =', await page.$$eval('article.exercise', (e) => e.length), 'grades =', await page.$$eval('.grades', (e) => e.length));
 await page.screenshot({ path: `${dir}/reveal-300ms.png` });
-await page.waitForTimeout(1200);
-console.log('at 1500ms: exercise shown =', await page.$$eval('article.exercise', (e) => e.length), 'grades =', await page.$$eval('.grades', (e) => e.length));
+await page.click('.flip-btn'); await page.waitForTimeout(500);
+console.log('after tap: exercise shown =', await page.$$eval('article.exercise', (e) => e.length), 'grades =', await page.$$eval('.grades', (e) => e.length));
 await page.screenshot({ path: `${dir}/reveal-1500ms.png` });
 await browser.close();

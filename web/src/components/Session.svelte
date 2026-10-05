@@ -12,7 +12,6 @@
   import type { CheckResult, Grade, QueueItem, Skill } from '../lib/types';
 
   type Phase = 'answer' | 'reveal' | 'graded' | 'flipped' | 'wait' | 'done';
-  const REVEAL_MS = 1000;
   const FLIP_MS = 220;
   const data = app.data!;
   const GRADES: { g: Grade; label: string; cls: string }[] = [
@@ -101,21 +100,19 @@
     reveal(res, 'graded');
   }
 
-  let revealTimer: ReturnType<typeof setTimeout> | undefined;
   let flipping = $state(false);
   let target: Phase = 'graded';
 
-  // Show the right/wrong outline for a moment, then flip the card to the explanation.
+  // Keep the right/wrong outline until the learner taps to flip the card to the explanation.
   function reveal(res: CheckResult, next: Phase) {
     phase = 'reveal';
     target = next;
     frame?.send({ type: 'graded', correct: res.correct, expected: res.expected, marks: res.marks });
-    revealTimer = setTimeout(flipNow, REVEAL_MS);
+    tick().then(() => document.querySelector<HTMLButtonElement>('.flip-btn')?.focus({ preventScroll: true }));
   }
 
   function flipNow() {
     if (phase !== 'reveal' || flipping) return;
-    clearTimeout(revealTimer);
     flipping = true;
     setTimeout(() => { flipping = false; phase = target; }, FLIP_MS);
   }
@@ -312,6 +309,8 @@
           </button>
         {/each}
       </div>
+    {:else if phase === 'reveal'}
+      <button class="btn block flip-btn" type="button" onclick={flipNow} in:fade={{ duration: 150 }}>Перевернуть</button>
     {:else if item.mode !== 'intro' && phase === 'answer'}
       <div class="tools" in:fade={{ duration: 200 }}>
         <button class="link" type="button" onclick={giveUp}>Не знаю</button>
@@ -337,6 +336,7 @@
   @keyframes flip-out { to { transform: perspective(1400px) rotateX(75deg); opacity: 0; } }
   @media (max-width: 520px) { .exercise { padding: 22px 18px 18px; } }
   .err { color: var(--again); }
+  .flip-btn { margin-top: 14px; }
   .tools { display: flex; justify-content: space-between; margin: 14px 4px 0; }
   .link { background: none; border: 0; color: var(--ink-3); font-size: 14px; cursor: pointer; padding: 8px 4px; border-radius: 8px; transition: color .2s; }
   .link:hover { color: var(--ink); }
