@@ -1,10 +1,16 @@
 <script lang="ts">
   import Connect from './Connect.svelte';
-  import { app, backend, setDevice, setGoal, setRepo, setTheme, STANDALONE, sync, reload } from '../lib/state.svelte';
+  import { app, backend, setDevice, setGoal, setMascot, setMascotMotion, setRepo, setTheme, STANDALONE, sync, reload, THEMES, type MascotMode } from '../lib/state.svelte';
+  import Zubrik from './Zubrik.svelte';
   import { mediaUrl } from '../lib/render';
   import { onMount } from 'svelte';
   import { clearLog, logEntries, logText, onLog } from '../lib/log';
 
+  const MODES: Record<MascotMode, { label: string; title: string; note: string; mood: 'happy' | 'hello' | 'sleep' }> = {
+    active: { label: 'Активный', title: 'Активный', note: 'Реагирует на ответы и отвечает одной строкой, если на него нажать.', mood: 'happy' },
+    quiet: { label: 'Тихий', title: 'Тихий', note: 'Только эмоции в панели проверки и на итогах, без реплик.', mood: 'hello' },
+    off: { label: 'Выкл', title: 'Выключен', note: 'Вместо Зубрика — иконка результата. Он остаётся только в иконке приложения.', mood: 'sleep' },
+  };
   let device = $state(app.device);
   let log = $state('');
   let downloading = $state('');
@@ -59,14 +65,39 @@
   <div class="eyebrow" style="margin-top:32px">Настройки</div>
   <h1 class="display">Устройство и синхронизация</h1>
 
-  <section class="panel box">
-    <h2>Тема</h2>
-    <div class="seg" role="radiogroup" aria-label="Тема">
-      {#each [['system', 'Как в системе'], ['light', 'Светлая'], ['dark', 'Тёмная']] as const as [value, label] (value)}
-        <button type="button" role="radio" aria-checked={app.theme === value} class:on={app.theme === value} onclick={() => setTheme(value)}>{label}</button>
+  <h2 class="section">Зубрик</h2>
+  <section class="panel box mascot">
+    <div class="m-head">
+      <span class="m-avatar">
+        {#if app.mascotMode === 'off'}<svg class="m-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>
+        {:else}<Zubrik mood={MODES[app.mascotMode].mood} size={70} crop="head" />{/if}
+      </span>
+      <div><b>{MODES[app.mascotMode].title}</b><span class="muted">{MODES[app.mascotMode].note}</span></div>
+    </div>
+    <div class="seg" role="radiogroup" aria-label="Режим Зубрика">
+      {#each Object.entries(MODES) as [id, m] (id)}
+        <button type="button" role="radio" aria-checked={app.mascotMode === id} class:on={app.mascotMode === id} onclick={() => setMascot(id as MascotMode)}>{m.label}</button>
       {/each}
     </div>
+    <button class="toggle" type="button" aria-pressed={app.mascotMotion} disabled={app.mascotMode === 'off'} onclick={() => setMascotMotion(!app.mascotMotion)}>
+      <span><span class="t-label">Анимации маскота</span><span class="t-note">Системное «уменьшить движение» важнее</span></span>
+      <span class="track" class:on={app.mascotMotion && app.mascotMode !== 'off'}><span class="knob"></span></span>
+    </button>
   </section>
+
+  <h2 class="section">Тема</h2>
+  <div class="themes">
+    <button type="button" class="theme-tile" aria-pressed={app.theme === 'system'} class:on={app.theme === 'system'} onclick={() => setTheme('system')}>
+      <span class="swatch split"><span style="background:#F3F0EA"><i style="background:#33251C"></i></span><span style="background:#141110"><i style="background:#E6DAC4"></i></span></span>
+      <span>Как в системе</span>
+    </button>
+    {#each THEMES as t (t.id)}
+      <button type="button" class="theme-tile" aria-pressed={app.theme === t.id} class:on={app.theme === t.id} onclick={() => setTheme(t.id)}>
+        <span class="swatch" style:background={t.bg}><i style:background={t.btn}></i></span>
+        <span>{t.name}</span>
+      </button>
+    {/each}
+  </div>
 
   <section class="panel box">
     <h2>Цель на день</h2>
@@ -150,6 +181,29 @@
   h2 { font: 600 16px/1.3 var(--font-body); margin: 0; }
   p { font-size: 14px; margin: 0; }
   .status { font-size: 12px; color: var(--ink-3); }
+  .mascot { gap: 14px; }
+  .m-head { display: flex; gap: 14px; align-items: center; }
+  .m-head div { display: grid; gap: 2px; }
+  .m-head b { font: 600 17px/1.2 var(--font-display); }
+  .m-head span.muted { font-size: 14px; }
+  .m-avatar { flex: none; width: 72px; height: 72px; border-radius: 50%; background: var(--soft); overflow: hidden; display: flex; align-items: flex-end; justify-content: center; }
+  .m-check { width: 32px; height: 32px; margin: auto; fill: none; stroke: var(--good); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .toggle { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 4px 0; border: 0; background: none; text-align: left; cursor: pointer; color: var(--ink); }
+  .toggle:disabled { cursor: default; color: var(--ink-3); }
+  .toggle > span:first-child { display: grid; gap: 2px; }
+  .t-label { font-size: 15px; font-weight: 500; }
+  .t-note { font-size: 13px; color: var(--ink-3); }
+  .track { flex: none; width: 44px; height: 26px; border-radius: 13px; background: var(--rule-strong); position: relative; transition: background-color 200ms var(--ease); }
+  .track.on { background: var(--brand); }
+  .knob { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--card); transition: transform 200ms var(--ease); }
+  .track.on .knob { transform: translateX(18px); }
+  .themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
+  .theme-tile { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); cursor: pointer; font-size: 14px; color: var(--ink); text-align: left; }
+  .theme-tile.on { border-color: var(--brand); box-shadow: 0 0 0 1px var(--brand); font-weight: 600; }
+  .swatch { height: 56px; border-radius: 10px; border: 1px solid var(--rule-strong); display: flex; align-items: flex-end; padding: 8px; overflow: hidden; }
+  .swatch i { display: block; width: 100%; height: 12px; border-radius: 4px; }
+  .swatch.split { padding: 0; }
+  .swatch.split > span { flex: 1; height: 100%; display: flex; align-items: flex-end; padding: 8px; }
   .seg { display: inline-flex; gap: 4px; padding: 4px; background: var(--soft); border-radius: 12px; }
   .seg button { border: 0; background: var(--soft); padding: 8px 14px; cursor: pointer; font-size: 14px; border-radius: 9px; color: var(--ink-2); transition: background-color .2s, color .2s; }
   .seg button.on { background: var(--card); color: var(--ink); }

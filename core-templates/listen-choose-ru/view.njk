@@ -1,7 +1,6 @@
 {% import "core/_macros" as m %}
 <div class="zb">
-  <div class="zb-kicker">Послушай и выбери перевод</div>
-  <div class="zb-row">{{ m.play(media(params.audio), true) }}{{ m.playSlow(media(params.audio)) }}</div>
+  <div class="zb-card-q"><span class="zb-translation">Послушай и выбери перевод</span><div class="zb-row">{{ m.play(media(params.audio), true) }}{{ m.playSlow(media(params.audio)) }}</div></div>
   {{ m.options(params.options, seed) }}
   <div class="zb-back" data-zb-back hidden>{{ m.explanation(params) }}</div>
 </div>

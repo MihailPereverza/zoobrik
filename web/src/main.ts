@@ -3,6 +3,9 @@ import './app.css';
 import App from './App.svelte';
 import { applyTheme } from './lib/state.svelte';
 import { log } from './lib/log';
+import { installFonts } from './lib/fonts';
+
+installFonts();
 
 log('app', 'start', { build: __BUILD__, ua: navigator.userAgent, standalone: matchMedia('(display-mode: standalone)').matches });
 addEventListener('error', (e) => log('app', 'error', { message: e.message, source: e.filename?.split('/').pop(), line: e.lineno }));

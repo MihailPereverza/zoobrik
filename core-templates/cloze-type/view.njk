@@ -1,10 +1,6 @@
 {% import "core/_macros" as m %}
 <div class="zb">
-  <div class="zb-kicker">Впиши пропущенное{% if params.hint %} · {{ params.hint }}{% endif %}</div>
-  <p class="zb-cloze">{{ params.text | gap('input') | safe }}</p>
-  {% if params.translation %}<div class="zb-translation">{{ params.translation }}</div>{% endif %}
-  <div class="zb-back" data-zb-back hidden>
-    <div class="zb-row">{% if params.audio %}{{ m.play(media(params.audio)) }}{% endif %}<div class="zb-answer">{{ params.text | gap('fill', params.answer) | safe }}</div></div>
-    {{ m.explanation(params) }}
-  </div>
+  <div class="zb-card-q"><p class="zb-cloze">{{ params.text | gap('blank') | safe }}</p>{% if params.translation %}<span class="zb-translation">{{ params.translation }}</span>{% endif %}{% if params.hint %}<span class="zb-hint" style="font-size:14px">{{ params.hint }}</span>{% endif %}</div>
+  <input class="zb-input" data-zb-input autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="пропущенное слово" aria-label="Пропущенное слово">
+  <div class="zb-back" data-zb-back hidden>{{ m.explanation(params) }}</div>
 </div>

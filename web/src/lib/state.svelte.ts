@@ -3,7 +3,15 @@ import type { RepoConfig } from './github';
 import type { DeckData } from './types';
 import { log } from './log';
 
-type Theme = 'system' | 'light' | 'dark';
+export type ThemeId = 'pushcha' | 'night' | 'snow' | 'contrast';
+type Theme = 'system' | ThemeId;
+export type MascotMode = 'active' | 'quiet' | 'off';
+export const THEMES: { id: ThemeId; name: string; bg: string; btn: string }[] = [
+  { id: 'pushcha', name: 'Пуща', bg: '#F3F0EA', btn: '#33251C' },
+  { id: 'night', name: 'Ночь', bg: '#141110', btn: '#E6DAC4' },
+  { id: 'snow', name: 'Снег', bg: '#EDF0F2', btn: '#33251C' },
+  { id: 'contrast', name: 'Контраст', bg: '#FFFFFF', btn: '#000000' },
+];
 export const STANDALONE = import.meta.env.VITE_STANDALONE === '1';
 
 function stored(key: string, fallback: string): string {
@@ -21,9 +29,11 @@ function storedRepo(): RepoConfig | null {
 export const app = $state({
   data: null as DeckData | null,
   error: '',
-  theme: stored('zb.theme', 'system') as Theme,
+  theme: (['system', 'pushcha', 'night', 'snow', 'contrast'].includes(stored('zb.theme', 'system')) ? stored('zb.theme', 'system') : 'system') as Theme,
   device: stored('zb.device', /iPhone|iPad/i.test(navigator.userAgent) ? 'iphone' : /Android/i.test(navigator.userAgent) ? 'android' : 'mac'),
-  effectiveTheme: 'light' as 'light' | 'dark',
+  effectiveTheme: 'pushcha' as ThemeId,
+  mascotMode: stored('zb.mascot', 'active') as MascotMode,
+  mascotMotion: stored('zb.mascotMotion', '1') === '1',
   version: 0,
   mode: (stored('zb.backend', STANDALONE ? 'github' : 'server')) as 'server' | 'github',
   repo: storedRepo(),
@@ -32,7 +42,12 @@ export const app = $state({
   syncMessage: '',
   online: navigator.onLine,
   goal: Number(stored('zb.goal', '30')) || 30,
+  activity: {} as Record<string, number>,
 });
+
+export async function refreshActivity() {
+  try { app.activity = await backend().activity(); } catch { /* activity is decorative: keep the previous numbers */ }
+}
 
 export function setGoal(goal: number) {
   app.goal = goal;
@@ -50,10 +65,10 @@ export const needsSetup = () => app.mode === 'github' && !app.repo;
 const media = matchMedia('(prefers-color-scheme: dark)');
 
 export function applyTheme() {
-  const effective = app.theme === 'system' ? (media.matches ? 'dark' : 'light') : app.theme;
+  const effective: ThemeId = app.theme === 'system' ? (media.matches ? 'night' : 'pushcha') : app.theme;
   app.effectiveTheme = effective;
   document.documentElement.dataset.theme = effective;
-  document.querySelector('meta[name="theme-color"]:not([media])')?.setAttribute('content', effective === 'dark' ? '#131417' : '#F4F5F7');
+  document.querySelector('meta[name="theme-color"]:not([media])')?.setAttribute('content', THEMES.find((t) => t.id === effective)!.bg);
 }
 media.addEventListener('change', applyTheme);
 
@@ -62,6 +77,18 @@ export function setTheme(theme: Theme) {
   store('zb.theme', theme);
   applyTheme();
 }
+
+export function setMascot(mode: MascotMode) {
+  app.mascotMode = mode;
+  store('zb.mascot', mode);
+}
+
+export function setMascotMotion(on: boolean) {
+  app.mascotMotion = on;
+  store('zb.mascotMotion', on ? '1' : '0');
+}
+
+export const isDark = () => app.effectiveTheme === 'night';
 
 export function setDevice(device: string) {
   app.device = device.replace(/[^a-z0-9-]/gi, '').toLowerCase() || 'device';
@@ -88,6 +115,7 @@ export async function reload() {
     app.error = '';
     app.version += 1;
     await refreshPending();
+    refreshActivity();
     log('deck', 'loaded', { mode: backend().kind, topics: app.data.topics.length, cards: app.data.topics.reduce((n, t) => n + t.cards.length, 0), pending: app.pending });
   } catch (error) {
     app.error = (error as Error).message;

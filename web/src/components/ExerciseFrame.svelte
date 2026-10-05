@@ -67,6 +67,6 @@
 ></iframe>
 
 <style>
-  iframe { display: block; width: 100%; border: 0; background: var(--card); color-scheme: inherit; visibility: hidden; transition: height .25s var(--ease); }
+  iframe { display: block; width: 100%; border: 0; background: var(--paper); color-scheme: inherit; visibility: hidden; transition: height .25s var(--ease); }
   iframe.shown { visibility: visible; }
 </style>

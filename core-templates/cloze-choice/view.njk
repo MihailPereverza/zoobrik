@@ -1,11 +1,6 @@
 {% import "core/_macros" as m %}
 <div class="zb">
-  {% if params.instruction %}<div class="zb-instruction zb-md">{{ params.instruction | md | safe }}</div>{% else %}<div class="zb-kicker">Выбери, что вставить</div>{% endif %}
-  <p class="zb-cloze">{{ params.text | gap('blank') | safe }}</p>
-  {% if params.translation %}<div class="zb-translation">{{ params.translation }}</div>{% endif %}
+  <div class="zb-card-q">{% if params.instruction %}<div class="zb-instruction zb-md">{{ params.instruction | md | safe }}</div>{% endif %}<p class="zb-cloze">{{ params.text | gap('blank') | safe }}</p>{% if params.translation %}<span class="zb-translation">{{ params.translation }}</span>{% endif %}</div>
   {{ m.options(params.options, seed) }}
-  <div class="zb-back" data-zb-back hidden>
-    <div class="zb-row">{% if params.audio %}{{ m.play(media(params.audio)) }}{% endif %}<div class="zb-answer">{{ params.text | gap('fill', params.answer) | safe }}</div></div>
-    {{ m.explanation(params) }}
-  </div>
+  <div class="zb-back" data-zb-back hidden>{{ m.explanation(params) }}</div>
 </div>

@@ -1,13 +1,8 @@
 {% import "core/_macros" as m %}
 <div class="zb">
-  <div class="zb-kicker">Расставь по порядку</div>
-  <div class="zb-instruction zb-md">{{ params.instruction | md | safe }}</div>
-  {% if params.translation %}<div class="zb-translation">{{ params.translation }}</div>{% endif %}
+  <div class="zb-card-q"><div class="zb-instruction zb-md">{{ params.instruction | md | safe }}</div>{% if params.translation %}<span class="zb-translation">{{ params.translation }}</span>{% endif %}</div>
   <div class="zb-slot" data-zb-slot></div>
   <div class="zb-bank">{% for w in params.tokens | shuffle(seed) %}<button class="zb-chip" type="button" data-zb-chip="{{ w }}">{{ w }}</button>{% endfor %}</div>
   <button class="zb-submit" type="button" data-zb="submit" disabled>Проверить</button>
-  <div class="zb-back" data-zb-back hidden>
-    <div class="zb-row">{% if params.audio %}{{ m.play(media(params.audio)) }}{% endif %}<div class="zb-answer">{{ params.answer }}</div></div>
-    {{ m.explanation(params) }}
-  </div>
+  <div class="zb-back" data-zb-back hidden>{{ m.explanation(params) }}</div>
 </div>

@@ -136,3 +136,18 @@ describe('card.yaml editing', () => {
     expect(YAML.parse(withDeckParams(withParams, null)).fsrs.params).toBeNull();
   });
 });
+
+import { typoLetters } from './typo';
+describe('typo letters', () => {
+  it('marks the missing letter', () => {
+    expect(typoLetters('lugage', 'luggage').filter((l) => l.fix).map((l) => l.ch)).toEqual(['g']);
+  });
+  it('marks a substituted letter and keeps case of the expected word', () => {
+    const out = typoLetters('heigth', 'height');
+    expect(out.map((l) => l.ch).join('')).toBe('height');
+    expect(out.some((l) => l.fix)).toBe(true);
+  });
+  it('marks nothing for an exact answer', () => {
+    expect(typoLetters('Gate', 'gate').every((l) => !l.fix)).toBe(true);
+  });
+});

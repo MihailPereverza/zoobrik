@@ -6,6 +6,10 @@
   import ExerciseFrame from './ExerciseFrame.svelte';
   import Ring from './Ring.svelte';
   import InlineView from './InlineView.svelte';
+  import GradeBar from './GradeBar.svelte';
+  import Zubrik from './Zubrik.svelte';
+  import { moodFor } from '../lib/mascot';
+  import { typoLetters } from '../lib/typo';
   import { dayStats, plural } from '../lib/activity';
   import { app, backend, refreshPending, scheduleSync, sync, touch } from '../lib/state.svelte';
   import { check } from '../lib/check';
@@ -34,6 +38,12 @@
   let practice = $state(false);
   let answerMs = 0;
   let hints = 0;
+  let results = $state<Record<number, 'good' | 'hard' | 'bad'>>({});
+  let streak = $state(0);
+  let selected = $state<Grade | null>(null);
+  let given = $state('');
+  let introduced = $state(0);
+  const startedAt = Date.now();
   let frame = $state<ExerciseFrame>();
   let nextDue = $state<Date | null>(null);
   let saveError = $state('');
@@ -57,7 +67,7 @@
 
   function show() {
     const current = queue[index];
-    result = null; practice = false; hints = 0; phase = 'answer';
+    result = null; practice = false; hints = 0; phase = 'answer'; selected = null; given = '';
     rendered = current ? render(data, current.card, current.exercise, current.mode, app.effectiveTheme, String(index)) : null;
     if (current) {
       prefetch([current]);
@@ -115,6 +125,10 @@
     if (res.correct && grade === 3 && ms > Math.max(25000, avg * 2.5)) grade = 2;
     result = res;
     suggested = grade;
+    selected = grade;
+    given = typeof value?.text === 'string' ? value.text : '';
+    streak = res.correct && !res.typo ? streak + 1 : 0;
+    results[index] = !res.correct ? 'bad' : grade === 2 ? 'hard' : 'good';
     practice = res.correct && primed(current);
     log('session', 'answer', { correct: res.correct, typo: res.typo, suggested: grade, ms, hints, practice: res.correct && primed(current) });
     navigator.vibrate?.(res.correct ? 12 : [20, 40, 20]);
@@ -128,7 +142,7 @@
   function reveal(res: CheckResult, next: Phase) {
     phase = 'reveal';
     target = next;
-    frame?.send({ type: 'graded', correct: res.correct, expected: res.expected, marks: res.marks });
+    frame?.send({ type: 'graded', correct: res.correct, typo: res.typo, expected: res.expected, marks: res.marks });
     tick().then(() => document.querySelector<HTMLButtonElement>('.flip-btn')?.focus({ preventScroll: true }));
   }
 
@@ -144,6 +158,10 @@
     const expected = String(item.exercise.params?.answer ?? '');
     result = { correct: false, typo: false, expected, suggested: 1 };
     suggested = 1;
+    selected = 1;
+    given = '';
+    streak = 0;
+    results[index] = 'bad';
     reveal(result, 'graded');
   }
 
@@ -164,6 +182,7 @@
     if (!current || (phase !== 'graded' && phase !== 'flipped')) return;
     const now = new Date();
     log('session', 'grade', { card: current.card.id, exercise: current.exercise.id, grade: g, practice });
+    results[index] = g === 1 ? 'bad' : g === 2 ? 'hard' : 'good';
     const members = current.topicCards ?? [current.card];
     const updates = [];
     const lines: string[] = [];
@@ -197,6 +216,8 @@
     const current = item;
     if (!current) return;
     log('session', 'intro done', current.card.id);
+    results[index] = 'good';
+    introduced += 1;
     const effect = applyIntro(current.card, new Date(), app.device);
     current.card.progress = effect.progress;
     persist([{ cardPath: current.card.path, progress: $state.snapshot(effect.progress) }], effect.lines);
@@ -273,13 +294,13 @@
     if (phase === 'reveal') { if (key === 'Enter' || key === ' ') flipNow(); return; }
     if (phase === 'graded' || phase === 'flipped') {
       if (/^[1-4]$/.test(key)) grade(Number(key) as Grade);
-      else if (key === 'Enter' || key === ' ') grade(phase === 'flipped' ? 3 : suggested);
+      else if (key === 'Enter' || key === ' ') grade(selected ?? (phase === 'flipped' ? 3 : suggested));
     } else if (phase === 'answer' && key === 'Escape') skip();
   }
 
   function onevent(type: string, d: any) {
     if (type === 'answer') onAnswer(d.value, d.ms, d.hints);
-    else if (type === 'flip') { answerMs = d.ms; hints = d.hints; suggested = 3; phase = 'reveal'; target = 'flipped'; flipNow(); }
+    else if (type === 'flip') { answerMs = d.ms; hints = d.hints; suggested = 3; selected = 3; result = null; phase = 'reveal'; target = 'flipped'; flipNow(); }
     else if (type === 'next') introDone();
     else if (type === 'play') play(d.src, d.rate, d.auto);
     else if (type === 'skip') skip();
@@ -326,6 +347,23 @@
     backend().activity().then((a) => { finishStats = dayStats(a); }).catch(() => {});
   });
 
+  const exerciseName = $derived(item ? (rendered && 'template' in rendered ? (rendered.template.manifest.name ?? '') : '').replace(/\s*\(.*\)\s*$/, '') : '');
+  const GRADE_NAME: Record<Grade, string> = { 1: 'Заново', 2: 'Трудно', 3: 'Хорошо', 4: 'Легко' };
+  const tone = $derived(phase === 'flipped' || !result ? 'neutral' : !result.correct ? 'bad' : result.typo || suggested === 2 ? 'hard' : 'good');
+  const mood = $derived(phase === 'flipped' ? 'think' : moodFor(result, streak));
+  const verdictTitle = $derived(phase === 'flipped' ? 'Как вспомнилось?' : !result ? '' : !result.correct ? 'Не то' : result.typo ? 'Опечатка' : streak > 0 && streak % 5 === 0 ? 'Пять подряд' : 'Верно');
+  const verdictLine = $derived.by(() => {
+    const g = selected ?? suggested;
+    const when = intervals ? `через ${intervals[g]}` : '';
+    const chosen = `${selected !== null && selected !== suggested ? 'вы выбрали' : 'авто'}: ${GRADE_NAME[g]}${when ? ', ' + when : ''}`;
+    if (phase === 'flipped') return 'Оцени, насколько легко вспомнилось';
+    if (result && !result.correct && result.expected) return `Правильно: ${result.expected} · ${chosen}`;
+    if (result?.typo) return `Засчитано как «${GRADE_NAME[g]}»${when ? ' · ' + when : ''}`;
+    return chosen;
+  });
+  const letters = $derived(result?.typo && given && result.expected ? typoLetters(given.trim(), result.expected) : []);
+  const segColor = (i: number) => (i === index && phase === 'answer' ? 'cur' : results[i] ?? (i < index ? 'good' : 'todo'));
+
   const modeLabel = $derived(item ? ({ intro: 'Новое', learn: 'Изучение', review: 'Повторение', practice: 'Практика' } as const)[item.mode] : '');
   const progressPct = $derived(queue.length ? `${(index / queue.length) * 100}%` : '0%');
   const timeTo = (d: Date) => formatInterval(new Date(), d);
@@ -333,26 +371,37 @@
 
 <div class="narrow session">
   {#if phase === 'done' || phase === 'wait'}
-    <section class="finish surface" in:fly={{ y: 12, duration: 400, opacity: 1 }}>
-      {#if finishStats}<Ring value={finishStats.today} max={app.goal} size={120} label="заданий сегодня" />{/if}
-      <h1 class="display">{phase === 'wait' ? 'Небольшой перерыв' : answered ? (finishStats && finishStats.today >= app.goal ? 'Цель на сегодня выполнена' : 'Отличная работа') : 'Сейчас нечего повторять'}</h1>
+    <section class="finish" in:fly={{ y: 12, duration: 400, opacity: 1 }}>
+      <div class="hero-pic"><Zubrik mood={phase === 'wait' ? 'sleep' : 'cheer'} size={240} /></div>
+      <h1 class="display">{phase === 'wait' ? 'Небольшой перерыв' : answered ? 'Сессия пройдена' : 'Сейчас нечего повторять'}</h1>
+      {#if finishStats?.streak}
+        <p class="streak-line"><svg class="flame zb-a" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 2-5 3-6 0 2 1 3 2 3 0-4-1-6 1-9z" /></svg><span><b>{finishStats.streak} {plural(finishStats.streak, 'день', 'дня', 'дней')}</b> подряд</span></p>
+      {/if}
       {#if answered}
-        <div class="result num">
+        <div class="result num" style="animation: zb-rise 320ms 200ms var(--ease-out) both">
           <div><b>{answered}</b><span>{plural(answered, 'задание', 'задания', 'заданий')}</span></div>
-          <div><b>{Math.round((correct / answered) * 100)}%</b><span>верно</span></div>
-          {#if finishStats?.streak}<div><b>{finishStats.streak}</b><span>{plural(finishStats.streak, 'день', 'дня', 'дней')} подряд</span></div>{/if}
+          <div><b class="good">{Math.round((correct / answered) * 100)}%</b><span>верно</span></div>
+          <div><b>{Math.max(1, Math.round((Date.now() - startedAt) / 60000))}′</b><span>минут</span></div>
+          <div><b>{introduced}</b><span>новых</span></div>
         </div>
       {/if}
-      {#if nextDue}<p class="muted">Следующее повторение через {timeTo(nextDue)}</p>{/if}
+      {#if nextDue}
+        <div class="say" style="animation: zb-rise 320ms 280ms var(--ease-out) both">
+          <span class="avatar small">{#if app.mascotMode !== 'off'}<Zubrik mood="hello" size={34} crop="head" phase={1800} />{/if}</span>
+          <div class="bubble">Следующее повторение через {timeTo(nextDue)}.</div>
+        </div>
+      {/if}
       <div class="actions">
-        {#if phase === 'wait'}<button class="btn" type="button" onclick={() => start(LEARN_AHEAD)}>Продолжить сейчас</button>{/if}
-        <a class="btn ghost" href="#/">На главную</a>
+        {#if phase === 'wait'}<button class="btn block" type="button" onclick={() => start(LEARN_AHEAD)}>Продолжить сейчас</button>{/if}
+        <a class="btn block" class:ghost={phase === 'wait'} href="#/">Готово</a>
       </div>
     </section>
   {:else if item}
     <div class="head">
-      <a class="close" href="#/" aria-label="Закончить занятие"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" /></svg></a>
-      <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax={queue.length} aria-valuenow={index}><i style:width={progressPct}></i></div>
+      <a class="close" href="#/" aria-label="Закончить сессию"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" /></svg></a>
+      <div class="segs" role="progressbar" aria-valuemin="0" aria-valuemax={queue.length} aria-valuenow={index}>
+        {#each queue as q, i (q.key)}<span class="seg {segColor(i)}"></span>{/each}
+      </div>
       <span class="count num">{index + 1}/{queue.length}</span>
       <div class="menu-wrap">
         <button class="more" type="button" aria-label="Действия с карточкой" aria-expanded={menuOpen} onclick={() => (menuOpen = !menuOpen)}><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></svg></button>
@@ -368,10 +417,18 @@
     </div>
     {#if notice}<p class="notice">{notice}</p>{/if}
 
+    <div class="kicker">
+      {#if item.mode === 'intro'}
+        <span class="chip amber">Новое {item.card.kind === 'grammar' ? 'правило' : 'слово'}</span><span class="muted small">{topicOf(data, item.card).title}</span>
+      {:else}
+        <span class="kname">{item.mode === 'practice' ? 'Практика · ' : ''}{exerciseName}</span>
+        <span class="skills">{#each item.skills as s (s)}<span class="chip">{s}</span>{/each}</span>
+      {/if}
+    </div>
+
     {#key item.key}
       <div class="step" in:fly={{ y: 14, duration: 320, opacity: 1 }}>
-        <p class="meta">{[modeLabel, topicOf(data, item.card).title, item.skills.map((s) => SKILL_LABEL[s]).join(', ')].filter(Boolean).join(' · ')}</p>
-        {#if phase === 'answer' || phase === 'reveal'}<article class="exercise surface" class:flipping>
+        {#if phase === 'answer' || phase === 'reveal'}<article class="exercise" class:flipping>
           {#if rendered && 'error' in rendered}
             <p class="err">{rendered.error}</p>
             <button class="btn small ghost" type="button" onclick={advance}>Пропустить</button>
@@ -382,40 +439,51 @@
       </div>
     {/key}
 
-    {#if phase === 'graded' || phase === 'flipped'}
-      {#if phase === 'graded' && result}
-        <div class="verdict" class:ok={result.correct} class:bad={!result.correct} in:flipIn={{ duration: 300 }}>
-          <span class="icon" aria-hidden="true">{#if result.correct}<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>{:else}<svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17" /></svg>{/if}</span>
-          <div>
-            <b>{result.correct ? (result.typo ? 'Верно, но с опечаткой' : 'Верно') : 'Пока неверно'}</b>
-            {#if (result.typo || !result.correct) && result.expected}<span>Правильно: <b class="exp">{result.expected}</b></span>{/if}
-            {#if practice}<span>Ответ уже встречался в этом цикле — засчитано как практика</span>{/if}
+    {#if (phase === 'graded' || phase === 'flipped') && extra && (extra.explanation || extra.translation || (extra.sentence && (phase === 'flipped' || result?.correct)))}
+      <div class="explain surface" in:flipIn={{ duration: 320 }}>
+        {#if extra.sentence && (phase === 'flipped' || result?.correct)}<p class="sentence">{extra.sentence}</p>{/if}
+        {#if extra.translation}<p class="muted">{extra.translation}</p>{/if}
+        {#if extra.explanation}<div class="md">{@html extra.explanation}</div>{/if}
+      </div>
+    {/if}
+    {#if (phase === 'graded' || phase === 'flipped') && backRendered && 'srcdoc' in backRendered}
+      <section class="back surface" in:flipIn={{ duration: 340, delay: 60 }}>{#key item.key}<InlineView html={backRendered.html} css={backRendered.css} onplay={playNow} />{/key}</section>
+    {/if}
+
+    {#if phase === 'reveal' || phase === 'graded' || phase === 'flipped'}
+      <div class="sheet {tone}" in:fly={{ y: 200, duration: 280, opacity: 1, easing: (t) => 1 - Math.pow(1 - t, 3) }}>
+        <div class="verdict">
+          <span class="avatar">
+            {#if app.mascotMode === 'off'}
+              <svg class="res-icon" viewBox="0 0 24 24" aria-hidden="true"><path d={tone === 'bad' ? 'M6 6l12 12M18 6 6 18' : 'M5 12l5 5 9-10'} /></svg>
+            {:else}
+              {#key index}<Zubrik {mood} size={54} crop="head" />{/key}
+            {/if}
+          </span>
+          <div class="vtext">
+            {#if verdictTitle}<b>{verdictTitle}</b>{/if}
+            <span>{verdictLine}</span>
+            {#if practice}<span class="small">Ответ уже встречался в этом цикле — засчитано как практика</span>{/if}
           </div>
         </div>
-      {/if}
-      {#if extra && (extra.explanation || extra.translation || (extra.sentence && (phase === 'flipped' || result?.correct)))}
-        <div class="explain surface" in:flipIn={{ duration: 320, delay: 30 }}>
-          {#if extra.sentence && (phase === 'flipped' || result?.correct)}<p class="sentence">{extra.sentence}</p>{/if}
-          {#if extra.translation}<p class="muted">{extra.translation}</p>{/if}
-          {#if extra.explanation}<div class="md">{@html extra.explanation}</div>{/if}
-        </div>
-      {/if}
-      {#if backRendered && 'srcdoc' in backRendered}
-        <section class="back surface" in:flipIn={{ duration: 340, delay: 60 }}>{#key item.key}<InlineView html={backRendered.html} css={backRendered.css} onplay={playNow} />{/key}</section>
-      {/if}
-      <div class="grades" in:fly={{ y: 24, duration: 300, opacity: 1 }}>
-        {#each GRADES as { g, label, cls } (g)}
-          <button type="button" class="{cls}" class:suggested={g === (phase === 'flipped' ? 3 : suggested)} onclick={() => grade(g)}>
-            <span>{label}</span>{#if intervals}<small class="num">{intervals[g]}</small>{/if}
-          </button>
-        {/each}
+        {#if letters.length}
+          <div class="letters" aria-label="Правильное написание">
+            {#each letters as l, i (i)}<span class:fix={l.fix} style={l.fix ? 'animation: zb-pop 300ms 260ms var(--ease-spring) both' : ''}>{l.ch === ' ' ? '\u00a0' : l.ch}</span>{/each}
+          </div>
+        {/if}
+        {#if phase === 'reveal'}
+          <button class="btn block flip-btn sheet-btn" type="button" onclick={flipNow}>Перевернуть</button>
+        {:else}
+          {#if item.mode !== 'intro' && !item.topicCards}
+            <GradeBar selected={selected} auto={phase === 'flipped' ? null : suggested} {intervals} onpick={(g) => (selected = g)} />
+          {/if}
+          <button class="btn block sheet-btn" type="button" onclick={() => grade(selected ?? suggested)}>Дальше</button>
+        {/if}
       </div>
-    {:else if phase === 'reveal'}
-      <button class="btn block flip-btn" type="button" onclick={flipNow} >Перевернуть</button>
     {:else if item.mode !== 'intro' && phase === 'answer'}
       <div class="tools">
         {#if history.length}<button class="link" type="button" onclick={undo}>← Отменить ответ</button>{/if}
-        <button class="link" type="button" onclick={giveUp}>Не знаю</button>
+        <button class="btn ghost dontknow" type="button" onclick={giveUp}>Не знаю</button>
         <button class="link" type="button" onclick={skip}>Пропустить</button>
       </div>
     {/if}
@@ -424,64 +492,79 @@
 </div>
 
 <style>
-  .session { padding-top: 14px; padding-bottom: 24px; }
-  .head { display: flex; align-items: center; gap: 14px; height: 36px; }
-  .close { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: var(--ink-3); transition: background-color .2s; }
-  .close:hover { background: var(--soft); color: var(--ink); }
-  .close svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; }
-  .progress { flex: 1; height: 6px; border-radius: 3px; background: var(--rule); overflow: hidden; }
-  .progress i { display: block; height: 100%; border-radius: 3px; background: var(--good); transition: width .5s var(--ease); }
-  .count { font-size: 13px; color: var(--ink-3); min-width: 40px; text-align: right; }
-  .meta { margin: 14px 4px 10px; font-size: 13px; color: var(--ink-3); }
-  .exercise { padding: 26px 24px 22px; min-height: 240px; transform-origin: 50% 100%; }
+  .session { padding-top: 8px; padding-bottom: 16px; min-height: calc(100vh - 140px); display: flex; flex-direction: column; }
+  .head { display: flex; align-items: center; gap: 10px; }
+  .close { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; color: var(--ink-2); flex: none; }
+  .close:hover { background: var(--soft); }
+  .close svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 2.2; fill: none; stroke-linecap: round; }
+  .segs { flex: 1; display: flex; gap: 3px; min-width: 0; }
+  .seg { flex: 1; height: 6px; border-radius: 3px; background: var(--line); transition: background-color 200ms var(--ease); }
+  .seg.good { background: var(--brand); } .seg.bad { background: var(--again); } .seg.hard { background: var(--hard); }
+  .seg.cur { background: var(--amber); transform-origin: 0 50%; animation: zb-grow 280ms var(--ease) both; }
+  .count { font: 400 13px/1 var(--font-mono); color: var(--ink-3); min-width: 40px; text-align: right; }
+  .kicker { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 14px 4px 12px; min-height: 26px; }
+  .kname { font-size: 15px; font-weight: 600; color: var(--ink-2); }
+  .skills { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .chip.amber { background: var(--amber-soft); color: var(--amber-ink); font: 600 13px/1 var(--font-body); height: 26px; }
+  .small { font-size: 13px; }
+  .exercise { min-height: 200px; transform-origin: 50% 100%; }
   .exercise.flipping { animation: flip-out .22s cubic-bezier(.4, 0, 1, 1) forwards; }
   @keyframes flip-out { to { transform: perspective(1400px) rotateX(88deg); } }
-  @media (max-width: 520px) { .exercise { padding: 22px 18px 18px; } }
   .err { color: var(--again); }
-  .flip-btn { margin-top: 14px; }
-  .menu-wrap { position: relative; }
-  .more { width: 32px; height: 32px; border-radius: 50%; border: 0; background: var(--paper); display: grid; place-items: center; cursor: pointer; color: var(--ink-3); }
-  .more:hover { background: var(--soft); color: var(--ink); }
-  .more svg { width: 18px; height: 18px; fill: currentColor; }
-  .menu { position: absolute; right: 0; top: 38px; z-index: 20; min-width: 240px; display: grid; padding: 6px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
-  .menu button, .menu a { display: flex; justify-content: space-between; gap: 12px; text-align: left; padding: 10px 12px; border: 0; border-radius: 9px; background: var(--card); font-size: 14px; color: var(--ink); text-decoration: none; cursor: pointer; }
-  .menu button:hover:not(:disabled), .menu a:hover { background: var(--soft); }
-  .menu button:disabled { color: var(--ink-3); cursor: default; }
-  .kbd { align-self: center; font-size: 11px; line-height: 1.4; color: var(--ink-3); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; }
-  @media (hover: none) { .kbd { display: none; } }
-  .notice { margin: 12px 4px 0; padding: 10px 14px; border-radius: 12px; background: var(--soft); color: var(--ink-2); font-size: 14px; }
-  .tools { gap: 12px; display: flex; justify-content: space-between; margin: 14px 4px 0; }
-  .link { background: none; border: 0; color: var(--ink-3); font-size: 14px; cursor: pointer; padding: 8px 4px; border-radius: 8px; transition: color .2s; }
+  .tools { margin-top: auto; padding-top: 16px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; }
+  .tools .dontknow { grid-column: 1 / -1; width: 100%; }
+  .link { background: none; border: 0; color: var(--ink-3); font-size: 14px; cursor: pointer; padding: 8px 4px; border-radius: 8px; }
   .link:hover { color: var(--ink); }
-  .verdict { margin-top: 4px; display: flex; gap: 12px; align-items: center; padding: 12px 16px; border-radius: 16px; }
-  .verdict.ok { background: var(--good-bg); color: var(--good); }
-  .verdict.bad { background: var(--again-bg); color: var(--again); }
-  .verdict div { display: grid; gap: 2px; }
-  .verdict b { font-weight: 600; }
-  .verdict span:not(.icon) { font-size: 14px; color: var(--ink-2); }
-  .icon { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: currentColor; flex: none; }
-  .icon svg { width: 16px; height: 16px; fill: none; stroke: var(--card); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
-  .back { margin-top: 12px; padding: 22px 24px; }
-  .exp { font-weight: 500; }
-  .explain { margin-top: 12px; padding: 18px 24px; display: grid; gap: 6px; font-size: 15px; }
+  .explain { margin-top: 4px; padding: 16px 20px; display: grid; gap: 6px; font-size: 15px; }
   .explain p { margin: 0; }
   .explain .sentence { font-size: 18px; font-weight: 500; }
   .explain .md { color: var(--ink-2); }
-  @media (max-width: 520px) { .explain { padding: 16px 18px; } }
-  @media (max-width: 520px) { .back { padding: 18px; } }
-  .grades { position: sticky; bottom: 0; z-index: 5; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0px)); background: var(--paper); }
-  .grades button { display: grid; gap: 2px; padding: 12px 4px 10px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--card); cursor: pointer; font-size: 15px; font-weight: 500; transition: transform .15s var(--ease), border-color .2s; }
-  .grades button:active { transform: scale(.96); }
-  .grades button small { font-size: 12px; font-weight: 400; color: var(--ink-3); }
-  .grades button.suggested { border-color: currentColor; }
-  .grades .again { color: var(--again); } .grades .hard { color: var(--hard); } .grades .good { color: var(--good); } .grades .easy { color: var(--easy); }
-  .finish { margin-top: 36px; padding: 36px 28px 30px; display: grid; justify-items: center; text-align: center; gap: 2px; }
-  .finish p { margin: 2px 0; }
-  .finish :global(.ring) { margin-bottom: 14px; }
-  .result { display: flex; gap: 28px; margin: 12px 0 14px; }
-  .result div { display: grid; gap: 2px; }
-  .result b { font-size: 22px; font-weight: 600; }
-  .result span { font-size: 12px; color: var(--ink-3); }
-  .actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
+  .back { margin-top: 10px; padding: 18px 20px 20px; }
+
+  .sheet { --tint: var(--card); --tone: var(--ink); --edge: var(--accent-edge); position: sticky; bottom: 0; z-index: 6; margin: auto -16px 0; margin-top: 16px; padding: 16px 16px calc(20px + env(safe-area-inset-bottom, 0px)); border-radius: 20px 20px 0 0; background: var(--tint); display: grid; gap: 14px; border-top: 1px solid var(--line); }
+  .sheet.good { --tint: var(--good-bg); --tone: var(--good); --edge: var(--good-deep); border-top-color: var(--good-bg); }
+  .sheet.bad { --tint: var(--again-bg); --tone: var(--again); --edge: var(--again-deep); border-top-color: var(--again-bg); }
+  .sheet.hard { --tint: var(--hard-bg); --tone: var(--hard); --edge: var(--hard-deep); border-top-color: var(--hard-bg); }
+  .verdict { display: flex; align-items: center; gap: 12px; }
+  .avatar { flex: none; width: 56px; height: 56px; border-radius: 50%; background: var(--avatar); overflow: hidden; display: flex; align-items: flex-end; justify-content: center; }
+  .avatar.small { width: 36px; height: 36px; background: var(--soft); }
+  .res-icon { width: 28px; height: 28px; margin: auto; fill: none; stroke: var(--tone); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; animation: zb-pop 260ms var(--ease-spring) both; }
+  .vtext { display: grid; gap: 2px; min-width: 0; }
+  .vtext b { font: 600 19px/1.2 var(--font-display); color: var(--tone); }
+  .vtext span { font-size: 14px; color: var(--tone); }
+  .letters { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; }
+  .letters span { width: 34px; height: 44px; border-radius: 8px; background: var(--card); font: 400 21px/1 var(--font-mono); display: flex; align-items: center; justify-content: center; color: var(--ink); }
+  .letters span.fix { background: var(--good); color: var(--on-grade); font-weight: 500; }
+  .sheet-btn { background: var(--tone); color: var(--on-grade); box-shadow: 0 2px 0 var(--edge); }
+  .sheet.neutral .sheet-btn { background: var(--accent); color: var(--on-accent); box-shadow: 0 2px 0 var(--accent-edge); }
+  .sheet-btn:hover { background: var(--tone); filter: brightness(1.05); }
+
+  .menu-wrap { position: relative; }
+  .more { width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--paper); display: grid; place-items: center; cursor: pointer; color: var(--ink-3); }
+  .more:hover { background: var(--soft); color: var(--ink); }
+  .more svg { width: 18px; height: 18px; fill: currentColor; }
+  .menu { position: absolute; right: 0; top: 42px; z-index: 20; min-width: 240px; display: grid; padding: 6px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
+  .menu button, .menu a { display: flex; justify-content: space-between; gap: 12px; text-align: left; padding: 11px 12px; border: 0; border-radius: 9px; background: var(--card); font-size: 14px; color: var(--ink); text-decoration: none; cursor: pointer; }
+  .menu button:hover:not(:disabled), .menu a:hover { background: var(--soft); }
+  .menu button:disabled { color: var(--ink-3); cursor: default; }
+  .kbd { align-self: center; font: 400 11px/1.4 var(--font-mono); color: var(--ink-3); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; }
+  @media (hover: none) { .kbd { display: none; } }
+  .notice { margin: 10px 4px 0; padding: 10px 14px; border-radius: 12px; background: var(--amber-soft); color: var(--ink); font-size: 14px; }
   .toast { margin: 12px 4px 0; font-size: 13px; color: var(--again); }
+
+  .finish { display: grid; gap: 0; padding-top: 8px; }
+  .hero-pic { height: 300px; border-radius: 20px; background: var(--soft); overflow: hidden; display: flex; align-items: flex-end; justify-content: center; }
+  .finish h1 { margin: 24px 4px 10px; }
+  .streak-line { margin: 0 4px; display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--ink-2); }
+  .streak-line b { color: var(--ink); }
+  .flame { width: 20px; height: 20px; fill: var(--amber); transform-origin: 50% 100%; animation: zb-flame 600ms 700ms var(--ease-spring) 1 both; }
+  .result { margin-top: 22px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); background: var(--card); border: 1px solid var(--line); border-radius: 16px; }
+  .result div { padding: 14px 12px; display: grid; gap: 2px; }
+  .result div + div { border-left: 1px solid var(--line); }
+  .result b { font: 600 22px/1.1 var(--font-display); }
+  .result b.good { color: var(--good); }
+  .result span { font-size: 12px; color: var(--ink-3); }
+  .say { margin-top: 12px; display: flex; gap: 10px; align-items: flex-start; }
+  .bubble { flex: 1; background: var(--card); border: 1px solid var(--line); border-radius: 4px 12px 12px 12px; padding: 10px 12px; font-size: 14px; line-height: 1.45; }
+  .actions { margin-top: 24px; display: grid; gap: 10px; }
 </style>

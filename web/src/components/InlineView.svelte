@@ -11,7 +11,7 @@
 
   function scopedCss(source: string): string {
     return source
-      .replace(/:root\[data-theme="dark"\]/g, ':host([data-theme="dark"])')
+      .replace(/:root\[data-theme="([a-z]+)"\]/g, ':host([data-theme="$1"])')
       .replace(/:root/g, ':host')
       .replace(/(^|\})\s*html, body\s*\{/g, '$1 :host, .zb-root {');
   }
@@ -32,7 +32,7 @@
 
   $effect(() => {
     if (!root) return;
-    root.innerHTML = `<style>${scopedCss(css)}</style><div class="zb-root">${sanitize(html)}</div>`;
+    root.innerHTML = `<style>${scopedCss(css)}\n:host, .zb-root { background: transparent !important; padding: 0 !important; }</style><div class="zb-root">${sanitize(html)}</div>`;
   });
 </script>
 

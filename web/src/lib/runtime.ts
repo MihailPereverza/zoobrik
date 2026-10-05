@@ -118,12 +118,13 @@ export const RUNTIME = String.raw`(function () {
     if (m.type === 'focus') { var first = inputs[0]; if (first && !answered) first.focus(); else document.body.focus(); }
     if (m.type === 'graded') {
       answered = true; lock(); reveal();
+      var mark = function (path) { return '<svg class="zb-mark" viewBox="0 0 24 24"><path d="' + path + '"/></svg>'; };
       $$('[data-zb-choice]').forEach(function (b) {
-        if (b.dataset.zbChoice === m.expected) b.classList.add('correct');
-        else if (b.classList.contains('picked')) b.classList.add('wrong');
+        if (b.dataset.zbChoice === m.expected) { b.classList.add('correct'); b.insertAdjacentHTML('beforeend', mark('M5 12l5 5 9-10')); }
+        else if (b.classList.contains('picked')) { b.classList.add('wrong'); b.insertAdjacentHTML('beforeend', mark('M6 6l12 12M18 6 6 18')); }
       });
       var gapMarks = (m.marks && m.marks.gaps) || null;
-      inputs.forEach(function (input, i) { input.classList.add((gapMarks ? gapMarks[i] : m.correct) ? 'ok' : 'bad'); });
+      inputs.forEach(function (input, i) { input.classList.add(m.typo && m.correct ? 'typo' : (gapMarks ? gapMarks[i] : m.correct) ? 'ok' : 'bad'); });
       if (slot) slot.classList.add(m.correct ? 'ok' : 'bad');
       zb.emit('graded', m);
     }

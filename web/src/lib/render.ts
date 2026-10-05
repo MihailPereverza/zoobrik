@@ -1,6 +1,8 @@
 import nunjucks from 'nunjucks/browser/nunjucks.js';
 import { parseMdExercise, renderMarkdown, type MdExercise } from './md';
 import { RUNTIME } from './runtime';
+import { zubrikSvg, type Mood } from './mascot';
+import { fontFaceCss } from './fonts';
 import type { Card, DeckData, Exercise, Mode, TemplateSource, Topic } from './types';
 
 export interface Rendered {
@@ -66,6 +68,7 @@ function environment(data: DeckData) {
   env.addFilter('gap', (text: string, mode: string, answer?: string) => new nunjucks.runtime.SafeString(gapFilter(text, mode, answer)));
   env.addFilter('mask', (text: string, word: string) => String(text).replace(new RegExp(`\\b${word}\\b`, 'i'), '___'));
   env.addFilter('notIn', (list: string[], text: string) => (list ?? []).filter((x) => !String(text ?? '').toLowerCase().includes(String(x).toLowerCase())));
+  env.addGlobal('zubrik', (mood: Mood, size = 40, crop: 'full' | 'head' = 'head') => new nunjucks.runtime.SafeString(zubrikSvg({ mood, size, crop })));
   env.addFilter('letters', (s: string) => String(s ?? '').split(''));
   envKey = data;
   return env;
@@ -105,8 +108,8 @@ function frame(data: DeckData, template: TemplateSource, exercise: Exercise, bod
   const logic = template.logic ? template.logic.replace(/export\s+default\s+function/, 'window.__zbLogic = function').replace(/export\s+function/g, 'function') : '';
   const attrText = Object.entries(attrs).map(([k, v]) => `data-${k}="${escapeHtml(v)}"`).join(' ');
   return `<!doctype html><html data-theme="${theme}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&display=swap">
-<style>${data.baseCss}\n${inherited}\n${template.style}\n${exercise.style ?? ''}</style></head>
+
+<style>${fontFaceCss()}\n${data.baseCss}\n${inherited}\n${template.style}\n${exercise.style ?? ''}</style></head>
 <body ${attrText}>${body}<script>${RUNTIME}</script>${logic ? `<script>${logic};window.__zbStart && window.__zbStart();</script>` : ''}</body></html>`;
 }
 

@@ -1,14 +1,17 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { app, needsSetup, reload, setTheme, sync } from './lib/state.svelte';
+  import { app, needsSetup, reload, sync } from './lib/state.svelte';
+  import { dayStats } from './lib/activity';
   import Connect from './components/Connect.svelte';
   import Home from './components/Home.svelte';
+  import Topics from './components/Topics.svelte';
   import Session from './components/Session.svelte';
   import TopicView from './components/TopicView.svelte';
   import CardView from './components/CardView.svelte';
   import Stats from './components/Stats.svelte';
   import Settings from './components/Settings.svelte';
   import Lint from './components/Lint.svelte';
+  import Zubrik from './components/Zubrik.svelte';
 
   let route = $state(location.hash.slice(1) || '/');
   onMount(() => {
@@ -20,39 +23,42 @@
 
   const parts = $derived(route.split('/').filter(Boolean));
   const section = $derived(parts[0] ?? '');
-  const themes = [['system', 'Авто'], ['light', 'Светлая'], ['dark', 'Тёмная']] as const;
-  const nextTheme = () => {
-    const order = ['system', 'light', 'dark'] as const;
-    setTheme(order[(order.indexOf(app.theme) + 1) % 3]);
-  };
+  const inSession = $derived(section === 'session');
+  const streak = $derived(dayStats(app.activity).streak);
+  const tabs = [
+    { href: '#/', id: '', label: 'Учить', icon: 'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z' },
+    { href: '#/topics', id: 'topics', label: 'Темы', icon: 'M7 3h11a3 3 0 0 1 3 3v11 M3 10a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z' },
+    { href: '#/stats', id: 'stats', label: 'Статистика', icon: 'M5 20v-8M12 20V5M19 20v-5' },
+    { href: '#/settings', id: 'settings', label: 'Профиль', icon: 'M16 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0 M4 21c1-4 4-6 8-6s7 2 8 6' },
+  ];
+  const activeTab = $derived(['topic', 'card'].includes(section) ? 'topics' : ['lint'].includes(section) ? 'settings' : section);
 </script>
 
-<header class="top">
-  <div class="wrap bar">
-    <a class="brand" href="#/">Zoobrik</a>
-    <nav>
-      <a href="#/" class:on={section === ''}>Учить</a>
-      <a href="#/stats" class:on={section === 'stats'}>Статистика</a>
-      <a href="#/settings" class:on={section === 'settings'}>Настройки</a>
-    </nav>
-    {#if app.mode === 'github' && app.repo}
-      <button class="sync" type="button" onclick={() => sync()} title={app.syncMessage || 'Синхронизировать'} aria-label="Синхронизировать" class:busy={app.syncing}>
-        <svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-14.3 4.9M4 12a8 8 0 0 1 14.3-4.9M18 3v4.5h-4.5M6 21v-4.5h4.5" /></svg>
-        {#if app.pending}<i class="dot" class:offline={!app.online}></i>{/if}
-      </button>
-    {/if}
-    <button class="theme" type="button" onclick={nextTheme} title="Тема: {themes.find((t) => t[0] === app.theme)?.[1]}" aria-label="Сменить тему">
-      {#if app.effectiveTheme === 'dark'}
-        <svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" /></svg>
-      {:else}
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5" /><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8" /></svg>
+{#if !inSession}
+  <header class="top">
+    <div class="wrap bar">
+      <a class="brand" href="#/">зубрик</a>
+      {#if streak > 0}
+        <span class="streak" title="Дней подряд с занятиями"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 2-5 3-6 0 2 1 3 2 3 0-4-1-6 1-9z" /></svg><b class="num">{streak}</b></span>
       {/if}
-      {#if app.theme === 'system'}<small>A</small>{/if}
-    </button>
-  </div>
-</header>
+      {#if app.mode === 'github' && app.repo}
+        <button class="icon-btn" type="button" onclick={() => sync()} title={app.syncMessage || 'Синхронизировать'} aria-label="Синхронизировать" class:busy={app.syncing}>
+          <svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-14.3 4.9M4 12a8 8 0 0 1 14.3-4.9M18 3v4.5h-4.5M6 21v-4.5h4.5" /></svg>
+          {#if app.pending}<i class="dot" class:offline={!app.online}></i>{/if}
+        </button>
+      {/if}
+      <a class="me" href="#/settings" aria-label="Профиль">
+        {#if app.mascotMode === 'off'}
+          <svg viewBox="0 0 24 24" class="me-icon"><circle cx="12" cy="8" r="4" /><path d="M4 21c1-4 4-6 8-6s7 2 8 6" /></svg>
+        {:else}
+          <Zubrik mood={app.syncing ? 'think' : 'hello'} size={38} crop="head" />
+        {/if}
+      </a>
+    </div>
+  </header>
+{/if}
 
-<main>
+<main class:session={inSession}>
   {#if needsSetup()}
     <div class="narrow"><Connect /></div>
   {:else if app.error}
@@ -62,9 +68,14 @@
       <button class="btn small" type="button" onclick={reload}>Повторить</button>
     </div>
   {:else if !app.data}
-    <div class="narrow loading muted">Загружаю колоду…</div>
+    <div class="narrow loading">
+      <Zubrik mood="think" size={120} />
+      <p class="muted">Загружаю колоду…</p>
+    </div>
   {:else if section === 'session'}
     {#key route}<Session practiceTopic={parts[1] === 'practice' ? parts[2] ?? '' : ''} />{/key}
+  {:else if section === 'topics'}
+    <Topics />
   {:else if section === 'topic' && parts[1]}
     <TopicView topicId={parts[1]} />
   {:else if section === 'card' && parts[2]}
@@ -80,28 +91,39 @@
   {/if}
 </main>
 
+{#if !inSession && !needsSetup()}
+  <nav class="tabs" aria-label="Разделы">
+    {#each tabs as t (t.id)}
+      <a href={t.href} class:on={activeTab === t.id} aria-current={activeTab === t.id ? 'page' : undefined}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d={t.icon} /></svg>{t.label}
+      </a>
+    {/each}
+  </nav>
+{/if}
+
 <style>
-  .top { position: sticky; top: 0; z-index: 10; background: var(--paper); padding-top: env(safe-area-inset-top, 0px); }
-  .bar { display: flex; align-items: center; gap: 18px; height: 56px; max-width: 1000px; }
-  .brand { font: 600 16px/1 var(--font-body); text-decoration: none; letter-spacing: -.01em; }
-  nav { display: flex; gap: 18px; margin-left: auto; }
-  nav { gap: 4px; }
-  nav a { text-decoration: none; font-size: 14px; color: var(--ink-3); padding: 7px 12px; border-radius: 999px; transition: background-color .2s, color .2s; }
-  nav a:hover { color: var(--ink); }
-  nav a.on { color: var(--ink); background: var(--card); border: 1px solid var(--line); }
-  nav a { border: 1px solid var(--paper); }
-  .theme, .sync { position: relative; width: 32px; height: 32px; border-radius: 8px; border: 0; background: var(--paper); display: grid; place-items: center; cursor: pointer; color: var(--ink-3); }
-  .theme:hover, .sync:hover { color: var(--ink); background: var(--soft); }
-  .theme, .sync { border-radius: 50%; transition: background-color .2s, color .2s; }
-  .theme svg, .sync svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-  .theme small { display: none; }
-  .sync.busy svg { animation: spin 1s linear infinite; }
+  .top { background: var(--paper); padding-top: env(safe-area-inset-top, 0px); }
+  .bar { display: flex; align-items: center; gap: 10px; height: 64px; }
+  .brand { flex: 1; font: 700 22px/1 var(--font-display); letter-spacing: -.035em; text-decoration: none; color: var(--ink); }
+  .streak { height: 36px; padding: 0 12px 0 8px; border-radius: 18px; background: var(--card); border: 1px solid var(--line); display: flex; align-items: center; gap: 4px; font-size: 15px; }
+  .streak svg { width: 18px; height: 18px; fill: var(--amber); }
+  .streak b { font-weight: 600; }
+  .icon-btn { position: relative; width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--paper); display: grid; place-items: center; cursor: pointer; color: var(--ink-2); }
+  .icon-btn:hover { background: var(--soft); }
+  .icon-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .icon-btn.busy svg { animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .sync .dot { position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--again); }
-  .sync .dot.offline { background: var(--ink-3); }
-  main { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+  .dot { position: absolute; top: 7px; right: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--amber); }
+  .dot.offline { background: var(--ink-3); }
+  .me { width: 40px; height: 40px; border-radius: 50%; background: var(--soft); overflow: hidden; display: flex; align-items: flex-end; justify-content: center; }
+  .me-icon { width: 20px; height: 20px; margin: auto; fill: none; stroke: var(--ink-2); stroke-width: 2; stroke-linecap: round; }
+  main { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+  main.session { padding-bottom: 0; padding-top: env(safe-area-inset-top, 0px); }
   .error, .loading { margin-top: 40px; }
   .error { padding: 18px; }
-  .loading { text-align: center; }
-  @media (max-width: 520px) { .bar { gap: 6px; } nav a { padding: 7px 9px; font-size: 13px; } }
+  .loading { display: grid; justify-items: center; gap: 8px; padding-top: 60px; }
+  .tabs { position: fixed; z-index: 15; left: 50%; transform: translateX(-50%); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); width: min(616px, calc(100% - 24px)); background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 6px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+  .tabs a { height: 52px; border-radius: 12px; color: var(--ink-3); text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 12px; font-weight: 500; transition: background-color 200ms var(--ease), color 200ms var(--ease); }
+  .tabs a svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .tabs a.on { background: var(--soft); color: var(--ink); font-weight: 600; }
 </style>

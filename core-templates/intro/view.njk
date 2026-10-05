@@ -1,6 +1,5 @@
 {% import "core/_macros" as m %}
 <div class="zb">
-  <div class="zb-kicker">Новое {{ 'правило' if card.kind == 'grammar' else 'слово' }}</div>
-  {{ m.cardInfo(card, theory, media, true) }}
-  <button class="zb-flip" type="button" data-zb="next">Дальше</button>
+  <div class="zb-card-q" style="align-items:stretch;text-align:left;padding:18px 20px 20px">{{ m.cardInfo(card, theory, media, true) }}</div>
+  <button class="zb-flip" type="button" data-zb="next">Понятно</button>
 </div>
