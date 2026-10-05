@@ -447,7 +447,8 @@
   .menu button, .menu a { display: flex; justify-content: space-between; gap: 12px; text-align: left; padding: 10px 12px; border: 0; border-radius: 9px; background: var(--card); font-size: 14px; color: var(--ink); text-decoration: none; cursor: pointer; }
   .menu button:hover:not(:disabled), .menu a:hover { background: var(--soft); }
   .menu button:disabled { color: var(--ink-3); cursor: default; }
-  .kbd { font-size: 11px; color: var(--ink-3); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
+  .kbd { align-self: center; font-size: 11px; line-height: 1.4; color: var(--ink-3); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; }
+  @media (hover: none) { .kbd { display: none; } }
   .notice { margin: 12px 4px 0; padding: 10px 14px; border-radius: 12px; background: var(--soft); color: var(--ink-2); font-size: 14px; }
   .tools { gap: 12px; display: flex; justify-content: space-between; margin: 14px 4px 0; }
   .link { background: none; border: 0; color: var(--ink-3); font-size: 14px; cursor: pointer; padding: 8px 4px; border-radius: 8px; transition: color .2s; }
