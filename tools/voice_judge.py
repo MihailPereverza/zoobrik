@@ -47,9 +47,37 @@ class Verdict:
         return self.distance + (0 if self.words_match else WHISPER_MISS_PENALTY)
 
 
-def words(text: str) -> list[str]:
-    british = text.lower().replace('mustache', 'moustache').replace('-', ' ')
-    return re.sub(r"[^a-z' ]", '', british).split()
+ONES = (
+    'zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen '
+    'eighteen nineteen'
+).split()
+TENS = 'twenty thirty forty fifty sixty seventy eighty ninety'.split()
+# Whisper writes US spellings and symbols; a few letters of spelling difference must not fail a take that sounds right.
+SPELLING_SLACK = 0.12
+
+
+def number_words(number: int) -> str:
+    if number < 20:
+        return ONES[number]
+    if number < 100:
+        return TENS[number // 10 - 2] + ('' if number % 10 == 0 else f' {ONES[number % 10]}')
+    if number < 1000:
+        rest = '' if number % 100 == 0 else f' and {number_words(number % 100)}'
+        return f'{ONES[number // 100]} hundred{rest}'
+    rest = '' if number % 1000 == 0 else f' {number_words(number % 1000)}'
+    return f'{number_words(number // 1000)} thousand{rest}'
+
+
+def spoken_form(text: str) -> str:
+    pounds = re.sub(r'£(\d+)', r'\1 pounds', text.lower())
+    numbers = re.sub(r'\d+', lambda match: number_words(int(match.group())), pounds.replace('%', ' percent'))
+    return re.sub(r'[^a-z]', '', numbers)
+
+
+def words_match(*, heard: str, expected: str) -> bool:
+    heard_letters, expected_letters = spoken_form(heard), spoken_form(expected)
+    allowed = max(1, round(len(expected_letters) * SPELLING_SLACK)) if len(expected_letters) > 4 else 0
+    return edit_distance(heard=list(heard_letters), expected=list(expected_letters)) <= allowed
 
 
 def phoneme_tokens(text: str) -> list[str]:
@@ -90,7 +118,7 @@ class Judge:
             heard = mlx_whisper.transcribe(wav.name, path_or_hf_repo=WHISPER_MODEL, language='en')['text'].strip()
         expected = phoneme_tokens(phonemize(text, language=accent, backend='espeak', strip=True))
         distance = edit_distance(heard=phoneme_tokens(self.sounds(audio)), expected=expected) / max(len(expected), 1)
-        words_match = words(heard) == words(text)
-        passed = words_match and distance <= MAX_PHONEME_DISTANCE
-        return Verdict(passed=passed, words_match=words_match, distance=distance, heard=heard)
+        matched = words_match(heard=heard, expected=text)
+        passed = matched and distance <= MAX_PHONEME_DISTANCE
+        return Verdict(passed=passed, words_match=matched, distance=distance, heard=heard)
 

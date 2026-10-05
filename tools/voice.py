@@ -168,10 +168,19 @@ def report_line(result: ClipResult) -> str:
     return f'{where}\t{",".join(result.written)}\t{result.clip.text}\t{notes}'
 
 
-def run(*, deck_dir: Path, engines: list[str], force: bool, only: str) -> None:
+def clips_with_failures(deck_dir: Path) -> set[str]:
+    report = CACHE_DIR / f'voice-report-{deck_dir.resolve().name}.tsv'
+    lines = report.read_text(encoding='utf-8').splitlines() if report.exists() else []
+    return {line.split('\t')[0] for line in lines if 'failed ' in line}
+
+
+def run(*, deck_dir: Path, engines: list[str], force: bool, only: str, redo_failed: bool) -> None:
     every_clip = collect_clips(deck_dir=deck_dir, field_name=deck_language(deck_dir))
     clips = [clip for clip in every_clip if only in str(clip.target)]
     done = load_done(deck_dir=deck_dir, force=force)
+    if redo_failed:
+        failed = clips_with_failures(deck_dir)
+        done -= {str(clip.target) for clip in clips if f'{clip.target.parent.name}/{clip.target.name}' in failed}
     todo = [clip for clip in clips if str(clip.target) not in done]
     print(f'{len(todo)} of {len(clips)} clips to voice with {", ".join(engines)}', flush=True)
     speakers, judge, started = {name: build_engine(name) for name in engines}, Judge(), time.time()
@@ -193,8 +202,10 @@ def main() -> None:
     parser.add_argument('--engines', default=','.join(DEFAULT_ENGINES), help='comma-separated voices, first is primary')
     parser.add_argument('--force', action='store_true', help='start over instead of continuing the previous run')
     parser.add_argument('--only', default='', help='voice only clips whose path contains this, e.g. hair/word')
+    parser.add_argument('--redo-failed', action='store_true', help='voice again the clips where some voice failed')
     args = parser.parse_args()
-    run(deck_dir=args.deck, engines=args.engines.split(','), force=args.force, only=args.only)
+    engines = args.engines.split(',')
+    run(deck_dir=args.deck, engines=engines, force=args.force, only=args.only, redo_failed=args.redo_failed)
 
 
 if __name__ == '__main__':
