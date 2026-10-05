@@ -5,7 +5,7 @@
   <input class="zb-input" data-zb-input autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="английское слово">
   {% if params.hint %}<button class="zb-hint-btn" type="button" data-zb="hint">Подсказка</button><div class="zb-hint" data-zb-hint hidden>{{ params.hint }}</div>{% endif %}
   <div class="zb-back" data-zb-back hidden>
-    <div class="zb-row">{{ m.play(media(params.audio or 'word.mp3')) }}<div class="zb-answer">{{ params.answer }}</div></div>
+    {% if params.answer != card.content.en %}<div class="zb-answer">{{ params.answer }}</div>{% endif %}
     {{ m.explanation(params) }}
   </div>
 </div>

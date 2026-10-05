@@ -63,6 +63,7 @@ function environment(data: DeckData) {
   env.addFilter('md', (s: string) => new nunjucks.runtime.SafeString(renderMarkdown(s)));
   env.addFilter('gap', (text: string, mode: string, answer?: string) => new nunjucks.runtime.SafeString(gapFilter(text, mode, answer)));
   env.addFilter('mask', (text: string, word: string) => String(text).replace(new RegExp(`\\b${word}\\b`, 'i'), '___'));
+  env.addFilter('notIn', (list: string[], text: string) => (list ?? []).filter((x) => !String(text ?? '').toLowerCase().includes(String(x).toLowerCase())));
   env.addFilter('letters', (s: string) => String(s ?? '').split(''));
   envKey = data;
   return env;
@@ -102,7 +103,7 @@ function frame(data: DeckData, template: TemplateSource, exercise: Exercise, bod
   const logic = template.logic ? template.logic.replace(/export\s+default\s+function/, 'window.__zbLogic = function').replace(/export\s+function/g, 'function') : '';
   const attrText = Object.entries(attrs).map(([k, v]) => `data-${k}="${escapeHtml(v)}"`).join(' ');
   return `<!doctype html><html data-theme="${theme}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&display=swap">
 <style>${data.baseCss}\n${inherited}\n${template.style}\n${exercise.style ?? ''}</style></head>
 <body ${attrText}>${body}<script>${RUNTIME}</script>${logic ? `<script>${logic};window.__zbStart && window.__zbStart();</script>` : ''}</body></html>`;
 }

@@ -1,25 +1,6 @@
 {% import "core/_macros" as m %}
-<div class="zb intro">
-  <div class="zb-kicker">Новое {{ 'правило' if card.kind == 'grammar' else 'слово' }} · {{ topic.title }}</div>
-  {% if card.kind == 'grammar' %}
-    <h1 class="zb-prompt word">{{ card.content.title }}</h1>
-    {% if card.content.formula %}<div class="formula">{{ card.content.formula }}</div>{% endif %}
-    {% if theory %}<div class="zb-md theory">{{ theory | md | safe }}</div>{% endif %}
-  {% else %}
-    <div class="zb-row head">
-      {{ m.play(media(card.content.audio or 'word.mp3'), true) }}
-      <div>
-        <h1 class="zb-prompt word">{{ card.content.en }}</h1>
-        {% if card.content.ipa %}<div class="zb-ipa">/{{ card.content.ipa }}/ {% if card.content.pos %}· {{ card.content.pos }}{% endif %}</div>{% endif %}
-      </div>
-    </div>
-    <div class="ru">{{ card.content.ru }}</div>
-    {% if card.content.note %}<div class="zb-note zb-md">{{ card.content.note | md | safe }}</div>{% endif %}
-  {% endif %}
-  <ul class="examples">
-    {% for ex in card.content.examples %}
-    <li>{{ m.play(media(ex.audio)) }}<div><div class="en">{{ ex.en }}</div><div class="zb-translation">{{ ex.ru }}</div></div></li>
-    {% endfor %}
-  </ul>
-  <button class="zb-flip" type="button" data-zb="next">Понятно, дальше</button>
+<div class="zb">
+  <div class="zb-kicker">Новое {{ 'правило' if card.kind == 'grammar' else 'слово' }}</div>
+  {{ m.cardInfo(card, theory, media, true) }}
+  <button class="zb-flip" type="button" data-zb="next">Дальше</button>
 </div>

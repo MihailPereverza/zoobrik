@@ -5,8 +5,9 @@
   interface Props {
     srcdoc: string;
     onevent: (type: string, data: any) => void;
+    autofocus?: boolean;
   }
-  let { srcdoc, onevent }: Props = $props();
+  let { srcdoc, onevent, autofocus = true }: Props = $props();
   let iframe: HTMLIFrameElement;
   let height = $state(280);
 
@@ -39,7 +40,7 @@
   sandbox="allow-scripts"
   title="Задание"
   style:height="{height}px"
-  onload={() => focus()}
+  onload={() => autofocus && focus()}
 ></iframe>
 
 <style>

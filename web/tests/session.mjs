@@ -9,7 +9,7 @@ const tag = `${scheme}-${width}`;
 await page.goto('http://localhost:5173/#/');
 await page.waitForSelector('.topics');
 await page.screenshot({ path: `${shots}/home-${tag}.png`, fullPage: true });
-await page.click('a.start');
+await page.click('a[href="#/session"]');
 const seen = new Set();
 for (let i = 0; i < Number(steps); i++) {
   await page.waitForSelector('iframe', { timeout: 10000 }).catch(() => null);

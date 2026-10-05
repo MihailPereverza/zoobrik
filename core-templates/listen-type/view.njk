@@ -4,8 +4,8 @@
   <div class="zb-row">{{ m.play(media(params.audio), true) }}{{ m.playSlow(media(params.audio)) }}</div>
   <input class="zb-input" data-zb-input autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="печатай по-английски">
   <div class="zb-back" data-zb-back hidden>
-    <div class="zb-answer">{{ params.answer }}</div>
-    {% if params.translation %}<div class="zb-translation">{{ params.translation }}</div>{% endif %}
+    {% if params.answer != card.content.en %}<div class="zb-answer">{{ params.answer }}</div>{% endif %}
+    {% if params.translation and params.answer != card.content.en %}<div class="zb-translation">{{ params.translation }}</div>{% endif %}
     {{ m.explanation(params) }}
   </div>
 </div>

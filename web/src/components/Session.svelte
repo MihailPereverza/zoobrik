@@ -202,6 +202,11 @@
 
   $effect(() => { if (phase === 'graded' || phase === 'flipped') tick().then(() => document.querySelector<HTMLButtonElement>('.grades .suggested')?.focus({ preventScroll: true })); });
 
+  const BACK = { id: 'back', template: 'back', status: 'ready', params: {} } as const;
+  const showBack = $derived((phase === 'graded' || phase === 'flipped') && !!item && !item.topicCards && item.mode !== 'intro');
+  const backRendered = $derived(showBack && item ? render(data, item.card, { ...BACK }, 'review', app.effectiveTheme, `b${index}`) : null);
+  const onBackEvent = (type: string, d: any) => { if (type === 'play') play(d.src, d.rate); else if (type === 'key') handleKey(d.key); };
+
   const modeLabel = $derived(item ? ({ intro: 'Новое', learn: 'Изучение', review: 'Повторение', practice: 'Практика' } as const)[item.mode] : '');
   const progressPct = $derived(queue.length ? `${(index / queue.length) * 100}%` : '0%');
   const timeTo = (d: Date) => formatInterval(new Date(), d);
@@ -209,10 +214,9 @@
 
 <div class="narrow session">
   {#if phase === 'done' || phase === 'wait'}
-    <section class="finish paper-card">
-      <div class="eyebrow">{phase === 'wait' ? 'Перерыв' : 'Занятие окончено'}</div>
-      <h1 class="display">{phase === 'wait' ? 'Слова ещё не остыли' : answered ? 'Готово!' : 'Сейчас нечего повторять'}</h1>
-      {#if answered}<p class="mono score">{answered} заданий · {Math.round((correct / answered) * 100)}% верно</p>{/if}
+    <section class="finish">
+      <h1 class="display">{phase === 'wait' ? 'Небольшой перерыв' : answered ? 'Готово' : 'Сейчас нечего повторять'}</h1>
+      {#if answered}<p class="num">{answered} заданий, {Math.round((correct / answered) * 100)}% верно</p>{/if}
       {#if nextDue}<p class="muted">Следующее повторение через {timeTo(nextDue)}.</p>{/if}
       <div class="actions">
         {#if phase === 'wait'}<button class="btn" type="button" onclick={() => start(LEARN_AHEAD)}>Продолжить сейчас</button>{/if}
@@ -221,17 +225,13 @@
     </section>
   {:else if item}
     <div class="head">
-      <a class="close" href="#/" aria-label="Закончить занятие">×</a>
+      <a class="close" href="#/" aria-label="Закончить занятие"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" /></svg></a>
       <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax={queue.length} aria-valuenow={index}><i style:width={progressPct}></i></div>
-      <span class="mono count">{index + 1}/{queue.length}</span>
+      <span class="count num">{index + 1}/{queue.length}</span>
     </div>
-    <div class="meta">
-      <span class="chip {item.mode === 'review' ? 'review' : 'learning'}">{modeLabel}</span>
-      <span class="muted">{topicOf(data, item.card).title}</span>
-      {#if item.skills.length}<span class="muted">· {item.skills.map((s) => SKILL_LABEL[s]).join(', ')}</span>{/if}
-    </div>
+    <p class="meta">{modeLabel} · {topicOf(data, item.card).title}{#if item.skills.length} · {item.skills.map((s) => SKILL_LABEL[s]).join(', ')}{/if}</p>
 
-    <article class="paper-card exercise">
+    <article class="exercise">
       {#if rendered && 'error' in rendered}
         <p class="err">{rendered.error}</p>
         <button class="btn small ghost" type="button" onclick={advance}>Пропустить</button>
@@ -241,26 +241,27 @@
     </article>
 
     {#if phase === 'graded' || phase === 'flipped'}
-      <section class="feedback" class:ok={phase === 'graded' && result?.correct} class:bad={phase === 'graded' && !result?.correct}>
-        {#if phase === 'graded' && result}
-          <div class="verdict">
-            <b>{result.correct ? (result.typo ? 'Верно, но с опечаткой' : 'Верно') : 'Неверно'}</b>
-            {#if (!result.correct || result.typo) && result.expected}<span>Правильно: <span class="mono">{result.expected}</span></span>{/if}
-            {#if practice}<span class="muted note">Ответ уже встречался в этом цикле — засчитано как практика.</span>{/if}
-          </div>
-        {/if}
-        <div class="grades">
-          {#each GRADES as { g, label, cls } (g)}
-            <button type="button" class="{cls}" class:suggested={g === (phase === 'flipped' ? 3 : suggested)} onclick={() => grade(g)}>
-              <span>{label}</span><small class="mono">{g}{intervals ? ` · ${intervals[g]}` : ''}</small>
-            </button>
-          {/each}
-        </div>
-      </section>
+      {#if phase === 'graded' && result}
+        <p class="verdict" class:ok={result.correct} class:bad={!result.correct}>
+          <b>{result.correct ? (result.typo ? 'Верно, с опечаткой' : 'Верно') : 'Неверно'}</b>
+          {#if result.typo && result.expected}<span>— правильно {result.expected}</span>{/if}
+          {#if practice}<span class="muted note">Ответ уже встречался в этом цикле, засчитано как практика.</span>{/if}
+        </p>
+      {/if}
+      {#if backRendered && 'srcdoc' in backRendered}
+        <section class="back">{#key item.key}<ExerciseFrame srcdoc={backRendered.srcdoc} onevent={onBackEvent} autofocus={false} />{/key}</section>
+      {/if}
+      <div class="grades">
+        {#each GRADES as { g, label, cls } (g)}
+          <button type="button" class="{cls}" class:suggested={g === (phase === 'flipped' ? 3 : suggested)} onclick={() => grade(g)}>
+            <span>{label}</span>{#if intervals}<small class="num">{intervals[g]}</small>{/if}
+          </button>
+        {/each}
+      </div>
     {:else if item.mode !== 'intro'}
       <div class="tools">
         <button class="link" type="button" onclick={giveUp}>Не знаю</button>
-        <button class="link" type="button" onclick={skip}>Пропустить <span class="mono">Esc</span></button>
+        <button class="link" type="button" onclick={skip}>Пропустить</button>
       </div>
     {/if}
     {#if saveError}<p class="toast">{saveError}</p>{/if}
@@ -268,35 +269,31 @@
 </div>
 
 <style>
-  .session { padding-top: 18px; }
+  .session { padding-top: 16px; padding-bottom: 24px; }
   .head { display: flex; align-items: center; gap: 14px; }
-  .close { font-size: 26px; line-height: 1; text-decoration: none; color: var(--ink-3); width: 28px; }
-  .progress { flex: 1; height: 6px; border-radius: 3px; background: var(--soft); overflow: hidden; }
-  .progress i { display: block; height: 100%; background: var(--accent); transition: width .3s; }
-  .count { font-size: 12px; color: var(--ink-3); }
-  .meta { display: flex; gap: 8px; align-items: center; margin: 16px 0 10px; font-size: 13px; flex-wrap: wrap; }
-  .exercise { padding: 22px 22px 18px; min-height: 260px; }
-  @media (max-width: 520px) { .exercise { padding: 16px 14px 14px; } }
+  .close { display: grid; place-items: center; width: 28px; height: 28px; color: var(--ink-3); }
+  .close svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; }
+  .progress { flex: 1; height: 2px; background: var(--rule); overflow: hidden; }
+  .progress i { display: block; height: 100%; background: var(--ink); transition: width .3s; }
+  .count { font-size: 13px; color: var(--ink-3); }
+  .meta { margin: 18px 0 22px; font-size: 13px; color: var(--ink-3); }
+  .exercise { min-height: 220px; }
   .err { color: var(--again); }
-  .tools { display: flex; justify-content: space-between; margin-top: 12px; }
-  .link { background: none; border: 0; color: var(--ink-3); font-size: 14px; cursor: pointer; padding: 6px 2px; }
+  .tools { display: flex; justify-content: space-between; margin-top: 18px; }
+  .link { background: none; border: 0; color: var(--ink-3); font-size: 14px; cursor: pointer; padding: 6px 0; }
   .link:hover { color: var(--ink); }
-  .link .mono { font-size: 11px; border: 1px solid var(--rule-strong); border-radius: 4px; padding: 1px 4px; margin-left: 4px; }
-  .feedback { margin-top: 14px; display: grid; gap: 12px; padding: 14px; border-radius: 12px; background: var(--card); border: 1px solid var(--rule); animation: rise .18s ease-out; }
-  .feedback.ok { border-color: color-mix(in srgb, var(--good) 45%, var(--rule)); }
-  .feedback.bad { border-color: color-mix(in srgb, var(--again) 45%, var(--rule)); }
-  @keyframes rise { from { transform: translateY(6px); opacity: 0; } }
-  .verdict { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; }
-  .ok .verdict b { color: var(--good); }
-  .bad .verdict b { color: var(--again); }
+  .verdict { margin: 18px 0 0; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
+  .verdict.ok b { color: var(--good); }
+  .verdict.bad b { color: var(--again); }
   .note { flex-basis: 100%; font-size: 13px; }
-  .grades { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-  .grades button { display: grid; gap: 3px; padding: 11px 6px 9px; border-radius: 9px; border: 1px solid var(--rule-strong); background: var(--paper); cursor: pointer; font-weight: 600; }
-  .grades button small { font-size: 11px; color: var(--ink-3); font-weight: 400; }
-  .grades .again { color: var(--again); } .grades .hard { color: var(--hard); } .grades .good { color: var(--good); } .grades .easy { color: var(--easy); }
-  .grades button.suggested { border-color: currentColor; box-shadow: 0 0 0 1px currentColor; background: var(--card); }
-  .finish { padding: 30px 26px; text-align: left; margin-top: 30px; }
-  .score { font-size: 15px; }
-  .actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+  .back { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--rule); }
+  .grades { position: sticky; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 18px; padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0px)); background: var(--paper); }
+  .grades button { display: grid; gap: 2px; padding: 11px 4px 9px; border-radius: 10px; border: 1px solid var(--rule-strong); background: var(--paper); cursor: pointer; font-size: 15px; }
+  .grades button small { font-size: 12px; color: var(--ink-3); }
+  .grades button:hover { border-color: var(--ink-3); }
+  .grades button.suggested { border-color: var(--ink); }
+  .grades .again span { color: var(--again); } .grades .hard span { color: var(--hard); } .grades .good span { color: var(--good); } .grades .easy span { color: var(--easy); }
+  .finish { padding-top: 48px; }
+  .actions { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
   .toast { margin-top: 12px; font-size: 13px; color: var(--again); }
 </style>

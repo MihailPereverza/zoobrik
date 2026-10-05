@@ -1,7 +1,6 @@
 {% import "core/_macros" as m %}
 <div class="zb">
-  <div class="zb-kicker">Выбери, что вставить</div>
-  {% if params.instruction %}<div class="zb-instruction zb-md">{{ params.instruction | md | safe }}</div>{% endif %}
+  {% if params.instruction %}<div class="zb-instruction zb-md">{{ params.instruction | md | safe }}</div>{% else %}<div class="zb-kicker">Выбери, что вставить</div>{% endif %}
   <p class="zb-cloze">{{ params.text | gap('blank') | safe }}</p>
   {% if params.translation %}<div class="zb-translation">{{ params.translation }}</div>{% endif %}
   {{ m.options(params.options, seed) }}

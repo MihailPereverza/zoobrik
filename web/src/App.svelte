@@ -29,7 +29,7 @@
 
 <header class="top">
   <div class="wrap bar">
-    <a class="brand" href="#/"><i></i>Zoobrik</a>
+    <a class="brand" href="#/">Zoobrik</a>
     <nav>
       <a href="#/" class:on={section === ''}>Учить</a>
       <a href="#/stats" class:on={section === 'stats'}>Статистика</a>
@@ -81,24 +81,22 @@
 </main>
 
 <style>
-  .top { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--paper) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--rule); padding-top: env(safe-area-inset-top, 0px); }
-  .bar { display: flex; align-items: center; gap: 20px; height: 56px; }
-  .brand { display: flex; align-items: center; gap: 10px; font: 700 16px/1 var(--font-display); text-decoration: none; letter-spacing: -.01em; }
-  .brand i { width: 22px; height: 16px; border-radius: 3px; background: var(--card); border: 1px solid var(--rule-strong); border-top: 3px solid var(--accent); }
-  nav { display: flex; gap: 4px; margin-left: auto; }
-  nav a { text-decoration: none; font-size: 14px; color: var(--ink-2); padding: 7px 10px; border-radius: 7px; }
-  nav a:hover { background: var(--card); color: var(--ink); }
-  nav a.on { color: var(--ink); background: var(--card); box-shadow: inset 0 -2px 0 var(--accent); }
-  .theme { position: relative; width: 36px; height: 36px; border-radius: 9px; border: 1px solid var(--rule-strong); background: var(--card); display: grid; place-items: center; cursor: pointer; }
-  .theme svg { width: 18px; height: 18px; fill: none; stroke: var(--ink); stroke-width: 1.8; stroke-linecap: round; }
-  .sync { position: relative; width: 36px; height: 36px; border-radius: 9px; border: 1px solid var(--rule-strong); background: var(--card); display: grid; place-items: center; cursor: pointer; }
-  .sync svg { width: 18px; height: 18px; fill: none; stroke: var(--ink); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .top { position: sticky; top: 0; z-index: 10; background: var(--paper); border-bottom: 1px solid var(--rule); padding-top: env(safe-area-inset-top, 0px); }
+  .bar { display: flex; align-items: center; gap: 18px; height: 54px; max-width: 980px; }
+  .brand { font: 600 16px/1 var(--font-body); text-decoration: none; letter-spacing: -.01em; }
+  nav { display: flex; gap: 18px; margin-left: auto; }
+  nav a { text-decoration: none; font-size: 14px; color: var(--ink-3); padding: 6px 0; }
+  nav a:hover, nav a.on { color: var(--ink); }
+  .theme, .sync { position: relative; width: 32px; height: 32px; border-radius: 8px; border: 0; background: transparent; display: grid; place-items: center; cursor: pointer; color: var(--ink-3); }
+  .theme:hover, .sync:hover { color: var(--ink); }
+  .theme svg, .sync svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .theme small { display: none; }
   .sync.busy svg { animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .sync .dot { position: absolute; top: 5px; right: 5px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+  .sync .dot { position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--again); }
   .sync .dot.offline { background: var(--ink-3); }
-  .theme small { position: absolute; right: 2px; bottom: 1px; font: 600 8px/1 var(--font-mono); color: var(--ink-3); }
-  main { padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
-  .error, .loading { margin-top: 40px; padding: 18px; }
-  @media (max-width: 560px) { .bar { gap: 8px; } nav a { padding: 7px 6px; font-size: 13px; } .brand { font-size: 0; gap: 0; } }
+  main { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+  .error, .loading { margin-top: 40px; }
+  .error { padding: 16px; }
+  @media (max-width: 520px) { .bar { gap: 12px; } nav { gap: 14px; } }
 </style>

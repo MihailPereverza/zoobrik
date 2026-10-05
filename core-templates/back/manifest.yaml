@@ -1,0 +1,8 @@
+id: back
+name: Обратная сторона карточки
+trains: []
+reveals: [en, ru, audio]
+asks: []
+difficulty: 0
+check: { type: none }
+params: {}

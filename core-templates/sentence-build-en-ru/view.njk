@@ -1,7 +1,7 @@
 {% import "core/_macros" as m %}
 <div class="zb">
   <div class="zb-kicker">Собери перевод</div>
-  <div class="zb-row">{% if params.audio %}{{ m.play(media(params.audio)) }}{% endif %}<p class="zb-prompt"><span class="lang">EN</span>{{ params.prompt }}</p></div>
+  <div class="zb-row">{% if params.audio %}{{ m.play(media(params.audio)) }}{% endif %}<p class="zb-prompt">{{ params.prompt }}</p></div>
   {{ m.chips(params.answer, params.extra or [], seed) }}
   <div class="zb-back" data-zb-back hidden>
     <div class="zb-row"><div class="zb-answer">{{ params.answer }}</div></div>

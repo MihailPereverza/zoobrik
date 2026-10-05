@@ -36,9 +36,9 @@
     <h1 class="display">Где лежит ваша колода?</h1>
     <p class="muted">Колода — репозиторий на GitHub. Приложение скачивает её на телефон, работает офлайн и отправляет прогресс обратно коммитами.</p>
   {/if}
-  <label for="repo">Репозиторий<input id="repo" class="mono" bind:value={repoName} placeholder="owner/english-notebook" autocomplete="off" autocapitalize="off" spellcheck="false" required /></label>
-  <label for="branch">Ветка<input id="branch" class="mono" bind:value={branch} autocapitalize="off" /></label>
-  <label for="token">Токен доступа<input id="token" class="mono" type="password" bind:value={token} placeholder="github_pat_…" autocomplete="off" required /></label>
+  <label for="repo">Репозиторий<input id="repo" bind:value={repoName} placeholder="owner/english-notebook" autocomplete="off" autocapitalize="off" spellcheck="false" required /></label>
+  <label for="branch">Ветка<input id="branch" bind:value={branch} autocapitalize="off" /></label>
+  <label for="token">Токен доступа<input id="token" type="password" bind:value={token} placeholder="github_pat_…" autocomplete="off" required /></label>
   <details class="help">
     <summary>Как получить токен</summary>
     <ol>
@@ -59,9 +59,9 @@
   .connect { display: grid; gap: 14px; max-width: 520px; }
   .connect:not(.compact) { margin-top: 36px; }
   p { margin: 0; }
-  label { display: grid; gap: 6px; font: 500 12px/1.2 var(--font-mono); text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3); }
-  input { font-size: 15px; padding: 11px 12px; border-radius: 9px; border: 1px solid var(--rule-strong); background: var(--card); color: var(--ink); text-transform: none; letter-spacing: 0; }
-  input:focus { outline: none; border-color: var(--accent); }
+  label { display: grid; gap: 6px; font-size: 14px; color: var(--ink-2); }
+  input { font: 400 15px/1.3 var(--font-body); padding: 11px 12px; border-radius: 10px; border: 1px solid var(--rule-strong); background: var(--paper); color: var(--ink); }
+  input:focus { outline: none; border-color: var(--ink); }
   .help { font-size: 14px; color: var(--ink-2); }
   .help summary { cursor: pointer; color: var(--ink); }
   .help ol { padding-left: 1.2em; display: grid; gap: 4px; }

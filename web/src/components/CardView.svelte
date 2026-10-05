@@ -75,14 +75,14 @@
   const stat = (id: string) => card?.progress?.exercises?.[id];
 </script>
 
-<div class="wrap">
+<div class="wrap wide">
   {#if !card}
     <p class="muted" style="margin-top:40px">Карточка не найдена. <a href="#/">На главную</a></p>
   {:else}
     <a class="back muted" href="#/topic/{card.topic}">← {topicOf(data, card).title}</a>
     <div class="layout">
       <section class="content">
-        <div class="eyebrow">{card.kind} · <span class="chip {stageOf(card)}">{STAGE_LABEL[stageOf(card)]}</span></div>
+        <div class="eyebrow">{card.kind} <span class="chip {stageOf(card)}">{STAGE_LABEL[stageOf(card)]}</span></div>
         <div class="title">
           {#if card.content.audio}<button class="play" type="button" aria-label="Прослушать" onclick={() => playUrl(mediaUrl(card, card.content.audio!))}><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z" /></svg></button>{/if}
           <h1 class="display">{card.content.en ?? card.content.title}</h1>
@@ -121,7 +121,7 @@
       </section>
 
       <section class="editor">
-        <div class="list panel">
+        <div class="list">
           <div class="eyebrow">{card.exercises.length} заданий</div>
           {#each card.exercises as ex (ex.id)}
             {@const s = stat(ex.id)}
@@ -168,13 +168,13 @@
   .layout { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 32px; align-items: start; }
   @media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
   .title { display: flex; gap: 14px; align-items: center; }
-  .play { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--ink); background: var(--card); display: grid; place-items: center; cursor: pointer; flex: none; padding: 0; }
+  .play { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--rule-strong); background: transparent; display: grid; place-items: center; cursor: pointer; flex: none; padding: 0; }
   .play svg { width: 40%; fill: currentColor; margin-left: 8%; }
   .play.small { width: 32px; height: 32px; }
   .ru { font-size: 19px; font-weight: 500; margin: 10px 0; }
-  .formula { color: var(--accent); margin-top: 6px; }
-  .note { color: var(--ink-2); font-size: 15px; padding: 12px 14px; background: var(--card); border-radius: 10px; border: 1px solid var(--rule); }
-  .theory { margin-top: 12px; background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 10px 14px; }
+  .formula { color: var(--ink-2); margin-top: 6px; font-family: var(--font-body); }
+  .note { color: var(--ink-2); font-size: 15px; }
+  .theory { margin-top: 12px; }
   .theory summary { cursor: pointer; font-weight: 600; }
   .examples { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
   .examples li { display: grid; grid-template-columns: 32px 1fr; gap: 12px; align-items: center; }
@@ -184,17 +184,17 @@
   .skills th { font: 500 11px/1 var(--font-mono); text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3); }
   .editor { display: grid; gap: 14px; position: sticky; top: 72px; }
   @media (max-width: 900px) { .editor { position: static; } }
-  .list { padding: 10px; display: grid; gap: 2px; max-height: 300px; overflow-y: auto; }
+  .list { display: grid; gap: 0; max-height: 300px; overflow-y: auto; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
   .list .eyebrow { padding: 4px 6px 8px; }
   .row { display: grid; grid-template-columns: 52px 46px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px; border: 0; border-radius: 7px; background: none; text-align: left; cursor: pointer; }
   .row:hover { background: var(--soft); }
-  .row.on { background: var(--soft); box-shadow: inset 2px 0 0 var(--accent); }
+  .row.on { background: var(--soft); }
   .row small { color: var(--ink-3); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .row .chip { justify-content: center; }
   .bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; font-size: 13px; }
   .actions { display: flex; gap: 6px; flex-wrap: wrap; }
   .btn.active { border-color: var(--ink); background: var(--soft); }
-  .frame { padding: 18px; }
+  .frame { padding: 18px 0; border-top: 1px solid var(--rule); }
   .verdict { font-size: 14px; color: var(--again); margin: 8px 0 0; }
   .verdict.ok { color: var(--good); }
   textarea { width: 100%; margin-top: 10px; font-size: 13px; padding: 10px; border-radius: 8px; border: 1px solid var(--rule-strong); background: var(--card); color: var(--ink); resize: vertical; }

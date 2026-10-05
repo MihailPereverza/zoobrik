@@ -24,8 +24,8 @@ export default defineConfig({
         lang: 'ru',
         display: 'standalone',
         orientation: 'portrait',
-        background_color: '#F3F5F8',
-        theme_color: '#F3F5F8',
+        background_color: '#FFFFFF',
+        theme_color: '#FFFFFF',
         icons: [
           { src: 'pwa-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'pwa-512.png', sizes: '512x512', type: 'image/png' },

@@ -5,3 +5,28 @@
 <div class="zb-bank">{% for w in (answer | tokens) | concat(extra) | shuffle(seed) %}<button class="zb-chip" type="button" data-zb-chip="{{ w }}">{{ w }}</button>{% endfor %}</div>
 <button class="zb-submit" type="button" data-zb="submit" disabled>Проверить</button>{% endmacro %}
 {% macro explanation(params) %}{% if params.explanation %}<div class="zb-note zb-md">{{ params.explanation | md | safe }}</div>{% endif %}{% endmacro %}
+{% macro cardInfo(card, theory, media, big=false) %}
+<div class="zb-card{% if big %} big{% endif %}">
+  {% if card.kind == 'grammar' %}
+    <div class="ci-head"><div><div class="ci-word">{{ card.content.title }}</div>{% if card.content.formula %}<div class="ci-formula">{{ card.content.formula }}</div>{% endif %}</div></div>
+  {% else %}
+    <div class="ci-head">
+      <button class="zb-play{% if big %} big{% endif %}" data-zb="play" data-src="{{ media(card.content.audio or 'word.mp3') }}" type="button" aria-label="Прослушать"><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z"/></svg></button>
+      <div>
+        <div class="ci-word">{{ card.content.en }}</div>
+        <div class="ci-meta">{% if card.content.ipa %}/{{ card.content.ipa }}/{% endif %}{% if card.content.pos %} · {{ card.content.pos }}{% endif %}</div>
+      </div>
+    </div>
+    <div class="ci-ru">{{ card.content.ru }}{% set alts = card.content.alt_ru | notIn(card.content.ru) %}{% if alts.length %}<span> · {{ alts | join(', ') }}</span>{% endif %}</div>
+  {% endif %}
+  {% if card.content.note %}<div class="ci-note zb-md">{{ card.content.note | md | safe }}</div>{% endif %}
+  {% if card.content.examples and card.content.examples.length %}
+  <ul class="ci-examples">
+    {% for ex in card.content.examples %}
+    <li><button class="zb-play small" data-zb="play" data-src="{{ media(ex.audio) }}" type="button" aria-label="Прослушать"><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z"/></svg></button><div><div>{{ ex.en }}</div><div class="ci-tr">{{ ex.ru }}</div></div></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% if theory %}{% if big %}<div class="ci-theory zb-md">{{ theory | md | safe }}</div>{% else %}<details class="ci-more"><summary>Правило целиком</summary><div class="zb-md">{{ theory | md | safe }}</div></details>{% endif %}{% endif %}
+</div>
+{% endmacro %}
