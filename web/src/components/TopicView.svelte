@@ -27,6 +27,7 @@
       {summary.open ? (summary.gate ? 'следующая порция открыта' : 'следующая порция — после закрепления текущей') : 'тема закрыта до освоения предыдущих'}
     </p>
 
+    {#if summary.total - summary.counts.new > 0}<a class="btn ghost practice" href="#/session/practice/{topic.id}">Практика по теме</a>{/if}
     {#each Array.from({ length: Math.ceil(topic.cards.length / batch) }, (_, i) => orderedCards(topic).slice(i * batch, i * batch + batch)) as group, gi (gi)}
       <h2 class="section">Порция {gi + 1}</h2>
       <ul class="cards surface appear" style="animation-delay: {gi * 0.04}s">
@@ -59,6 +60,7 @@
   .back:hover { color: var(--ink); }
   .desc { max-width: 62ch; }
   .status { font-size: 13px; color: var(--ink-3); margin: 8px 0 0; }
+  .practice { margin-top: 16px; }
   .cards { list-style: none; margin: 0; padding: 4px 0; overflow: hidden; }
   .cards li { padding-inline: 18px; }
   .cards li:hover { background: var(--soft); }

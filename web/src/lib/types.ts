@@ -26,6 +26,8 @@ export interface Progress {
   skills: Partial<Record<Skill, SkillState>>;
   exercises: Record<string, ExerciseStats>;
   recent: string[];
+  buried_until?: string;
+  leech?: boolean;
 }
 
 export interface Example { id: string; en: string; ru: string; audio?: string }
@@ -119,6 +121,9 @@ export interface DeckConfig {
     relearning_steps?: string[];
     max_interval?: string;
     leech_threshold?: number;
+    leech_action?: 'tag' | 'suspend';
+    load_balance?: boolean;
+    easy_days?: number[];
   };
   cycle?: { cards?: number; min_gap?: number; max_exercises_per_card?: number };
 }

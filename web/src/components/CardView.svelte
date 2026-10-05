@@ -8,6 +8,7 @@
   import { mediaUrl, render, topicOf, type Rendered } from '../lib/render';
   import { cardSkills, exerciseSkills, manifestOf } from '../lib/scheduler';
   import { STAGE_LABEL, stageOf } from '../lib/summary';
+  import { isBuried, suspend, unsuspend } from '../lib/progress';
   import type { CheckResult, Exercise, ExerciseStatus } from '../lib/types';
 
   let { topicId, cardId }: { topicId: string; cardId: string } = $props();
@@ -74,6 +75,14 @@
   }
 
   const stat = (id: string) => card?.progress?.exercises?.[id];
+
+  async function toggleSuspend() {
+    if (!card) return;
+    const progress = card.progress?.stage === 'suspended' ? unsuspend(card, new Date()) : suspend(card, new Date());
+    card.progress = progress;
+    await backend().saveAnswer(app.device, [{ cardPath: card.path, progress: $state.snapshot(progress) }], []);
+    await refreshPending(); scheduleSync(); touch();
+  }
 </script>
 
 <div class="wrap wide">
@@ -83,7 +92,12 @@
     <a class="back" href="#/topic/{card.topic}">← {topicOf(data, card).title}</a>
     <div class="layout">
       <section class="content">
-        <div class="eyebrow">{card.kind} <span class="chip {stageOf(card)}">{STAGE_LABEL[stageOf(card)]}</span></div>
+        <div class="eyebrow tags">{card.kind} <span class="chip {stageOf(card)}">{STAGE_LABEL[stageOf(card)]}</span>
+          {#if card.progress?.leech}<span class="chip leech">пиявка</span>{/if}
+          {#if isBuried(card, now)}<span class="chip">отложено до завтра</span>{/if}
+          <button class="btn small ghost" type="button" onclick={toggleSuspend}>{card.progress?.stage === 'suspended' ? 'Вернуть в занятия' : 'Приостановить'}</button>
+        </div>
+        {#if card.progress?.leech}<p class="leech-note">Это слово часто забывается. Помогает своя заметка-ассоциация, ещё один пример или картинка — отредактируйте карточку.</p>{/if}
         <div class="title">
           {#if card.content.audio}<button class="play" type="button" aria-label="Прослушать" onclick={() => playUrl(mediaUrl(card, card.content.audio!))}><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z" /></svg></button>{/if}
           <h1 class="display">{card.content.en ?? card.content.title}</h1>
@@ -172,6 +186,9 @@
   .play { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--card); border: 1px solid var(--line); display: grid; place-items: center; cursor: pointer; flex: none; padding: 0; }
   .play svg { width: 40%; fill: currentColor; margin-left: 8%; }
   .play.small { width: 34px; height: 34px; }
+  .tags { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .chip.leech { color: var(--again); }
+  .leech-note { font-size: 14px; color: var(--ink-2); background: var(--soft); padding: 10px 12px; border-radius: 12px; }
   .ru { font-size: 19px; font-weight: 500; margin: 10px 0; }
   .formula { color: var(--ink-2); margin-top: 6px; font-family: var(--font-body); }
   .note { color: var(--ink-2); font-size: 15px; }

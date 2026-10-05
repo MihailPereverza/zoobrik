@@ -64,7 +64,7 @@
   {:else if !app.data}
     <div class="narrow loading muted">Загружаю колоду…</div>
   {:else if section === 'session'}
-    <Session />
+    {#key route}<Session practiceTopic={parts[1] === 'practice' ? parts[2] ?? '' : ''} />{/key}
   {:else if section === 'topic' && parts[1]}
     <TopicView topicId={parts[1]} />
   {:else if section === 'card' && parts[2]}

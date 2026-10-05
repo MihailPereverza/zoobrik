@@ -27,6 +27,14 @@ export function readProgress(cardYaml: string): any {
   return YAML.parse(cardYaml)?.progress ?? null;
 }
 
+export function withDeckParams(deckYaml: string, params: number[] | null): string {
+  const doc = YAML.parseDocument(deckYaml);
+  const node = doc.createNode(params);
+  if (node instanceof YAML.YAMLSeq) node.flow = true;
+  doc.setIn(['fsrs', 'params'], node);
+  return doc.toString({ lineWidth: 0 });
+}
+
 export interface ExercisePatch { status?: string; params?: Record<string, unknown> }
 
 export function patchCardExercise(cardYaml: string, exerciseId: string, patch: ExercisePatch): string {

@@ -1,6 +1,8 @@
+import { get_fuzz_range } from 'ts-fsrs';
 import { retrievability } from './fsrs';
+import { dayKey, isBuried } from './progress';
 import { resolveTemplate } from './render';
-import type { Card, DeckData, Exercise, Mode, QueueItem, Skill, TemplateManifest, Topic } from './types';
+import type { Card, DeckData, Exercise, Mode, QueueItem, Skill, SkillState, TemplateManifest, Topic } from './types';
 
 const LEARN_AHEAD_MS = 20 * 60 * 1000;
 const SKILL_ORDER: Skill[] = ['recognize', 'listen', 'recall', 'spell', 'context', 'apply'];
@@ -41,7 +43,7 @@ const isSuspended = (card: Card) => card.progress?.stage === 'suspended';
 export const LEARN_AHEAD = LEARN_AHEAD_MS;
 
 export function dueSkills(data: DeckData, card: Card, now: Date, aheadMs = 0): Skill[] {
-  if (!isIntroduced(card) || isSuspended(card)) return [];
+  if (!isIntroduced(card) || isSuspended(card) || isBuried(card, now)) return [];
   const limit = now.getTime() + aheadMs;
   return cardSkills(data, card).filter((skill) => {
     const state = card.progress?.skills?.[skill];
@@ -169,7 +171,7 @@ export function nextBatch(data: DeckData, now: Date, dueCount: number): { topic:
   const left = (data.deck.limits?.new_cards_per_day ?? 8) - cardsIntroducedToday(data, now);
   if (left <= 0 || dueCount > (data.deck.limits?.reviews_per_day ?? 250)) return null;
   for (const topic of data.topics) {
-    const fresh = orderedCards(topic).filter((c) => !isIntroduced(c) && cardSkills(data, c).length > 0);
+    const fresh = orderedCards(topic).filter((c) => !isIntroduced(c) && !isSuspended(c) && !isBuried(c, now) && cardSkills(data, c).length > 0);
     if (!fresh.length || !topicIsOpen(data, topic) || !gateOpen(data, topic)) continue;
     return { topic, cards: fresh.slice(0, Math.min(topic.batch ?? 4, left)) };
   }
@@ -187,7 +189,7 @@ export function buildSession(data: DeckData, now: Date, allowNew = true, aheadMs
   const cycleSize = data.deck.cycle?.cards ?? 4;
   const minGap = data.deck.cycle?.min_gap ?? 2;
   const queue: QueueItem[] = [];
-  const due = data.topics.flatMap((t) => t.cards).filter((c) => dueSkills(data, c, now, aheadMs).length > 0);
+  const due = limitReviews(data, data.topics.flatMap((t) => t.cards).filter((c) => dueSkills(data, c, now, aheadMs).length > 0), now);
   const byTopic = new Map<string, Card[]>();
   for (const card of due) byTopic.set(card.topic, [...(byTopic.get(card.topic) ?? []), card]);
   const topics = [...byTopic.entries()].sort((a, b) => Math.min(...a[1].map((c) => minRetrievability(data, c, now))) - Math.min(...b[1].map((c) => minRetrievability(data, c, now))));
@@ -202,6 +204,77 @@ export function buildSession(data: DeckData, now: Date, allowNew = true, aheadMs
   const batch = allowNew ? nextBatch(data, now, due.length) : null;
   if (batch) queue.push(...spread(batch.cards.map((c) => learnItems(data, c)), minGap, true), ...topicExerciseItems(data, batch.topic, batch.cards));
   return { queue, dueCards: due.length, newCards: batch?.cards.length ?? 0, nextDue: nextDueDate(data, now) };
+}
+
+function isLearningCard(data: DeckData, card: Card, now: Date): boolean {
+  if (card.progress?.introduced === dayKey(now)) return true;
+  return dueSkills(data, card, now, LEARN_AHEAD_MS).some((s) => (card.progress?.skills?.[s]?.state ?? 'new') !== 'review');
+}
+
+export function reviewsDoneToday(data: DeckData, now: Date): number {
+  const today = dayKey(now);
+  return data.topics.flatMap((t) => t.cards).filter((c) =>
+    c.progress?.introduced && c.progress.introduced < today && Object.values(c.progress.exercises ?? {}).some((e) => e.last?.slice(0, 10) === today)).length;
+}
+
+// Anki's daily review limit: learning cards always come; mature reviews are capped, most-forgotten first.
+export function limitReviews(data: DeckData, due: Card[], now: Date): Card[] {
+  const limit = data.deck.limits?.reviews_per_day ?? 250;
+  const left = Math.max(0, limit - reviewsDoneToday(data, now));
+  const learning = due.filter((c) => isLearningCard(data, c, now));
+  const reviews = due.filter((c) => !isLearningCard(data, c, now)).sort((a, b) => minRetrievability(data, a, now) - minRetrievability(data, b, now));
+  return [...learning, ...reviews.slice(0, left)];
+}
+
+function dueLoad(data: DeckData, except: Card): Map<string, number> {
+  const load = new Map<string, number>();
+  for (const card of data.topics.flatMap((t) => t.cards)) {
+    if (card === except || !isIntroduced(card) || isSuspended(card)) continue;
+    const dues = Object.values(card.progress?.skills ?? {}).map((s) => s!.due).sort();
+    if (dues[0]) load.set(dues[0].slice(0, 10), (load.get(dues[0].slice(0, 10)) ?? 0) + 1);
+  }
+  return load;
+}
+
+// Anki 24.11 load balancer: inside the fuzz range pick the day with the fewest reviews; Easy Days count as busier.
+export function balanceDue(data: DeckData, card: Card, state: SkillState): SkillState {
+  if (data.deck.fsrs?.load_balance === false || state.state !== 'review' || !state.last) return state;
+  const last = new Date(state.last);
+  const interval = Math.round((new Date(state.due).getTime() - last.getTime()) / 86_400_000);
+  if (interval < 3) return state;
+  const maximum = parseFloat(data.deck.fsrs?.max_interval ?? '365') || 365;
+  const { min_ivl, max_ivl } = get_fuzz_range(interval, 0, maximum);
+  const load = dueLoad(data, card);
+  const easy = new Set(data.deck.fsrs?.easy_days ?? []);
+  let best = interval;
+  let bestScore = Infinity;
+  for (let ivl = min_ivl; ivl <= max_ivl; ivl++) {
+    const day = new Date(last.getTime() + ivl * 86_400_000);
+    const score = (load.get(dayKey(day)) ?? 0) * (easy.has(day.getUTCDay()) ? 2 : 1) + Math.abs(ivl - interval) * 0.01;
+    if (score < bestScore) { bestScore = score; best = ivl; }
+  }
+  return { ...state, due: new Date(last.getTime() + best * 86_400_000).toISOString() };
+}
+
+export function practiceSession(data: DeckData, topicId: string, now: Date): QueueItem[] {
+  const topic = data.topics.find((t) => t.id === topicId);
+  if (!topic) return [];
+  const cards = topic.cards.filter((c) => isIntroduced(c) && !isSuspended(c));
+  const lists = cards.map((card) => {
+    const pool = card.exercises.filter((e) => usable(data, card, e, 'practice'));
+    const picked = [...pool].sort(() => Math.random() - 0.5).slice(0, 2);
+    return picked.map((exercise) => ({ key: `${card.id}:${exercise.id}:p${Math.random().toString(36).slice(2, 6)}`, card, exercise, skills: exerciseSkills(data, card, exercise), mode: 'practice' as Mode }));
+  });
+  return spread(lists, data.deck.cycle?.min_gap ?? 2, false).slice(0, 30);
+}
+
+/**
+ * A correct answer counts only as practice when the same cycle already showed what this exercise asks for.
+ * Applies to reviews of mature skills only: while a word is being learned, answers drive the learning steps.
+ */
+export function isPrimed(asks: string[], seen: Map<string, number> | undefined, position: number, mode: Mode, window = 14): boolean {
+  if (mode !== 'review' || !asks.length || !seen) return false;
+  return asks.every((form) => seen.has(form) && position - seen.get(form)! <= window);
 }
 
 export function nextDueDate(data: DeckData, now: Date): Date | null {

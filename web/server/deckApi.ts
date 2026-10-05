@@ -156,11 +156,34 @@ async function activity(deckDir: string) {
       const text = await fs.readFile(path.join(root, month, file), 'utf8');
       for (const line of text.split('\n')) {
         const day = line.slice(0, 10);
-        if (/^\d{4}-\d{2}-\d{2}$/.test(day)) days[day] = (days[day] ?? 0) + 1;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) continue;
+        const grade = line.split('\t')[4];
+        if (grade === 'seen') continue;
+        days[day] = (days[day] ?? 0) + (grade === 'undo' ? -1 : 1);
       }
     }
   }
   return days;
+}
+
+async function journalLines(deckDir: string): Promise<string[]> {
+  const root = path.join(deckDir, 'journal');
+  const lines: string[] = [];
+  for (const month of await listDirs(root)) {
+    for (const file of (await fs.readdir(path.join(root, month))).filter((f) => f.endsWith('.tsv'))) {
+      lines.push(...(await fs.readFile(path.join(root, month, file), 'utf8')).split('\n').filter(Boolean));
+    }
+  }
+  return lines.sort();
+}
+
+async function saveParams(deckDir: string, params: number[] | null) {
+  const file = path.join(deckDir, 'deck.yaml');
+  const doc = YAML.parseDocument(await fs.readFile(file, 'utf8'));
+  const node = doc.createNode(params);
+  if (node instanceof YAML.YAMLSeq) node.flow = true;
+  doc.setIn(['fsrs', 'params'], node);
+  await fs.writeFile(file, doc.toString({ lineWidth: 0 }));
 }
 
 async function git(deckDir: string, args: string[]) {
@@ -210,6 +233,7 @@ function middleware(opts: Options) {
       if (!url.pathname.startsWith('/api/')) return next();
       if (url.pathname === '/api/deck') return send(res, 200, await loadDeck(opts));
       if (url.pathname === '/api/activity') return send(res, 200, await activity(opts.deckDir));
+      if (url.pathname === '/api/journal') return send(res, 200, await journalLines(opts.deckDir));
       const body = req.method === 'POST' ? await readBody(req) : {};
       if (url.pathname === '/api/answer') {
         await serial(async () => {
@@ -218,6 +242,7 @@ function middleware(opts: Options) {
         });
         return send(res, 200, { ok: true });
       }
+      if (url.pathname === '/api/deck-params') { await serial(() => saveParams(opts.deckDir, body.params ?? null)); return send(res, 200, { ok: true }); }
       if (url.pathname === '/api/exercise') { await serial(() => patchExercise(opts.deckDir, body)); return send(res, 200, { ok: true }); }
       if (url.pathname === '/api/sync') return send(res, 200, await serial(() => sync(opts.deckDir, body.device ?? 'device')));
       send(res, 404, { error: 'unknown endpoint' });

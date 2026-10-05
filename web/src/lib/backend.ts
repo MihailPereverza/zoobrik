@@ -1,6 +1,6 @@
 import { createStore, del, get, set } from 'idb-keyval';
 import * as api from './api';
-import { patchCardExercise, patchMdExercise, readProgress, withProgress, type ExercisePatch } from './cardyaml';
+import { patchCardExercise, patchMdExercise, readProgress, withDeckParams, withProgress, type ExercisePatch } from './cardyaml';
 import { CORE } from './core';
 import { buildDeck, isTextFile, type FileMap } from './deckfs';
 import { createBlob, createCommit, createTree, getBlob, getHead, getTextBlob, getTextBlobs, getTree, GitHubError, pool, updateRef, type RepoConfig } from './github';
@@ -21,6 +21,8 @@ export interface Backend {
   mediaNow(url: string): string | null;
   mediaExists(url: string): Promise<boolean>;
   pendingCount(): Promise<number>;
+  journal(): Promise<string[]>;
+  saveParams(params: number[] | null): Promise<void>;
 }
 
 export const serverBackend: Backend = {
@@ -34,6 +36,8 @@ export const serverBackend: Backend = {
   mediaNow: (url) => url,
   mediaExists: async (url) => (await fetch(url, { method: 'HEAD' })).ok,
   pendingCount: async () => 0,
+  journal: api.loadJournal,
+  saveParams: async (params) => { await api.saveDeckParams(params); },
 };
 
 interface Snapshot { commit: string; tree: string; shas: Record<string, string> }
@@ -178,10 +182,27 @@ export class GitHubBackend implements Backend {
     return { ok: false, log: 'Не удалось отправить: ветка постоянно меняется. Попробуйте ещё раз.' };
   }
 
+  async journal(): Promise<string[]> {
+    const snap = await this.snapshot();
+    const lines: string[] = [];
+    for (const [path, sha] of Object.entries(snap?.shas ?? {})) if (path.startsWith('journal/')) lines.push(...((await this.cachedText(sha)) ?? '').split('\n').filter(Boolean));
+    lines.push(...(await this.pending()).journal);
+    return lines.sort();
+  }
+
+  async saveParams(params: number[] | null) {
+    await this.edit('deck.yaml', (text) => withDeckParams(text, params));
+  }
+
   async activity(): Promise<Record<string, number>> {
     const snap = await this.snapshot();
     const days: Record<string, number> = {};
-    const count = (text: string) => text.split('\n').forEach((l) => { const d = l.slice(0, 10); if (/^\d{4}-\d{2}-\d{2}$/.test(d)) days[d] = (days[d] ?? 0) + 1; });
+    const count = (text: string) => text.split('\n').forEach((l) => {
+      const d = l.slice(0, 10);
+      const grade = l.split('\t')[4];
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || grade === 'seen') return;
+      days[d] = (days[d] ?? 0) + (grade === 'undo' ? -1 : 1);
+    });
     for (const [path, sha] of Object.entries(snap?.shas ?? {})) if (path.startsWith('journal/')) count((await this.cachedText(sha)) ?? '');
     count((await this.pending()).journal.join('\n'));
     return days;

@@ -13,4 +13,6 @@ export const saveAnswer = (device: string, updates: { cardPath: string; progress
   request('/api/answer', { device, updates, lines });
 export const patchExercise = (body: { cardPath: string; exerciseId: string; file?: string; patch: { status?: string; params?: Record<string, unknown> } }) =>
   request('/api/exercise', body);
+export const loadJournal = () => request<string[]>('/api/journal');
+export const saveDeckParams = (params: number[] | null) => request('/api/deck-params', { params });
 export const syncDeck = (device: string) => request<{ ok: boolean; log: string }>('/api/sync', { device });

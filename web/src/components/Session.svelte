@@ -10,13 +10,14 @@
   import { app, backend, refreshPending, scheduleSync, sync, touch } from '../lib/state.svelte';
   import { check } from '../lib/check';
   import { formatInterval, preview } from '../lib/fsrs';
-  import { applyAnswer, applyIntro } from '../lib/progress';
+  import { applyAnswer, applyIntro, bury, suspend } from '../lib/progress';
   import { mediaUrl, render, topicOf, type Rendered } from '../lib/render';
-  import { buildSession, LEARN_AHEAD, manifestOf, replacementItem } from '../lib/scheduler';
+  import { balanceDue, buildSession, isPrimed, LEARN_AHEAD, manifestOf, practiceSession, replacementItem } from '../lib/scheduler';
   import type { CheckResult, Grade, QueueItem, Skill } from '../lib/types';
 
   type Phase = 'answer' | 'reveal' | 'graded' | 'flipped' | 'wait' | 'done';
   const FLIP_MS = 220;
+  let { practiceTopic = '' }: { practiceTopic?: string } = $props();
   const data = app.data!;
   const GRADES: { g: Grade; label: string; cls: string }[] = [
     { g: 1, label: 'Снова', cls: 'again' }, { g: 2, label: 'Трудно', cls: 'hard' },
@@ -40,6 +41,10 @@
   let correct = $state(0);
   const revealed = new Map<string, Map<string, number>>();
   const requeued = new Map<string, number>();
+  interface UndoStep { index: number; snapshots: { card: QueueItem['card']; progress: unknown }[]; lines: string[]; inserted?: string }
+  let history = $state<UndoStep[]>([]);
+  let menuOpen = $state(false);
+  let notice = $state('');
   const audio = new Audio();
 
   const item = $derived(queue[index]);
@@ -62,6 +67,14 @@
   }
 
   function start(aheadMs = 0) {
+    if (practiceTopic) {
+      if (queue.length) { phase = 'done'; nextDue = null; if (answered) sync(); return; }
+      queue = practiceSession(data, practiceTopic, new Date());
+      index = 0;
+      if (!queue.length) { phase = 'done'; return; }
+      prefetch(queue); revealed.clear(); show();
+      return;
+    }
     const plan = buildSession(data, new Date(), true, aheadMs);
     nextDue = plan.nextDue;
     if (!plan.queue.length) {
@@ -86,10 +99,8 @@
     revealed.set(cardId, map);
   }
 
-  function isPrimed(current: QueueItem): boolean {
-    const asks = manifestOf(data, current.card, current.exercise)?.asks ?? [];
-    const seen = revealed.get(current.card.id);
-    return asks.length > 0 && !!seen && asks.every((f) => seen.has(f) && index - seen.get(f)! <= 14);
+  function primed(current: QueueItem): boolean {
+    return isPrimed(manifestOf(data, current.card, current.exercise)?.asks ?? [], revealed.get(current.card.id), index, current.mode);
   }
 
   function onAnswer(value: any, ms: number, hintCount: number) {
@@ -104,8 +115,8 @@
     if (res.correct && grade === 3 && ms > Math.max(25000, avg * 2.5)) grade = 2;
     result = res;
     suggested = grade;
-    practice = res.correct && isPrimed(current);
-    log('session', 'answer', { correct: res.correct, typo: res.typo, suggested: grade, ms, hints, practice: res.correct && isPrimed(current) });
+    practice = res.correct && primed(current);
+    log('session', 'answer', { correct: res.correct, typo: res.typo, suggested: grade, ms, hints, practice: res.correct && primed(current) });
     navigator.vibrate?.(res.correct ? 12 : [20, 40, 20]);
     reveal(res, 'graded');
   }
@@ -156,9 +167,13 @@
     const members = current.topicCards ?? [current.card];
     const updates = [];
     const lines: string[] = [];
+    const snapshots = members.map((card) => ({ card, progress: card.progress ? $state.snapshot(card.progress) : undefined }));
+    const isPractice = practice || current.mode === 'practice';
     for (const card of members) {
       const skills = current.topicCards ? [current.exercise.cards![card.id]] : current.skills;
-      const effect = applyAnswer({ deck: data.deck, card, exercise: current.exercise, skills, grade: g, practice, ms: answerMs, now, device: app.device });
+      const effect = applyAnswer({ deck: data.deck, card, exercise: current.exercise, skills, grade: g, practice: isPractice, ms: answerMs, now, device: app.device });
+      if (!isPractice) for (const s of skills) if (effect.progress.skills[s]) effect.progress.skills[s] = balanceDue(data, card, effect.progress.skills[s]!);
+      if (effect.becameLeech) { notice = `«${card.content.en ?? card.content.title}» стало пиявкой: слишком много ошибок. Загляните в карточку — поможет своя заметка или пример.`; log('session', 'leech', card.id); }
       card.progress = effect.progress;
       updates.push({ cardPath: card.path, progress: $state.snapshot(effect.progress) });
       lines.push(...effect.lines);
@@ -168,10 +183,12 @@
     if (g > 1) correct += 1;
     remember(current.card.id, manifestOf(data, current.card, current.exercise)?.reveals ?? []);
     const key = `${current.card.id}:${current.skills[0]}`;
-    if (g === 1 && !practice && (requeued.get(key) ?? 0) < 2) {
+    let inserted: string | undefined;
+    if (g === 1 && !isPractice && (requeued.get(key) ?? 0) < 2) {
       const again = replacementItem(data, current);
-      if (again) { queue.splice(Math.min(queue.length, index + 4), 0, again); requeued.set(key, (requeued.get(key) ?? 0) + 1); }
+      if (again) { queue.splice(Math.min(queue.length, index + 4), 0, again); requeued.set(key, (requeued.get(key) ?? 0) + 1); inserted = again.key; }
     }
+    history = [...history.slice(-19), { index, snapshots, lines, inserted }];
     touch();
     advance();
   }
@@ -183,7 +200,6 @@
     const effect = applyIntro(current.card, new Date(), app.device);
     current.card.progress = effect.progress;
     persist([{ cardPath: current.card.path, progress: $state.snapshot(effect.progress) }], effect.lines);
-    remember(current.card.id, ['en', 'ru', 'audio']);
     touch();
     advance();
   }
@@ -216,7 +232,44 @@
     (async () => { for (const u of urls) await backend().media(u).catch(() => ''); })();
   }
 
+  // Undo restores the cards' previous progress and returns to the answered exercise; the journal gets an undo line.
+  function undo() {
+    const step = history.at(-1);
+    if (!step) return;
+    history = history.slice(0, -1);
+    const updates = step.snapshots.map(({ card, progress }) => {
+      card.progress = progress as typeof card.progress;
+      return { cardPath: card.path, progress: (progress ?? { stage: 'new', totals: { answers: 0, correct: 0, lapses: 0 }, skills: {}, exercises: {}, recent: [] }) as any };
+    });
+    const now = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+    const undoLines = step.lines.map((l) => { const f = l.split('\t'); return [now, f[1], f[2], f[3], 'undo', 0, app.device, `ref=${f[0]}`].join('\t'); });
+    persist(updates, undoLines);
+    if (step.inserted) queue = queue.filter((q) => q.key !== step.inserted);
+    answered = Math.max(0, answered - 1);
+    log('session', 'undo', { card: step.snapshots[0]?.card.id, back_to: step.index + 1 });
+    menuOpen = false; notice = '';
+    index = step.index;
+    touch();
+    show();
+  }
+
+  function setAside(kind: 'bury' | 'suspend') {
+    const current = item;
+    if (!current) return;
+    const card = current.card;
+    const progress = kind === 'bury' ? bury(card, new Date()) : suspend(card, new Date());
+    card.progress = progress;
+    persist([{ cardPath: card.path, progress: $state.snapshot(progress) }], []);
+    queue = [...queue.slice(0, index + 1), ...queue.slice(index + 1).filter((q) => q.card !== card)];
+    log('session', kind, card.id);
+    notice = kind === 'bury' ? `«${card.content.en ?? card.content.title}» отложено до завтра.` : `«${card.content.en ?? card.content.title}» приостановлено. Вернуть можно на странице карточки.`;
+    menuOpen = false;
+    touch();
+    advance();
+  }
+
   function handleKey(key: string) {
+    if (key === 'u' || key === 'г') { if (history.length && phase !== 'reveal') undo(); return; }
     if (phase === 'reveal') { if (key === 'Enter' || key === ' ') flipNow(); return; }
     if (phase === 'graded' || phase === 'flipped') {
       if (/^[1-4]$/.test(key)) grade(Number(key) as Grade);
@@ -301,7 +354,19 @@
       <a class="close" href="#/" aria-label="Закончить занятие"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" /></svg></a>
       <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax={queue.length} aria-valuenow={index}><i style:width={progressPct}></i></div>
       <span class="count num">{index + 1}/{queue.length}</span>
+      <div class="menu-wrap">
+        <button class="more" type="button" aria-label="Действия с карточкой" aria-expanded={menuOpen} onclick={() => (menuOpen = !menuOpen)}><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></svg></button>
+        {#if menuOpen}
+          <div class="menu" role="menu">
+            <button type="button" role="menuitem" disabled={!history.length} onclick={undo}>Отменить последний ответ <span class="kbd">U</span></button>
+            <button type="button" role="menuitem" onclick={() => setAside('bury')}>Отложить до завтра</button>
+            <button type="button" role="menuitem" onclick={() => setAside('suspend')}>Приостановить карточку</button>
+            <a role="menuitem" href="#/card/{item.card.topic}/{item.card.id}">Открыть карточку</a>
+          </div>
+        {/if}
+      </div>
     </div>
+    {#if notice}<p class="notice">{notice}</p>{/if}
 
     {#key item.key}
       <div class="step" in:fly={{ y: 14, duration: 320, opacity: 1 }}>
@@ -349,6 +414,7 @@
       <button class="btn block flip-btn" type="button" onclick={flipNow} >Перевернуть</button>
     {:else if item.mode !== 'intro' && phase === 'answer'}
       <div class="tools">
+        {#if history.length}<button class="link" type="button" onclick={undo}>← Отменить ответ</button>{/if}
         <button class="link" type="button" onclick={giveUp}>Не знаю</button>
         <button class="link" type="button" onclick={skip}>Пропустить</button>
       </div>
@@ -373,7 +439,17 @@
   @media (max-width: 520px) { .exercise { padding: 22px 18px 18px; } }
   .err { color: var(--again); }
   .flip-btn { margin-top: 14px; }
-  .tools { display: flex; justify-content: space-between; margin: 14px 4px 0; }
+  .menu-wrap { position: relative; }
+  .more { width: 32px; height: 32px; border-radius: 50%; border: 0; background: var(--paper); display: grid; place-items: center; cursor: pointer; color: var(--ink-3); }
+  .more:hover { background: var(--soft); color: var(--ink); }
+  .more svg { width: 18px; height: 18px; fill: currentColor; }
+  .menu { position: absolute; right: 0; top: 38px; z-index: 20; min-width: 240px; display: grid; padding: 6px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
+  .menu button, .menu a { display: flex; justify-content: space-between; gap: 12px; text-align: left; padding: 10px 12px; border: 0; border-radius: 9px; background: var(--card); font-size: 14px; color: var(--ink); text-decoration: none; cursor: pointer; }
+  .menu button:hover:not(:disabled), .menu a:hover { background: var(--soft); }
+  .menu button:disabled { color: var(--ink-3); cursor: default; }
+  .kbd { font-size: 11px; color: var(--ink-3); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
+  .notice { margin: 12px 4px 0; padding: 10px 14px; border-radius: 12px; background: var(--soft); color: var(--ink-2); font-size: 14px; }
+  .tools { gap: 12px; display: flex; justify-content: space-between; margin: 14px 4px 0; }
   .link { background: none; border: 0; color: var(--ink-3); font-size: 14px; cursor: pointer; padding: 8px 4px; border-radius: 8px; transition: color .2s; }
   .link:hover { color: var(--ink); }
   .verdict { margin-top: 4px; display: flex; gap: 12px; align-items: center; padding: 12px 16px; border-radius: 16px; }

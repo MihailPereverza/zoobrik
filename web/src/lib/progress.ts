@@ -3,6 +3,15 @@ import type { Card, DeckConfig, Exercise, Grade, Progress, Skill, Stage } from '
 
 export const MASTERED_DAYS = 90;
 
+// One learning day is a UTC date: for Europe/Asia time zones it rolls over at night, close to Anki's 4 am.
+export const dayKey = (d: Date) => d.toISOString().slice(0, 10);
+
+export function nextDayKey(now: Date): string {
+  const d = new Date(now);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return dayKey(d);
+}
+
 export function emptyProgress(now: Date): Progress {
   return {
     stage: 'learning', introduced: now.toISOString().slice(0, 10),
@@ -30,6 +39,7 @@ function clone(progress: Progress | undefined, now: Date): Progress {
 export interface AnswerEffect {
   progress: Progress;
   lines: string[];
+  becameLeech?: boolean;
 }
 
 interface ApplyInput {
@@ -81,8 +91,47 @@ export function applyAnswer(input: ApplyInput): AnswerEffect {
   progress.recent = [`${nowIso.replace(/\.\d+Z$/, 'Z')} ${input.exercise.id} ${input.skills.join(',')} ${input.practice ? 'p' : ''}${input.grade} ${input.ms} ${input.device}`, ...progress.recent].slice(0, 20);
   progress.as_of = `${input.device}:${nowIso.replace(/\.\d+Z$/, 'Z')}`;
   progress.stage = computeStage(progress);
-  return { progress, lines };
+  const becameLeech = markLeech(input, progress);
+  return { progress, lines, becameLeech };
 }
+
+// Anki's leech rule: a skill that lapsed `leech_threshold` times gets tagged (and optionally suspended).
+function markLeech(input: ApplyInput, progress: Progress): boolean {
+  if (progress.leech || input.practice || input.grade !== 1) return false;
+  const threshold = input.deck.fsrs?.leech_threshold ?? 8;
+  const worst = Math.max(0, ...input.skills.map((s) => progress.skills[s]?.lapses ?? 0));
+  if (worst < threshold) return false;
+  progress.leech = true;
+  if (input.deck.fsrs?.leech_action === 'suspend') progress.stage = 'suspended';
+  return true;
+}
+
+function base(card: Card, now: Date): Progress {
+  if (card.progress) return clone(card.progress, now);
+  return { stage: 'new', totals: { answers: 0, correct: 0, lapses: 0 }, skills: {}, exercises: {}, recent: [] };
+}
+
+export function suspend(card: Card, now: Date): Progress {
+  const p = base(card, now);
+  p.stage = 'suspended';
+  return p;
+}
+
+export function unsuspend(card: Card, now: Date): Progress {
+  const p = base(card, now);
+  p.stage = 'learning';
+  p.stage = p.introduced ? computeStage(p) : 'new';
+  return p;
+}
+
+export function bury(card: Card, now: Date): Progress {
+  const p = base(card, now);
+  p.buried_until = nextDayKey(now);
+  return p;
+}
+
+export const isBuried = (card: Card, now: Date) => Boolean(card.progress?.buried_until && card.progress.buried_until > dayKey(now));
+export const isSuspendedCard = (card: Card) => card.progress?.stage === 'suspended';
 
 function laterSkill<T extends { last?: string; reps: number }>(a: T | undefined, b: T | undefined): T | undefined {
   if (!a || !b) return a ?? b;
