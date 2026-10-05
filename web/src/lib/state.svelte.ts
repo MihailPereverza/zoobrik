@@ -30,7 +30,13 @@ export const app = $state({
   syncing: false,
   syncMessage: '',
   online: navigator.onLine,
+  goal: Number(stored('zb.goal', '30')) || 30,
 });
+
+export function setGoal(goal: number) {
+  app.goal = goal;
+  store('zb.goal', String(goal));
+}
 
 let current: Backend | null = null;
 export function backend(): Backend {
@@ -46,7 +52,7 @@ export function applyTheme() {
   const effective = app.theme === 'system' ? (media.matches ? 'dark' : 'light') : app.theme;
   app.effectiveTheme = effective;
   document.documentElement.dataset.theme = effective;
-  document.querySelector('meta[name="theme-color"]:not([media])')?.setAttribute('content', effective === 'dark' ? '#0F1013' : '#F3F4F6');
+  document.querySelector('meta[name="theme-color"]:not([media])')?.setAttribute('content', effective === 'dark' ? '#131417' : '#F4F5F7');
 }
 media.addEventListener('change', applyTheme);
 

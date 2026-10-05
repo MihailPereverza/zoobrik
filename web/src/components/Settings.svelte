@@ -1,6 +1,6 @@
 <script lang="ts">
   import Connect from './Connect.svelte';
-  import { app, backend, setDevice, setRepo, setTheme, STANDALONE, sync, reload } from '../lib/state.svelte';
+  import { app, backend, setDevice, setGoal, setRepo, setTheme, STANDALONE, sync, reload } from '../lib/state.svelte';
   import { mediaUrl } from '../lib/render';
 
   let device = $state(app.device);
@@ -48,6 +48,16 @@
     <div class="seg" role="radiogroup" aria-label="Тема">
       {#each [['system', 'Как в системе'], ['light', 'Светлая'], ['dark', 'Тёмная']] as const as [value, label] (value)}
         <button type="button" role="radio" aria-checked={app.theme === value} class:on={app.theme === value} onclick={() => setTheme(value)}>{label}</button>
+      {/each}
+    </div>
+  </section>
+
+  <section class="panel box">
+    <h2>Цель на день</h2>
+    <p class="muted">Сколько заданий в день считать выполненной нормой. Кольцо на главной заполняется по мере занятий.</p>
+    <div class="seg" role="radiogroup" aria-label="Цель на день">
+      {#each [15, 30, 50, 100] as n (n)}
+        <button type="button" role="radio" aria-checked={app.goal === n} class:on={app.goal === n} onclick={() => setGoal(n)}>{n}</button>
       {/each}
     </div>
   </section>
@@ -111,10 +121,9 @@
   h2 { font: 600 16px/1.3 var(--font-body); margin: 0; }
   p { font-size: 14px; margin: 0; }
   .status { font-size: 12px; color: var(--ink-3); }
-  .seg { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 9px; overflow: hidden; }
-  .seg button { border: 0; background: var(--card); padding: 9px 14px; cursor: pointer; font-size: 14px; }
-  .seg button + button { border-left: 1px solid var(--rule-strong); }
-  .seg button.on { background: var(--ink); color: var(--card); }
+  .seg { display: inline-flex; gap: 4px; padding: 4px; background: var(--soft); border-radius: 12px; }
+  .seg button { border: 0; background: transparent; padding: 8px 14px; cursor: pointer; font-size: 14px; border-radius: 9px; color: var(--ink-2); transition: background-color .2s, color .2s; }
+  .seg button.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
   .row { display: flex; gap: 8px; width: 100%; }
   input { flex: 1; min-width: 0; padding: 9px 11px; border-radius: 8px; border: 1px solid var(--rule-strong); background: var(--paper); color: var(--ink); font-size: 14px; }
   .log { white-space: pre-wrap; font-size: 12px; background: var(--soft); padding: 10px; border-radius: 8px; margin: 0; width: 100%; }

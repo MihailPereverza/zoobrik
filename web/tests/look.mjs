@@ -17,6 +17,9 @@ for (let i = 0; i < 14 && shots < 3; i++) {
   if (shots === 0) await page.screenshot({ path: `${dir}/s-${tpl}-q-${tag}.png` });
   if (await f.locator('[data-zb-choice]').count()) await f.locator('[data-zb-choice]').nth(i % 2).click();
   else if (await f.locator('[data-zb-input]').count()) { await f.locator('[data-zb-input]').first().fill('test'); await f.locator('[data-zb-input]').first().press('Enter'); }
+  await page.waitForSelector('.flip-btn', { timeout: 5000 }).catch(() => null);
+  if (shots === 0) await page.screenshot({ path: `${dir}/s-${tpl}-reveal-${tag}.png` });
+  if (await page.$('.flip-btn')) await page.click('.flip-btn');
   await page.waitForSelector('.grades'); await page.waitForTimeout(900);
   await page.screenshot({ path: `${dir}/s-${tpl}-a${shots}-${tag}.png` }); shots++;
   await page.keyboard.press('3');

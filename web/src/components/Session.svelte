@@ -3,6 +3,8 @@
   import { fly, fade } from 'svelte/transition';
   import { renderMarkdown } from '../lib/md';
   import ExerciseFrame from './ExerciseFrame.svelte';
+  import Ring from './Ring.svelte';
+  import { dayStats, plural } from '../lib/activity';
   import { app, backend, refreshPending, scheduleSync, sync, touch } from '../lib/state.svelte';
   import { check } from '../lib/check';
   import { formatInterval, preview } from '../lib/fsrs';
@@ -243,6 +245,12 @@
     return { duration, delay, css: (t: number) => { const e = 1 - Math.pow(1 - t, 3); return `transform: perspective(1400px) rotateX(${(1 - e) * -70}deg); transform-origin: 50% 0; opacity: ${e}`; } };
   }
 
+  let finishStats = $state<{ today: number; streak: number } | null>(null);
+  $effect(() => {
+    if (phase !== 'done' && phase !== 'wait') return;
+    backend().activity().then((a) => { finishStats = dayStats(a); }).catch(() => {});
+  });
+
   const modeLabel = $derived(item ? ({ intro: 'Новое', learn: 'Изучение', review: 'Повторение', practice: 'Практика' } as const)[item.mode] : '');
   const progressPct = $derived(queue.length ? `${(index / queue.length) * 100}%` : '0%');
   const timeTo = (d: Date) => formatInterval(new Date(), d);
@@ -251,9 +259,15 @@
 <div class="narrow session">
   {#if phase === 'done' || phase === 'wait'}
     <section class="finish surface" in:fly={{ y: 12, duration: 400 }}>
-      <div class="badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg></div>
-      <h1 class="display">{phase === 'wait' ? 'Небольшой перерыв' : answered ? 'Готово' : 'Сейчас нечего повторять'}</h1>
-      {#if answered}<p class="num">{answered} заданий · {Math.round((correct / answered) * 100)}% верно</p>{/if}
+      {#if finishStats}<Ring value={finishStats.today} max={app.goal} size={120} label="заданий сегодня" />{/if}
+      <h1 class="display">{phase === 'wait' ? 'Небольшой перерыв' : answered ? (finishStats && finishStats.today >= app.goal ? 'Цель на сегодня выполнена' : 'Отличная работа') : 'Сейчас нечего повторять'}</h1>
+      {#if answered}
+        <div class="result num">
+          <div><b>{answered}</b><span>{plural(answered, 'задание', 'задания', 'заданий')}</span></div>
+          <div><b>{Math.round((correct / answered) * 100)}%</b><span>верно</span></div>
+          {#if finishStats?.streak}<div><b>{finishStats.streak}</b><span>{plural(finishStats.streak, 'день', 'дня', 'дней')} подряд</span></div>{/if}
+        </div>
+      {/if}
       {#if nextDue}<p class="muted">Следующее повторение через {timeTo(nextDue)}</p>{/if}
       <div class="actions">
         {#if phase === 'wait'}<button class="btn" type="button" onclick={() => start(LEARN_AHEAD)}>Продолжить сейчас</button>{/if}
@@ -364,8 +378,11 @@
   .grades .again { color: var(--again); } .grades .hard { color: var(--hard); } .grades .good { color: var(--good); } .grades .easy { color: var(--easy); }
   .finish { margin-top: 36px; padding: 36px 28px 30px; display: grid; justify-items: center; text-align: center; gap: 2px; }
   .finish p { margin: 2px 0; }
-  .badge { width: 56px; height: 56px; border-radius: 50%; background: var(--good-bg); display: grid; place-items: center; margin-bottom: 10px; }
-  .badge svg { width: 26px; height: 26px; fill: none; stroke: var(--good); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .finish :global(.ring) { margin-bottom: 14px; }
+  .result { display: flex; gap: 28px; margin: 12px 0 14px; }
+  .result div { display: grid; gap: 2px; }
+  .result b { font-size: 22px; font-weight: 600; }
+  .result span { font-size: 12px; color: var(--ink-3); }
   .actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
   .toast { margin: 12px 4px 0; font-size: 13px; color: var(--again); }
 </style>

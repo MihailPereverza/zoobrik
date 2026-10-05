@@ -28,8 +28,8 @@ export default defineConfig({
         lang: 'ru',
         display: 'standalone',
         orientation: 'portrait',
-        background_color: '#F3F4F6',
-        theme_color: '#F3F4F6',
+        background_color: '#F4F5F7',
+        theme_color: '#F4F5F7',
         icons: [
           { src: 'pwa-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'pwa-512.png', sizes: '512x512', type: 'image/png' },
