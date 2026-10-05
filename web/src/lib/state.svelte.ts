@@ -1,8 +1,9 @@
 import YAML from 'yaml';
-import { GitHubBackend, LocalBackend, localRoots, ServerBackend, serverFiles, type Backend, type StoreKind } from './backend';
+import { countActivity, GitHubBackend, LocalBackend, localRoots, ServerBackend, serverFiles, type Backend, type StoreKind } from './backend';
 import { deckRoots } from './deckfs';
 import type { RepoConfig } from './github';
 import { deckLangs } from './lang';
+import { dayKey } from './progress';
 import type { DeckData } from './types';
 import { log } from './log';
 
@@ -98,6 +99,17 @@ export const activeDeck = (): DeckRef | undefined => app.decks.find((d) => d.key
 export async function refreshActivity() {
   try { app.activity = await backend().activity(); } catch { /* activity is decorative: keep the previous numbers */ }
 }
+
+/** Counts fresh answers right away, so the daily goal and Zubrik react during a session, not after the next reload. */
+export function bumpActivity(lines: string[]) {
+  const add = countActivity(lines);
+  if (!Object.keys(add).length) return;
+  const next = { ...app.activity };
+  for (const [day, n] of Object.entries(add)) next[day] = (next[day] ?? 0) + n;
+  app.activity = next;
+}
+
+export const goalMet = (now = new Date()) => (app.activity[dayKey(now)] ?? 0) >= app.goal;
 
 export function setGoal(goal: number) {
   app.goal = goal;

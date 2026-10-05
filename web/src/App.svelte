@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { app, backend, needsSetup, reload, sync } from './lib/state.svelte';
+  import { app, backend, goalMet, needsSetup, reload, sync } from './lib/state.svelte';
   import { dayStats } from './lib/activity';
   import Home from './components/Home.svelte';
   import Words from './components/Words.svelte';
@@ -55,7 +55,7 @@
         {#if app.mascotMode === 'off'}
           <svg viewBox="0 0 24 24" class="me-icon"><circle cx="12" cy="8" r="4" /><path d="M4 21c1-4 4-6 8-6s7 2 8 6" /></svg>
         {:else}
-          <Zubrik mood={app.syncing ? 'think' : 'hello'} size={38} crop="head" />
+          <Zubrik mood={app.syncing ? 'think' : goalMet() ? 'happy' : 'hello'} size={38} crop="head" />
         {/if}
       </a>
     </div>

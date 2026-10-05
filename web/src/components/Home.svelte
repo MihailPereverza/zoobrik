@@ -21,6 +21,7 @@
   let timer: ReturnType<typeof setTimeout> | undefined;
   onDestroy(() => clearTimeout(timer));
   const lines = $derived([
+    ...(days.today >= app.goal ? [`Норма на сегодня выполнена: ${days.today} из ${app.goal}. Я доволен!`] : []),
     summary.due ? `Начнём с повторения: ${summary.due} ${plural(summary.due, 'слово', 'слова', 'слов')}.` : 'Повторять пока нечего — можно взять новые слова.',
     summary.batch ? `Новые сегодня: ${summary.batch.cards.map((c) => c.content.term ?? c.content.title).join(', ')}.` : 'Новые слова откроются, когда закрепятся текущие.',
     days.streak ? `Серия — ${days.streak} ${plural(days.streak, 'день', 'дня', 'дней')}. Хватит пяти минут.` : 'Пять минут в день — и слова останутся с тобой.',
@@ -59,7 +60,7 @@
         {#if canStart}<a class="btn amber start" href="#/session">{days.today ? 'Продолжить' : 'Начать сессию'}</a>{/if}
       </div>
       {#if app.mascotMode !== 'off'}
-        <div class="pic"><Zubrik mood={canStart ? 'hello' : 'sleep'} size={176} onpoke={poke} label="Зубрик: нажми, чтобы узнать план на сегодня" /></div>
+        <div class="pic"><Zubrik mood={days.today >= app.goal ? 'happy' : canStart ? 'hello' : 'sleep'} size={176} onpoke={poke} label="Зубрик: нажми, чтобы узнать план на сегодня" /></div>
       {/if}
     </section>
   </div>

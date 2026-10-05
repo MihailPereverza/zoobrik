@@ -11,7 +11,7 @@
   import { moodFor } from '../lib/mascot';
   import { typoLetters } from '../lib/typo';
   import { dayStats, plural } from '../lib/activity';
-  import { app, backend, refreshPending, scheduleSync, sync, touch } from '../lib/state.svelte';
+  import { app, backend, bumpActivity, goalMet, refreshPending, scheduleSync, sync, touch } from '../lib/state.svelte';
   import { check } from '../lib/check';
   import { formatInterval, preview } from '../lib/fsrs';
   import { applyAnswer, applyIntro, bury, suspend } from '../lib/progress';
@@ -56,6 +56,7 @@
   let history = $state<UndoStep[]>([]);
   let menuOpen = $state(false);
   let notice = $state('');
+  let goalReached = $state(false);
   const audio = new Audio();
 
   const item = $derived(queue[index]);
@@ -173,6 +174,9 @@
   }
 
   function persist(updates: { cardPath: string; progress: any }[], lines: string[]) {
+    const before = goalMet();
+    bumpActivity(lines);
+    if (!before && goalMet()) { goalReached = true; log('session', 'daily goal reached', app.goal); }
     backend().saveAnswer(app.device, updates, lines)
       .then(() => { saveError = ''; refreshPending(); scheduleSync(); })
       .catch((e) => { log('save', 'failed', String(e.message)); saveError = `Прогресс не сохранён: ${e.message}`; });
@@ -421,6 +425,12 @@
         {/if}
       </div>
     </div>
+    {#if goalReached}
+      <button class="goal-done" type="button" onclick={() => (goalReached = false)} aria-label="Норма на сегодня выполнена. Скрыть">
+        {#if app.mascotMode !== 'off'}<span class="goal-pic"><Zubrik mood="happy" size={44} crop="head" /></span>{/if}
+        <span><b>Норма на сегодня выполнена</b><span>{app.goal} заданий — можно закончить или продолжить.</span></span>
+      </button>
+    {/if}
     {#if notice}<p class="notice">{notice}</p>{/if}
 
     <div class="kicker">
@@ -555,6 +565,11 @@
   .menu button:disabled { color: var(--ink-3); cursor: default; }
   .kbd { align-self: center; font: 400 11px/1.4 var(--font-mono); color: var(--ink-3); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; }
   @media (hover: none) { .kbd { display: none; } }
+  .goal-done { width: calc(100% - 8px); margin: 10px 4px 0; padding: 8px 14px 8px 8px; border: 0; border-radius: 14px; background: var(--good-bg); color: var(--good); display: flex; align-items: center; gap: 10px; text-align: left; cursor: pointer; font: inherit; animation: zb-rise 280ms var(--ease-out) both; }
+  .goal-done > span:last-child { display: grid; gap: 2px; }
+  .goal-done b { font: 600 15px/1.2 var(--font-display); }
+  .goal-done span span { font-size: 13px; color: var(--ink-2); }
+  .goal-pic { flex: none; width: 48px; height: 48px; border-radius: 50%; background: var(--card); overflow: hidden; display: flex; align-items: flex-end; justify-content: center; }
   .notice { margin: 10px 4px 0; padding: 10px 14px; border-radius: 12px; background: var(--amber-soft); color: var(--ink); font-size: 14px; }
   .toast { margin: 12px 4px 0; font-size: 13px; color: var(--again); }
 
