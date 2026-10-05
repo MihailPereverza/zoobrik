@@ -211,6 +211,7 @@
     else if (type === 'grade') grade(d.grade);
     else if (type === 'key') handleKey(d.key);
     else if (type === 'tap' && phase === 'reveal') flipNow();
+    else if (type === 'stop-audio') audio.pause();
   }
 
   onMount(() => {
@@ -230,7 +231,7 @@
   const BACK = { id: 'back', template: 'back', status: 'ready', params: {} } as const;
   const showBack = $derived((phase === 'graded' || phase === 'flipped') && !!item && !item.topicCards && item.mode !== 'intro');
   const backRendered = $derived(showBack && item ? render(data, item.card, { ...BACK }, 'review', app.effectiveTheme, `b${index}`) : null);
-  const onBackEvent = (type: string, d: any) => { if (type === 'play') play(d.src, d.rate); else if (type === 'key') handleKey(d.key); };
+  const onBackEvent = (type: string, d: any) => { if (type === 'play') play(d.src, d.rate); else if (type === 'stop-audio') audio.pause(); else if (type === 'key') handleKey(d.key); };
 
   const extra = $derived.by(() => {
     if (!item || (phase !== 'graded' && phase !== 'flipped')) return null;

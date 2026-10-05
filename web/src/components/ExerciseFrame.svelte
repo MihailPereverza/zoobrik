@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { app } from '../lib/state.svelte';
+  import { app, backend } from '../lib/state.svelte';
 
   interface Props {
     srcdoc: string;
@@ -16,6 +16,16 @@
     iframe?.contentWindow?.postMessage({ zb: 1, ...message }, '*');
   }
 
+  async function deliverMedia(urls: string[]) {
+    const files = (await Promise.all(urls.map(async (url) => {
+      try {
+        const res = await fetch(await backend().media(url));
+        return { url, type: res.headers.get('content-type') ?? 'audio/mpeg', buffer: await res.arrayBuffer() };
+      } catch { return null; }
+    }))).filter((f): f is { url: string; type: string; buffer: ArrayBuffer } => f !== null);
+    iframe?.contentWindow?.postMessage({ zb: 1, type: 'media', files }, '*', files.map((f) => f.buffer));
+  }
+
   export function focus() {
     iframe?.focus();
     send({ type: 'focus' });
@@ -28,6 +38,7 @@
       if (event.source !== iframe?.contentWindow || !event.data?.zb) return;
       const { type, ...data } = event.data;
       if (type === 'resize') { height = Math.max(120, data.height); shown = true; return; }
+      if (type === 'need-media') { deliverMedia(data.urls ?? []); return; }
       onevent(type, data);
     };
     window.addEventListener('message', onMessage);

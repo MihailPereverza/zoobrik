@@ -43,6 +43,7 @@
   function onevent(type: string, d: any) {
     if (!card || !selected || !rendered || !('template' in rendered)) return;
     if (type === 'play') playUrl(d.src, d.rate ?? 1);
+    if (type === 'stop-audio') audio.pause();
     if (type === 'answer') {
       verdict = check(selected, rendered.template.manifest, d.value, rendered.md);
       frame?.send({ type: 'graded', correct: verdict.correct, expected: verdict.expected, marks: verdict.marks });

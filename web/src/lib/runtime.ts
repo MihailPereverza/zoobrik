@@ -5,6 +5,8 @@ export const RUNTIME = String.raw`(function () {
   var $ = function (s) { return document.querySelector(s); };
   var $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
   var answered = false, hints = 0, started = performance.now();
+  var media = {};
+  var audio = new Audio();
   var ms = function () { return Math.round(performance.now() - started); };
   function reveal() { $$('[data-zb-back]').forEach(function (e) { e.hidden = false; }); $$('[data-zb="flip"]').forEach(function (b) { b.disabled = true; }); }
   function lock() { $$('[data-zb-choice],[data-zb-chip],[data-zb-input],[data-zb="submit"],[data-zb="hint"]').forEach(function (e) { e.disabled = true; }); }
@@ -17,7 +19,16 @@ export const RUNTIME = String.raw`(function () {
     grade: function (g) { post('grade', { grade: g }); },
     skip: function (reason) { post('skip', { reason: reason || 'later' }); },
     hint: function () { hints++; $$('[data-zb-hint]').forEach(function (e) { e.hidden = false; }); $$('[data-zb="hint"]').forEach(function (b) { b.hidden = true; }); post('hint'); },
-    play: function (src, rate) { post('play', { src: src, rate: rate || 1 }); },
+    play: function (src, rate) {
+      // Play inside this frame, synchronously within the tap: mobile browsers block audio started after async hops.
+      var local = media[src];
+      if (!local) { post('play', { src: src, rate: rate || 1 }); return; }
+      audio.pause();
+      audio.src = local;
+      audio.playbackRate = rate || 1;
+      post('stop-audio');
+      audio.play().catch(function () { post('play', { src: src, rate: rate || 1 }); });
+    },
     next: function () { post('next'); },
     get answered() { return answered; }
   };
@@ -92,6 +103,7 @@ export const RUNTIME = String.raw`(function () {
     var m = e.data || {};
     if (!m.zb) return;
     if (m.type === 'theme') document.documentElement.dataset.theme = m.theme;
+    if (m.type === 'media') (m.files || []).forEach(function (f) { media[f.url] = URL.createObjectURL(new Blob([f.buffer], { type: f.type || 'audio/mpeg' })); });
     if (m.type === 'focus') { var first = inputs[0]; if (first && !answered) first.focus(); else document.body.focus(); }
     if (m.type === 'graded') {
       answered = true; lock(); reveal();
@@ -109,6 +121,8 @@ export const RUNTIME = String.raw`(function () {
   new ResizeObserver(report).observe(document.body);
   window.addEventListener('load', report);
   document.body.tabIndex = -1;
+  var sources = $$('[data-zb="play"]').map(function (b) { return b.dataset.src; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; });
+  if (sources.length) post('need-media', { urls: sources });
   if (document.body.dataset.autoplay) { var p = $('[data-zb="play"]'); if (p) post('play', { src: p.dataset.src, rate: 1, auto: true }); }
   setTimeout(function () { if (inputs[0]) inputs[0].focus(); else document.body.focus(); report(); }, 30);
 })();`;
