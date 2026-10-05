@@ -294,8 +294,12 @@
     if (key === 'u' || key === 'г') { if (history.length && phase !== 'reveal') undo(); return; }
     if (phase === 'reveal') { if (key === 'Enter' || key === ' ') flipNow(); return; }
     if (phase === 'graded' || phase === 'flipped') {
-      if (/^[1-4]$/.test(key)) grade(Number(key) as Grade);
-      else if (key === 'Enter' || key === ' ') grade(selected ?? (phase === 'flipped' ? 3 : suggested));
+      const current = selected ?? (phase === 'flipped' ? 3 : suggested);
+      const step = key === 'ArrowRight' || key === 'ArrowDown' ? 1 : key === 'ArrowLeft' || key === 'ArrowUp' ? -1 : 0;
+      // Arrows walk the four grades as a ring; Enter/Space confirms whatever is selected.
+      if (step) selected = ((((current - 1 + step) % 4) + 4) % 4 + 1) as Grade;
+      else if (/^[1-4]$/.test(key)) grade(Number(key) as Grade);
+      else if (key === 'Enter' || key === ' ') grade(current);
     } else if (phase === 'answer' && key === 'Escape') skip();
   }
 
@@ -315,7 +319,8 @@
     start();
     const onKey = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement)?.matches?.('input, textarea')) return;
-      if (e.key === ' ' && (phase === 'graded' || phase === 'flipped')) e.preventDefault();
+      // Space and arrows would scroll the page, Enter would also click a focused grade tile after the grade is given.
+      if ((e.key === ' ' || e.key === 'Enter' || e.key.startsWith('Arrow')) && (phase === 'graded' || phase === 'flipped')) e.preventDefault();
       handleKey(e.key);
     };
     window.addEventListener('keydown', onKey);

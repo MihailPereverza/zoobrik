@@ -20,6 +20,7 @@
     </button>
   {/each}
 </div>
+<p class="keys" aria-hidden="true">← → выбрать · Enter или пробел — дальше</p>
 
 <style>
   .bar { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
@@ -40,5 +41,7 @@
   .on .bars i.full { background: var(--on-grade); }
   .auto { position: absolute; top: 6px; right: 6px; width: 6px; height: 6px; border-radius: 50%; background: var(--amber); }
   .key { font: 400 10px/1 var(--font-mono); }
+  .keys { display: none; margin: 8px 0 0; text-align: center; font: 400 11px/1 var(--font-mono); color: var(--ink-3); }
+  @media (hover: hover) and (pointer: fine) { .keys { display: block; } }
   @media (hover: none) { .key { display: none; } }
 </style>

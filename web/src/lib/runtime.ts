@@ -104,7 +104,7 @@ export const RUNTIME = String.raw`(function () {
       if (next) { zb.next(); return; }
       if (submitBtn && !submitBtn.disabled) { submit(); return; }
     }
-    if (e.key === ' ') e.preventDefault();
+    if (e.key === ' ' || (answered && e.key.indexOf('Arrow') === 0)) e.preventDefault();
     post('key', { key: e.key });
   });
   window.addEventListener('message', function (e) {
