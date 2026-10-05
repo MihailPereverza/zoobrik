@@ -7,13 +7,16 @@
     "dev": "vite --host",
     "build": "vite build",
     "serve": "vite preview --host --port 5180",
-    "check": "svelte-check --tsconfig ./tsconfig.json"
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "idb-keyval": "^6.3.0",
     "marked": "^18.0.14",
     "nunjucks": "^3.2.4",
     "ts-fsrs": "^5.4.2",
+    "ts-fsrs-optimizer": "^0.1.2",
     "yaml": "^2.9.1"
   },
   "devDependencies": {
@@ -26,6 +29,7 @@
     "typescript": "~5.9",
     "vite": "^8.3.2",
     "vite-plugin-pwa": "^2.0.0",
+    "vitest": "^5.0.3",
     "workbox-window": "^7.4.1"
   }
 }

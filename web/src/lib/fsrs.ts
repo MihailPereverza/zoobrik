@@ -1,4 +1,4 @@
-import { createEmptyCard, fsrs, generatorParameters, State, type Card as FsrsCard, type FSRS, type Grade as FsrsGrade, type Steps } from 'ts-fsrs';
+import { createEmptyCard, fsrs, generatorParameters, S_MIN, State, type Card as FsrsCard, type FSRS, type Grade as FsrsGrade, type Steps } from 'ts-fsrs';
 import type { DeckConfig, Grade, Skill, SkillPhase, SkillState } from './types';
 
 const DEFAULT_RETENTION: Record<Skill, number> = { recognize: 0.92, recall: 0.9, listen: 0.88, spell: 0.85, context: 0.88, apply: 0.88 };
@@ -13,7 +13,7 @@ function days(value: string | undefined, fallback: number): number {
 
 function engine(deck: DeckConfig, skill: Skill): FSRS {
   const retention = deck.fsrs?.retention?.[skill] ?? DEFAULT_RETENTION[skill];
-  const key = `${skill}:${retention}`;
+  const key = JSON.stringify([skill, retention, deck.fsrs?.params ?? null, deck.fsrs?.learning_steps ?? null, deck.fsrs?.relearning_steps ?? null, deck.fsrs?.max_interval ?? null]);
   let f = engines.get(key);
   if (!f) {
     f = fsrs(generatorParameters({
@@ -44,23 +44,32 @@ function toFsrs(state: SkillState | undefined, now: Date): FsrsCard {
 
 function fromFsrs(card: FsrsCard): SkillState {
   return {
-    state: PHASES[card.state], s: round(card.stability), d: round(card.difficulty),
+    // Stability can drop far below 0.01 after repeated lapses; rounding it to zero makes the state invalid.
+    state: PHASES[card.state], s: Math.max(S_MIN, round(card.stability)), d: round(card.difficulty),
     due: card.due.toISOString(), last: card.last_review?.toISOString(),
     reps: card.reps, lapses: card.lapses, step: card.learning_steps,
   };
 }
 
-function round(n: number): number { return Math.round(n * 100) / 100; }
+function round(n: number): number { return Math.round(n * 10000) / 10000; }
+
+// ts-fsrs forces Easy one day past Good even when Good already sits at the maximum interval.
+function clampToMaximum(deck: DeckConfig, state: SkillState): SkillState {
+  if (state.state !== 'review' || !state.last) return state;
+  const limit = new Date(state.last).getTime() + days(deck.fsrs?.max_interval, 365) * 86_400_000;
+  return new Date(state.due).getTime() > limit ? { ...state, due: new Date(limit).toISOString() } : state;
+}
 
 export function review(deck: DeckConfig, skill: Skill, state: SkillState | undefined, grade: Grade, now: Date): SkillState {
   const f = engine(deck, skill);
-  return fromFsrs(f.next(toFsrs(state, now), now, grade as FsrsGrade).card);
+  return clampToMaximum(deck, fromFsrs(f.next(toFsrs(state, now), now, grade as FsrsGrade).card));
 }
 
 export function preview(deck: DeckConfig, skill: Skill, state: SkillState | undefined, now: Date): Record<Grade, Date> {
   const f = engine(deck, skill);
   const result = f.repeat(toFsrs(state, now), now);
-  return { 1: result[1].card.due, 2: result[2].card.due, 3: result[3].card.due, 4: result[4].card.due };
+  const due = (g: Grade) => new Date(clampToMaximum(deck, fromFsrs(result[g].card)).due);
+  return { 1: due(1), 2: due(2), 3: due(3), 4: due(4) };
 }
 
 export function retrievability(deck: DeckConfig, skill: Skill, state: SkillState | undefined, now: Date): number {
