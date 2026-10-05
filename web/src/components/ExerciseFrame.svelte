@@ -16,14 +16,17 @@
     iframe?.contentWindow?.postMessage({ zb: 1, ...message }, '*');
   }
 
-  async function deliverMedia(urls: string[]) {
-    const files = (await Promise.all(urls.map(async (url) => {
-      try {
-        const res = await fetch(await backend().media(url));
-        return { url, type: res.headers.get('content-type') ?? 'audio/mpeg', buffer: await res.arrayBuffer() };
-      } catch { return null; }
-    }))).filter((f): f is { url: string; type: string; buffer: ArrayBuffer } => f !== null);
-    iframe?.contentWindow?.postMessage({ zb: 1, type: 'media', files }, '*', files.map((f) => f.buffer));
+  // Send each file as soon as it is ready: one slow download must not hold back audio that is already cached.
+  function deliverMedia(urls: string[]) {
+    for (const url of urls) {
+      backend().media(url)
+        .then((local) => fetch(local))
+        .then(async (res) => {
+          const buffer = await res.arrayBuffer();
+          iframe?.contentWindow?.postMessage({ zb: 1, type: 'media', files: [{ url, type: res.headers.get('content-type') ?? 'audio/mpeg', buffer }] }, '*', [buffer]);
+        })
+        .catch(() => {});
+    }
   }
 
   export function focus() {

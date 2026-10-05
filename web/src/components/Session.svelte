@@ -52,6 +52,7 @@
     const current = queue[index];
     result = null; practice = false; hints = 0; phase = 'answer';
     rendered = current ? render(data, current.card, current.exercise, current.mode, app.effectiveTheme, String(index)) : null;
+    if (current) prefetch([current]);
   }
 
   function start(aheadMs = 0) {
