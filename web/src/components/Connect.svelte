@@ -32,18 +32,17 @@
 
 <form class="connect" class:compact onsubmit={connect}>
   {#if !compact}
-    <div class="eyebrow">Подключение</div>
-    <h1 class="display">Где лежит ваша колода?</h1>
-    <p class="muted">Колода — репозиторий на GitHub. Приложение скачивает её на телефон, работает офлайн и отправляет прогресс обратно коммитами.</p>
+    <b class="title">Подключить GitHub</b>
+    <p class="muted">Репозиторий — библиотека колод: колода в корне или папки <span class="mono">decks/&lt;имя&gt;/</span>. Приложение скачивает её на телефон, работает офлайн и отправляет прогресс обратно коммитами.</p>
   {/if}
-  <label for="repo">Репозиторий<input id="repo" bind:value={repoName} placeholder="owner/english-notebook" autocomplete="off" autocapitalize="off" spellcheck="false" required /></label>
+  <label for="repo">Репозиторий<input id="repo" bind:value={repoName} placeholder="owner/my-decks" autocomplete="off" autocapitalize="off" spellcheck="false" required /></label>
   <label for="branch">Ветка<input id="branch" bind:value={branch} autocapitalize="off" /></label>
   <label for="token">Токен доступа<input id="token" type="password" bind:value={token} placeholder="github_pat_…" autocomplete="off" required /></label>
   <details class="help">
     <summary>Как получить токен</summary>
     <ol>
       <li>GitHub → Settings → Developer settings → Personal access tokens → <b>Fine-grained tokens</b> → Generate new token.</li>
-      <li>Repository access: <b>Only select repositories</b> → репозиторий колоды.</li>
+      <li>Repository access: <b>Only select repositories</b> → репозиторий с колодами.</li>
       <li>Permissions → Repository permissions → <b>Contents: Read and write</b>.</li>
       <li>Скопируйте токен сюда. Он хранится только на этом устройстве.</li>
     </ol>
@@ -57,7 +56,7 @@
 
 <style>
   .connect { display: grid; gap: 14px; max-width: 520px; }
-  .connect:not(.compact) { margin-top: 36px; }
+  .title { font: 600 18px/1.2 var(--font-display); }
   p { margin: 0; }
   label { display: grid; gap: 6px; font-size: 14px; color: var(--ink-2); }
   input { font: 400 15px/1.3 var(--font-body); padding: 11px 12px; border-radius: 10px; border: 1px solid var(--rule-strong); background: var(--paper); color: var(--ink); }

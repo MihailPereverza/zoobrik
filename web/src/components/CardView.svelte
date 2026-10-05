@@ -5,7 +5,7 @@
   import { check } from '../lib/check';
   import { formatInterval, retrievability } from '../lib/fsrs';
   import { renderMarkdown } from '../lib/md';
-  import { mediaUrl, render, topicOf, type Rendered } from '../lib/render';
+  import { mediaUrl, render, type Rendered } from '../lib/render';
   import { cardSkills, exerciseSkills, manifestOf } from '../lib/scheduler';
   import { STAGE_LABEL, stageOf } from '../lib/summary';
   import { isBuried, suspend, unsuspend } from '../lib/progress';
@@ -89,7 +89,7 @@
   {#if !card}
     <p class="muted" style="margin-top:40px">Карточка не найдена. <a href="#/">На главную</a></p>
   {:else}
-    <a class="back" href="#/topic/{card.topic}">← {topicOf(data, card).title}</a>
+    <a class="back" href="#/words" onclick={(e) => { if (history.length > 1) { e.preventDefault(); history.back(); } }}>← Слова</a>
     <div class="layout">
       <section class="content">
         <div class="eyebrow tags">{card.kind} <span class="chip {stageOf(card)}">{STAGE_LABEL[stageOf(card)]}</span>
@@ -100,11 +100,11 @@
         {#if card.progress?.leech}<p class="leech-note">Это слово часто забывается. Помогает своя заметка-ассоциация, ещё один пример или картинка — отредактируйте карточку.</p>{/if}
         <div class="title">
           {#if card.content.audio}<button class="play" type="button" aria-label="Прослушать" onclick={() => playUrl(mediaUrl(card, card.content.audio!))}><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z" /></svg></button>{/if}
-          <h1 class="display">{card.content.en ?? card.content.title}</h1>
+          <h1 class="display">{card.content.term ?? card.content.title}</h1>
         </div>
         {#if card.content.ipa}<div class="mono muted">/{card.content.ipa}/ {card.content.pos ? `· ${card.content.pos}` : ''}</div>{/if}
         {#if card.content.formula}<div class="mono formula">{card.content.formula}</div>{/if}
-        {#if card.content.ru}<p class="ru">{card.content.ru}{#if card.content.alt_ru?.length}<span class="muted"> · {card.content.alt_ru.join(', ')}</span>{/if}</p>{/if}
+        {#if card.content.meaning}<p class="ru">{card.content.meaning}{#if card.content.alt?.length}<span class="muted"> · {card.content.alt.join(', ')}</span>{/if}</p>{/if}
         {#if card.content.note}<div class="md note">{@html renderMarkdown(card.content.note)}</div>{/if}
         {#if card.theory}<details class="theory"><summary>Теория</summary><div class="md">{@html renderMarkdown(card.theory)}</div></details>{/if}
 
@@ -113,7 +113,7 @@
           {#each card.content.examples ?? [] as ex (ex.id)}
             <li>
               <button class="play small" type="button" aria-label="Прослушать" onclick={() => playUrl(mediaUrl(card, ex.audio ?? ''))}><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z" /></svg></button>
-              <div><div>{ex.en}</div><div class="muted small">{ex.ru}</div></div>
+              <div><div>{ex.term}</div><div class="muted small">{ex.meaning}</div></div>
             </li>
           {/each}
         </ul>

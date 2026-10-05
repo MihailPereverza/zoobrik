@@ -1,8 +1,8 @@
-id: en-ru-choice
-name: Выбери перевод (en → ru)
+id: meaning-choice
+name: Выбери перевод
 trains: [recognize]
-reveals: [en, ru, audio]
-asks: [ru]
+reveals: [term, meaning, audio]
+asks: [meaning]
 difficulty: 1
 modes: [learn, review, practice]
 check: { type: choice }

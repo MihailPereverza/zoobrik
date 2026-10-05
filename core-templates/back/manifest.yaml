@@ -1,7 +1,7 @@
 id: back
 name: Обратная сторона карточки
 trains: []
-reveals: [en, ru, audio]
+reveals: [term, meaning, audio]
 asks: []
 difficulty: 0
 check: { type: none }

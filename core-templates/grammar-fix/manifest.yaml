@@ -1,7 +1,7 @@
 id: grammar-fix
 name: Исправь ошибку
 trains: [apply]
-reveals: [en]
+reveals: [term]
 asks: []
 difficulty: 4
 modes: [learn, review, practice]

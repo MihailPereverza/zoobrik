@@ -1,8 +1,8 @@
 id: cloze-type
 name: Впиши пропущенное
 trains: [context]
-reveals: [en]
-asks: [en]
+reveals: [term]
+asks: [term]
 difficulty: 3
 modes: [learn, review, practice]
 check: { type: fuzzy }

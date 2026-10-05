@@ -1,7 +1,7 @@
 id: intro
 name: Знакомство
 trains: []
-reveals: [en, ru, audio]
+reveals: [term, meaning, audio]
 asks: []
 difficulty: 0
 modes: [intro, learn, review, practice]

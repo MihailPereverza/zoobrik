@@ -143,14 +143,14 @@
     <section class="panel box">
       <h2>Пиявки <small class="muted">{leeches.length}</small></h2>
       {#if leeches.length}
-        <ul class="plain">{#each leeches as c (c.id)}<li><a href="#/card/{c.topic}/{c.id}">{c.content.en ?? c.content.title}</a><span class="muted">{c.content.ru ?? ''}</span></li>{/each}</ul>
+        <ul class="plain">{#each leeches as c (c.id)}<li><a href="#/card/{c.topic}/{c.id}">{c.content.term ?? c.content.title}</a><span class="muted">{c.content.meaning ?? ''}</span></li>{/each}</ul>
       {:else}<p class="muted text">Нет. Слово становится пиявкой после {data.deck.fsrs?.leech_threshold ?? 8} провалов одного навыка.</p>{/if}
     </section>
 
     <section class="panel box">
       <h2>Приостановлены <small class="muted">{suspended.length}</small></h2>
       {#if suspended.length}
-        <ul class="plain">{#each suspended as c (c.id)}<li><a href="#/card/{c.topic}/{c.id}">{c.content.en ?? c.content.title}</a><span class="muted">{c.content.ru ?? ''}</span></li>{/each}</ul>
+        <ul class="plain">{#each suspended as c (c.id)}<li><a href="#/card/{c.topic}/{c.id}">{c.content.term ?? c.content.title}</a><span class="muted">{c.content.meaning ?? ''}</span></li>{/each}</ul>
       {:else}<p class="muted text">Нет приостановленных карточек.</p>{/if}
     </section>
 

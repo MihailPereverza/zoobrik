@@ -5,7 +5,7 @@ import { promisify } from 'node:util';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
 import YAML from 'yaml';
-import { patchCardExercise, patchMdExercise, splitFrontmatter, withProgress } from '../src/lib/cardyaml.ts';
+import { patchCardExercise, patchMdExercise, withProgress } from '../src/lib/cardyaml.ts';
 
 const run = promisify(execFile);
 
@@ -15,11 +15,10 @@ const MIME: Record<string, string> = {
   '.md': 'text/markdown; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json',
 };
 
-interface Options { deckDir: string; coreDir: string }
+interface Options { deckDir: string }
 
-async function readYaml(file: string): Promise<any> {
-  return YAML.parse(await fs.readFile(file, 'utf8'));
-}
+const TEXT = /\.(ya?ml|md|njk|css|js|json|txt|tsv)$/i;
+const SKIP_DIRS = new Set(['.git', 'node_modules', '.github']);
 
 async function listDirs(dir: string): Promise<string[]> {
   if (!existsSync(dir)) return [];
@@ -27,91 +26,32 @@ async function listDirs(dir: string): Promise<string[]> {
   return entries.filter((e) => e.isDirectory() && !e.name.startsWith('.')).map((e) => e.name).sort();
 }
 
-async function readIfExists(file: string): Promise<string | null> {
-  return existsSync(file) ? fs.readFile(file, 'utf8') : null;
-}
-
-async function loadTemplate(dir: string, id: string, scope: string) {
-  const manifestFile = path.join(dir, 'manifest.yaml');
-  const view = await readIfExists(path.join(dir, 'view.njk'));
-  if (!view) return null;
-  return {
-    id, scope,
-    manifest: existsSync(manifestFile) ? await readYaml(manifestFile) : { id },
-    view,
-    style: (await readIfExists(path.join(dir, 'style.css'))) ?? '',
-    logic: await readIfExists(path.join(dir, 'logic.js')),
-  };
-}
-
-async function loadTemplatesIn(dir: string, scope: string) {
-  const result = [];
-  for (const id of await listDirs(dir)) {
-    const tpl = await loadTemplate(path.join(dir, id), id, scope);
-    if (tpl) result.push(tpl);
+async function walk(root: string, rel = ''): Promise<string[]> {
+  const out: string[] = [];
+  for (const e of await fs.readdir(path.join(root, rel), { withFileTypes: true })) {
+    if (e.name.startsWith('.') || SKIP_DIRS.has(e.name)) continue;
+    const child = rel ? `${rel}/${e.name}` : e.name;
+    if (e.isDirectory()) out.push(...(await walk(root, child)));
+    else out.push(child);
   }
-  return result;
+  return out;
 }
 
-async function loadMdExercises(cardDir: string) {
-  const dir = path.join(cardDir, 'exercises');
-  if (!existsSync(dir)) return [];
-  const files = (await fs.readdir(dir)).filter((f) => f.endsWith('.md')).sort();
-  const result = [];
-  for (const file of files) {
-    const { meta, body } = splitFrontmatter(await fs.readFile(path.join(dir, file), 'utf8'));
-    result.push({ id: meta.id ?? file.replace(/\.md$/, ''), template: 'md', skill: meta.skill, status: meta.status ?? 'draft', file: `exercises/${file}`, params: { markdown: body } });
+/** The whole library: text files with content, media by path. The app builds decks from it the same way as from GitHub. */
+async function listFiles(deckDir: string) {
+  const texts: Record<string, string> = {};
+  const binaries: string[] = [];
+  for (const rel of await walk(deckDir)) {
+    if (TEXT.test(rel)) texts[rel] = await fs.readFile(path.join(deckDir, rel), 'utf8');
+    else binaries.push(rel);
   }
-  return result;
+  return { texts, binaries };
 }
 
-async function loadCard(topicDir: string, topicId: string, cardId: string) {
-  const cardDir = path.join(topicDir, cardId);
-  const card = await readYaml(path.join(cardDir, 'card.yaml'));
-  const theoryFile = card?.content?.theory;
-  return {
-    ...card,
-    id: card.id ?? cardId,
-    topic: topicId,
-    path: `topics/${topicId}/${cardId}`,
-    theory: theoryFile ? await readIfExists(path.join(cardDir, theoryFile)) : null,
-    exercises: [...(card.exercises ?? []), ...(await loadMdExercises(cardDir))],
-    templates: await loadTemplatesIn(path.join(cardDir, 'views'), `card:${topicId}/${cardId}`),
-  };
-}
-
-async function loadTopic(deckDir: string, topicId: string) {
-  const topicDir = path.join(deckDir, 'topics', topicId);
-  const topic = await readYaml(path.join(topicDir, 'topic.yaml'));
-  const cards = [];
-  for (const cardId of await listDirs(topicDir)) {
-    if (existsSync(path.join(topicDir, cardId, 'card.yaml'))) cards.push(await loadCard(topicDir, topicId, cardId));
-  }
-  const extra = path.join(topicDir, 'exercises.yaml');
-  return {
-    ...topic,
-    id: topic.id ?? topicId,
-    cards,
-    exercises: existsSync(extra) ? (await readYaml(extra)) ?? [] : [],
-    templates: await loadTemplatesIn(path.join(topicDir, 'views'), `topic:${topicId}`),
-  };
-}
-
-async function loadDeck({ deckDir, coreDir }: Options) {
-  const deck = await readYaml(path.join(deckDir, 'deck.yaml'));
-  const order: string[] = deck.topics ?? [];
-  const found = (await listDirs(path.join(deckDir, 'topics'))).filter((t) => existsSync(path.join(deckDir, 'topics', t, 'topic.yaml')));
-  const ids = [...order.filter((t) => found.includes(t)), ...found.filter((t) => !order.includes(t))];
-  const topics = [];
-  for (const id of ids) topics.push(await loadTopic(deckDir, id));
-  const core = await loadTemplatesIn(coreDir, 'core');
-  const macros = await readIfExists(path.join(coreDir, '_macros.njk'));
-  const baseCss = (await readIfExists(path.join(coreDir, '_base.css'))) ?? '';
-  return {
-    deck, topics, baseCss,
-    templates: [...core, ...(await loadTemplatesIn(path.join(deckDir, 'templates'), 'deck'))],
-    partials: { 'core/_macros': macros ?? '' },
-  };
+function deckRoot(root: unknown): string {
+  const value = String(root ?? '');
+  if (value !== '' && !/^decks\/[a-z0-9._-]+\/$/i.test(value)) throw new Error(`bad deck root: ${value}`);
+  return value;
 }
 
 let queue: Promise<unknown> = Promise.resolve();
@@ -132,13 +72,27 @@ async function writeProgress(deckDir: string, cardPath: string, progress: any) {
   await fs.writeFile(file, withProgress(await fs.readFile(file, 'utf8'), progress));
 }
 
-async function appendJournal(deckDir: string, device: string, lines: string[]) {
-  if (!lines.length) return;
-  const month = new Date().toISOString().slice(0, 7);
-  const dir = path.join(deckDir, 'journal', month);
-  await fs.mkdir(dir, { recursive: true });
+async function appendJournal(deckDir: string, root: string, device: string, lines: string[]) {
   const safeDevice = device.replace(/[^a-z0-9-]/gi, '').toLowerCase() || 'device';
-  await fs.appendFile(path.join(dir, `${safeDevice}.tsv`), lines.join('\n') + '\n');
+  const byMonth = new Map<string, string[]>();
+  for (const line of lines) byMonth.set(line.slice(0, 7), [...(byMonth.get(line.slice(0, 7)) ?? []), line]);
+  for (const [month, monthLines] of byMonth) {
+    const dir = safeJoin(deckDir, `${root}journal/${month}`);
+    await fs.mkdir(dir, { recursive: true });
+    await fs.appendFile(path.join(dir, `${safeDevice}.tsv`), monthLines.join('\n') + '\n');
+  }
+}
+
+async function writeFiles(deckDir: string, root: string, body: any) {
+  for (const rel of body.remove ?? []) {
+    const file = safeJoin(deckDir, root + rel);
+    if (existsSync(file)) await fs.rm(file);
+  }
+  for (const f of body.files ?? []) {
+    const file = safeJoin(deckDir, root + f.path);
+    await fs.mkdir(path.dirname(file), { recursive: true });
+    await fs.writeFile(file, f.text !== undefined ? f.text : Buffer.from(f.base64, 'base64'));
+  }
 }
 
 async function patchExercise(deckDir: string, body: any) {
@@ -148,26 +102,8 @@ async function patchExercise(deckDir: string, body: any) {
   await fs.writeFile(file, body.file ? patchMdExercise(text, body.patch) : patchCardExercise(text, body.exerciseId, body.patch));
 }
 
-async function activity(deckDir: string) {
-  const days: Record<string, number> = {};
-  const root = path.join(deckDir, 'journal');
-  for (const month of await listDirs(root)) {
-    for (const file of await fs.readdir(path.join(root, month))) {
-      const text = await fs.readFile(path.join(root, month, file), 'utf8');
-      for (const line of text.split('\n')) {
-        const day = line.slice(0, 10);
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) continue;
-        const grade = line.split('\t')[4];
-        if (grade === 'seen') continue;
-        days[day] = (days[day] ?? 0) + (grade === 'undo' ? -1 : 1);
-      }
-    }
-  }
-  return days;
-}
-
-async function journalLines(deckDir: string): Promise<string[]> {
-  const root = path.join(deckDir, 'journal');
+async function journalLines(deckDir: string, deck: string): Promise<string[]> {
+  const root = path.join(deckDir, deck, 'journal');
   const lines: string[] = [];
   for (const month of await listDirs(root)) {
     for (const file of (await fs.readdir(path.join(root, month))).filter((f) => f.endsWith('.tsv'))) {
@@ -177,8 +113,8 @@ async function journalLines(deckDir: string): Promise<string[]> {
   return lines.sort();
 }
 
-async function saveParams(deckDir: string, params: number[] | null) {
-  const file = path.join(deckDir, 'deck.yaml');
+async function saveParams(deckDir: string, root: string, params: number[] | null) {
+  const file = safeJoin(deckDir, `${root}deck.yaml`);
   const doc = YAML.parseDocument(await fs.readFile(file, 'utf8'));
   const node = doc.createNode(params);
   if (node instanceof YAML.YAMLSeq) node.flow = true;
@@ -231,18 +167,24 @@ function middleware(opts: Options) {
     try {
       if (url.pathname.startsWith('/deck/')) return await serveFile(res, opts.deckDir, url.pathname.slice(6));
       if (!url.pathname.startsWith('/api/')) return next();
-      if (url.pathname === '/api/deck') return send(res, 200, await loadDeck(opts));
-      if (url.pathname === '/api/activity') return send(res, 200, await activity(opts.deckDir));
-      if (url.pathname === '/api/journal') return send(res, 200, await journalLines(opts.deckDir));
+      if (url.pathname === '/api/files') return send(res, 200, await listFiles(opts.deckDir));
+      if (url.pathname === '/api/journal') return send(res, 200, await journalLines(opts.deckDir, deckRoot(url.searchParams.get('root'))));
       const body = req.method === 'POST' ? await readBody(req) : {};
       if (url.pathname === '/api/answer') {
         await serial(async () => {
           for (const update of body.updates ?? []) await writeProgress(opts.deckDir, update.cardPath, update.progress);
-          await appendJournal(opts.deckDir, body.device ?? 'device', body.lines ?? []);
+          await appendJournal(opts.deckDir, deckRoot(body.root), body.device ?? 'device', body.lines ?? []);
         });
         return send(res, 200, { ok: true });
       }
-      if (url.pathname === '/api/deck-params') { await serial(() => saveParams(opts.deckDir, body.params ?? null)); return send(res, 200, { ok: true }); }
+      if (url.pathname === '/api/deck-params') { await serial(() => saveParams(opts.deckDir, deckRoot(body.root), body.params ?? null)); return send(res, 200, { ok: true }); }
+      if (url.pathname === '/api/write') { await serial(() => writeFiles(opts.deckDir, deckRoot(body.root), body)); return send(res, 200, { ok: true }); }
+      if (url.pathname === '/api/remove-deck') {
+        const root = deckRoot(body.root);
+        if (!root) throw new Error('the root deck cannot be removed');
+        await serial(() => fs.rm(safeJoin(opts.deckDir, root), { recursive: true, force: true }));
+        return send(res, 200, { ok: true });
+      }
       if (url.pathname === '/api/exercise') { await serial(() => patchExercise(opts.deckDir, body)); return send(res, 200, { ok: true }); }
       if (url.pathname === '/api/sync') return send(res, 200, await serial(() => sync(opts.deckDir, body.device ?? 'device')));
       send(res, 404, { error: 'unknown endpoint' });

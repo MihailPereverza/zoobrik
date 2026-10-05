@@ -9,7 +9,7 @@ async function call<T>(cfg: RepoConfig, path: string, init: RequestInit = {}): P
     ...init,
     cache: 'no-store',
     headers: {
-      Authorization: `Bearer ${cfg.token}`,
+      ...(cfg.token ? { Authorization: `Bearer ${cfg.token}` } : {}),
       Accept: 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2022-11-28',
       ...(init.body ? { 'Content-Type': 'application/json' } : {}),
@@ -24,6 +24,13 @@ async function call<T>(cfg: RepoConfig, path: string, init: RequestInit = {}): P
 }
 
 export interface Head { commit: string; tree: string }
+
+export interface RepoInfo { defaultBranch: string; private: boolean }
+
+export async function getRepoInfo(cfg: RepoConfig): Promise<RepoInfo> {
+  const res = await call<{ default_branch: string; private: boolean }>(cfg, '');
+  return { defaultBranch: res.default_branch, private: res.private };
+}
 export interface TreeEntry { path: string; sha: string; type: string; size?: number }
 
 export async function getHead(cfg: RepoConfig): Promise<Head> {
@@ -58,8 +65,21 @@ export async function createBlob(cfg: RepoConfig, text: string): Promise<string>
   return (await call<{ sha: string }>(cfg, '/git/blobs', { method: 'POST', body: JSON.stringify({ content: text, encoding: 'utf-8' }) })).sha;
 }
 
-export async function createTree(cfg: RepoConfig, baseTree: string, entries: { path: string; sha: string }[]): Promise<string> {
-  const tree = entries.map((e) => ({ path: e.path, mode: '100644', type: 'blob', sha: e.sha }));
+export async function createBinaryBlob(cfg: RepoConfig, bytes: Uint8Array): Promise<string> {
+  return (await call<{ sha: string }>(cfg, '/git/blobs', { method: 'POST', body: JSON.stringify({ content: encodeBase64(bytes), encoding: 'base64' }) })).sha;
+}
+
+export function encodeBase64(bytes: Uint8Array): string {
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+
+/** A tree entry carries either a blob sha, inline text content, or `sha: null` to delete the path. */
+export interface TreeChange { path: string; sha?: string | null; content?: string }
+
+export async function createTree(cfg: RepoConfig, baseTree: string, entries: TreeChange[]): Promise<string> {
+  const tree = entries.map((e) => ({ path: e.path, mode: '100644', type: 'blob', ...(e.content !== undefined ? { content: e.content } : { sha: e.sha ?? null }) }));
   return (await call<{ sha: string }>(cfg, '/git/trees', { method: 'POST', body: JSON.stringify({ base_tree: baseTree, tree }) })).sha;
 }
 

@@ -10,19 +10,24 @@ import yaml
 
 TEMPLATE_PARAMS: dict[str, set[str]] = {
     'intro': set(),
-    'en-ru-choice': {'word', 'answer', 'options'},
-    'en-ru-flip': {'front', 'back'},
-    'ru-en-type': {'prompt', 'answer'},
-    'ru-en-choice': {'prompt', 'answer', 'options'},
-    'sentence-build-ru-en': {'prompt', 'answer', 'extra'},
-    'sentence-build-en-ru': {'prompt', 'answer', 'extra'},
+    'meaning-choice': {'word', 'answer', 'options'},
+    'meaning-flip': {'front', 'back'},
+    'term-type': {'prompt', 'answer'},
+    'term-choice': {'prompt', 'answer', 'options'},
+    'build-term': {'prompt', 'answer', 'extra'},
+    'build-meaning': {'prompt', 'answer', 'extra'},
     'listen-type': {'audio', 'answer', 'translation'},
-    'listen-choose-ru': {'audio', 'answer', 'options'},
+    'listen-choice': {'audio', 'answer', 'options'},
     'cloze-type': {'text', 'answer'},
     'cloze-choice': {'text', 'answer', 'options'},
     'grammar-fix': {'wrong', 'answer'},
     'word-order': {'instruction', 'tokens', 'answer'},
     'match-pairs': {'pairs'},
+}
+# Ids from before decks became language-neutral; the app maps them to the new templates.
+LEGACY_TEMPLATES: dict[str, str] = {
+    'en-ru-choice': 'meaning-choice', 'en-ru-flip': 'meaning-flip', 'ru-en-choice': 'term-choice', 'ru-en-type': 'term-type',
+    'listen-choose-ru': 'listen-choice', 'sentence-build-en-ru': 'build-meaning', 'sentence-build-ru-en': 'build-term',
 }
 SKILLS = {'recognize', 'recall', 'listen', 'spell', 'context', 'apply'}
 STATUSES = {'draft', 'ready', 'off'}
@@ -94,7 +99,7 @@ def check_skills(*, where: str, exercise: dict[str, Any], report: Report) -> Non
 
 def check_exercise(*, where: str, exercise: dict[str, Any], audio_files: set[str], report: Report) -> None:
     report.exercises += 1
-    template = exercise.get('template', '')
+    template = LEGACY_TEMPLATES.get(exercise.get('template', ''), exercise.get('template', ''))
     params = exercise.get('params') or {}
     if exercise.get('status') not in STATUSES:
         report.errors.append(f'{where}: bad status {exercise.get("status")}')
@@ -125,8 +130,9 @@ def check_examples(*, where: str, content: dict[str, Any], report: Report) -> No
     for example in examples:
         if example.get('audio') != f'{example.get("id")}.mp3':
             report.errors.append(f'{where}: example {example.get("id")} audio must be <id>.mp3')
-        if not example.get('en') or not example.get('ru'):
-            report.errors.append(f'{where}: example {example.get("id")} lacks en or ru')
+        texts = [key for key, value in example.items() if key not in {'id', 'audio'} and isinstance(value, str) and value]
+        if len(texts) < 2:
+            report.errors.append(f'{where}: example {example.get("id")} needs the sentence and its translation')
 
 
 def check_card(*, card_dir: Path, report: Report) -> str:

@@ -1,12 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { app, needsSetup, reload, sync } from './lib/state.svelte';
+  import { app, backend, needsSetup, reload, sync } from './lib/state.svelte';
   import { dayStats } from './lib/activity';
-  import Connect from './components/Connect.svelte';
   import Home from './components/Home.svelte';
-  import Topics from './components/Topics.svelte';
+  import Words from './components/Words.svelte';
+  import Decks from './components/Decks.svelte';
+  import AddDeck from './components/AddDeck.svelte';
+  import Welcome from './components/Welcome.svelte';
   import Session from './components/Session.svelte';
-  import TopicView from './components/TopicView.svelte';
   import CardView from './components/CardView.svelte';
   import Stats from './components/Stats.svelte';
   import Settings from './components/Settings.svelte';
@@ -21,17 +22,20 @@
     return () => window.removeEventListener('hashchange', onHash);
   });
 
-  const parts = $derived(route.split('/').filter(Boolean));
+  const path = $derived(route.split('?')[0]);
+  const query = $derived(route.split('?')[1] ?? '');
+  const parts = $derived(path.split('/').filter(Boolean));
   const section = $derived(parts[0] ?? '');
   const inSession = $derived(section === 'session');
   const streak = $derived(dayStats(app.activity).streak);
+  const backendKind = () => { void app.deckKey; void app.decks; return app.decks.length ? backend().kind : ''; };
   const tabs = [
     { href: '#/', id: '', label: 'Учить', icon: 'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z' },
-    { href: '#/topics', id: 'topics', label: 'Темы', icon: 'M7 3h11a3 3 0 0 1 3 3v11 M3 10a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z' },
+    { href: '#/words', id: 'words', label: 'Слова', icon: 'M4 5h16M4 10h10M4 15h16M4 20h8' },
     { href: '#/stats', id: 'stats', label: 'Статистика', icon: 'M5 20v-8M12 20V5M19 20v-5' },
     { href: '#/settings', id: 'settings', label: 'Профиль', icon: 'M16 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0 M4 21c1-4 4-6 8-6s7 2 8 6' },
   ];
-  const activeTab = $derived(['topic', 'card'].includes(section) ? 'topics' : ['lint'].includes(section) ? 'settings' : section);
+  const activeTab = $derived(section === 'card' ? 'words' : ['lint', 'decks', 'add'].includes(section) ? 'settings' : section);
 </script>
 
 {#if !inSession}
@@ -41,7 +45,7 @@
       {#if streak > 0}
         <span class="streak" title="Дней подряд с занятиями"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 2-5 3-6 0 2 1 3 2 3 0-4-1-6 1-9z" /></svg><b class="num">{streak}</b></span>
       {/if}
-      {#if app.mode === 'github' && app.repo}
+      {#if backendKind() === 'github'}
         <button class="icon-btn" type="button" onclick={() => sync()} title={app.syncMessage || 'Синхронизировать'} aria-label="Синхронизировать" class:busy={app.syncing}>
           <svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-14.3 4.9M4 12a8 8 0 0 1 14.3-4.9M18 3v4.5h-4.5M6 21v-4.5h4.5" /></svg>
           {#if app.pending}<i class="dot" class:offline={!app.online}></i>{/if}
@@ -59,8 +63,10 @@
 {/if}
 
 <main class:session={inSession}>
-  {#if needsSetup()}
-    <div class="narrow"><Connect /></div>
+  {#if section === 'add' && (app.data || needsSetup())}
+    <AddDeck {query} />
+  {:else if needsSetup()}
+    <Welcome />
   {:else if app.error}
     <div class="narrow error panel appear">
       <b>Не удалось загрузить колоду.</b>
@@ -73,11 +79,11 @@
       <p class="muted">Загружаю колоду…</p>
     </div>
   {:else if section === 'session'}
-    {#key route}<Session practiceTopic={parts[1] === 'practice' ? parts[2] ?? '' : ''} />{/key}
-  {:else if section === 'topics'}
-    <Topics />
-  {:else if section === 'topic' && parts[1]}
-    <TopicView topicId={parts[1]} />
+    {#key route}<Session practice={parts[1] === 'practice'} practiceQuery={query} />{/key}
+  {:else if section === 'words'}
+    <Words {query} />
+  {:else if section === 'decks'}
+    <Decks />
   {:else if section === 'card' && parts[2]}
     <CardView topicId={parts[1]} cardId={parts[2]} />
   {:else if section === 'stats'}

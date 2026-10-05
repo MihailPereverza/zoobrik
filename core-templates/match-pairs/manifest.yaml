@@ -1,7 +1,7 @@
 id: match-pairs
 name: Соедини пары
 trains: [recognize]
-reveals: [en, ru]
+reveals: [term, meaning]
 asks: []
 difficulty: 1
 modes: [learn, review, practice]

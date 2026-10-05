@@ -1,7 +1,7 @@
-id: sentence-build-en-ru
-name: Собери перевод (en → ru)
+id: build-meaning
+name: Собери перевод
 trains: [context]
-reveals: [en, ru]
+reveals: [term, meaning]
 asks: []
 difficulty: 3
 modes: [learn, review, practice]
@@ -11,5 +11,5 @@ params:
   answer: { type: text, label: Перевод, required: true }
   accept: { type: list, of: text, label: Тоже верно }
   extra: { type: list, of: word, label: Лишние слова, min: 2, max: 5 }
-  audio: { type: audio, label: Озвучка английского предложения }
+  audio: { type: audio, label: Озвучка предложения }
 autoplay: true

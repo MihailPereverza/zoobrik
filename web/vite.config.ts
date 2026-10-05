@@ -15,7 +15,6 @@ export default defineConfig({
     svelte(),
     deckApi({
       deckDir: path.resolve(process.env.ZOOBRIK_DECK ?? path.join(root, 'decks/english-notebook')),
-      coreDir: path.join(root, 'core-templates'),
     }),
     VitePWA({
       registerType: 'autoUpdate',
@@ -24,7 +23,7 @@ export default defineConfig({
       manifest: {
         name: 'Zoobrik',
         short_name: 'Zoobrik',
-        description: 'Английские слова и грамматика с интервальными повторениями',
+        description: 'Слова и грамматика любого языка с интервальными повторениями',
         lang: 'ru',
         display: 'standalone',
         orientation: 'portrait',
@@ -46,5 +45,6 @@ export default defineConfig({
       devOptions: { enabled: false },
     }),
   ],
-  server: { port: 5173, fs: { allow: [root] } },
+  // Exercise iframes are srcdoc documents with a null origin; they load the app's fonts cross-origin.
+  server: { port: 5173, fs: { allow: [root] }, cors: { origin: '*' } },
 });

@@ -1,8 +1,8 @@
-id: listen-choose-ru
+id: listen-choice
 name: Послушай и выбери перевод
 trains: [listen]
-reveals: [ru, audio]
-asks: [ru]
+reveals: [meaning, audio]
+asks: [meaning]
 difficulty: 2
 modes: [learn, review, practice]
 check: { type: choice }

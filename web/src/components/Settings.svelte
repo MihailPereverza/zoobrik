@@ -1,6 +1,6 @@
 <script lang="ts">
   import Connect from './Connect.svelte';
-  import { app, backend, setDevice, setGoal, setMascot, setMascotMotion, setRepo, setTheme, STANDALONE, sync, reload, THEMES, type MascotMode } from '../lib/state.svelte';
+  import { activeDeck, app, backend, setDevice, setGoal, setMascot, setMascotMotion, setRepo, setTheme, STANDALONE, sync, reload, THEMES, type MascotMode } from '../lib/state.svelte';
   import Zubrik from './Zubrik.svelte';
   import { mediaUrl } from '../lib/render';
   import { onMount } from 'svelte';
@@ -99,6 +99,11 @@
     {/each}
   </div>
 
+  <a class="panel box decks-link" href="#/decks">
+    <span><h2>Колоды</h2><span class="muted">{activeDeck()?.name ?? '—'}{app.decks.length > 1 ? ` и ещё ${app.decks.length - 1}` : ''} · добавить, поделиться, обновить</span></span>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+  </a>
+
   <section class="panel box">
     <h2>Цель на день</h2>
     <p class="muted">Сколько заданий в день считать выполненной нормой. Кольцо на главной заполняется по мере занятий.</p>
@@ -111,8 +116,10 @@
 
   <section class="panel box">
     <h2>Синхронизация</h2>
-    {#if backend().kind === 'github'}
-      <p class="muted">Колода <span class="mono">{app.repo?.owner}/{app.repo?.repo}</span>. Прогресс сохраняется на устройстве и отправляется коммитом: автоматически через пару минут после ответов, при сворачивании приложения и по кнопке.</p>
+    {#if backend().kind === 'local'}
+      <p class="muted">Текущая колода хранится только в этом браузере и не синхронизируется. Чтобы прогресс был на всех устройствах, подключите GitHub и добавьте колоду туда.</p>
+    {:else if backend().kind === 'github'}
+      <p class="muted">Библиотека <span class="mono">{app.repo?.owner}/{app.repo?.repo}</span>. Прогресс сохраняется на устройстве и отправляется коммитом: автоматически через пару минут после ответов, при сворачивании приложения и по кнопке.</p>
       <p class="mono status">{app.pending ? `Ждут отправки: ${app.pending} файлов` : 'Всё отправлено'}{app.online ? '' : ' · нет сети'}</p>
     {:else}
       <p class="muted">Локальный режим: прогресс пишется в файлы колоды на этом компьютере. Кнопка делает коммит, <span class="mono">pull --rebase</span> и <span class="mono">push</span>, если у колоды настроен remote.</p>
@@ -143,7 +150,7 @@
 
   <section class="panel box">
     <h2>Имя устройства</h2>
-    <p class="muted">Каждое устройство пишет свой журнал: <span class="mono">journal/&lt;месяц&gt;/{app.device}.tsv</span>, поэтому синхронизация не даёт конфликтов.</p>
+    <p class="muted">Каждое устройство пишет свой журнал: <span class="mono">{backend().root}journal/&lt;месяц&gt;/{app.device}.tsv</span>, поэтому синхронизация не даёт конфликтов.</p>
     <div class="row">
       <input id="device" class="mono" bind:value={device} aria-label="Имя устройства" />
       <button class="btn small" type="button" onclick={() => setDevice(device)} disabled={device === app.device}>Сохранить</button>
@@ -177,6 +184,10 @@
 </div>
 
 <style>
+  .decks-link { display: flex !important; align-items: center; justify-content: space-between; text-decoration: none; color: var(--ink); }
+  .decks-link > span { display: grid; gap: 4px; }
+  .decks-link .muted { font-size: 14px; }
+  .decks-link svg { width: 22px; height: 22px; flex: none; fill: none; stroke: var(--ink-3); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .box { padding: 18px; margin-top: 14px; display: grid; gap: 10px; justify-items: start; }
   h2 { font: 600 16px/1.3 var(--font-body); margin: 0; }
   p { font-size: 14px; margin: 0; }

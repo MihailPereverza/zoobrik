@@ -8,7 +8,7 @@ const deck: DeckConfig = { name: 't', limits: { new_cards_per_day: 8, reviews_pe
 const exercise: Exercise = { id: 'e1', template: 'ru-en-type', status: 'ready', params: {} };
 
 function card(progress?: Progress): Card {
-  return { id: 'luggage', kind: 'word', topic: 'travel', path: 'topics/travel/luggage', content: { en: 'luggage' }, theory: null, exercises: [exercise], templates: [], progress };
+  return { id: 'luggage', kind: 'word', topic: 'travel', path: 'topics/travel/luggage', content: { term: 'luggage' }, theory: null, exercises: [exercise], templates: [], progress };
 }
 
 function answer(c: Card, grade: 1 | 2 | 3 | 4, opts: { skills?: Skill[]; practice?: boolean; now?: Date; ms?: number } = {}) {

@@ -1,8 +1,8 @@
-id: en-ru-flip
+id: meaning-flip
 name: Вспомни перевод
 trains: [recognize]
-reveals: [en, ru, audio]
-asks: [ru]
+reveals: [term, meaning, audio]
+asks: [meaning]
 difficulty: 2
 modes: [learn, review, practice]
 check: { type: manual }

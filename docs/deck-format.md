@@ -2,6 +2,33 @@
 
 Contract between deck content, the app and the voice tool. The full rationale is in `spec.html`.
 
+## Library
+
+A library (a GitHub repository, a folder on the Mac, or the browser's storage) holds decks:
+the repository root may itself be a deck (`deck.yaml` at the top), and every `decks/<id>/` with a `deck.yaml` is another one.
+Each deck has its own `topics/`, `templates/` and `journal/`. Card paths in the app include the deck folder.
+
+## Package (`.zoobrik`)
+
+A zip of the deck folder plus `zoobrik.json` (`format: 1`, `id`, `name`, `version`, `lang`, `cards`, `exported`).
+Export and import always drop `progress` from cards, `journal/`, `fsrs.params` and `source` from `deck.yaml`.
+Allowed files: yaml, md, njk, css, js, json, txt and media (mp3, ogg, opus, wav, m4a, webp, png, jpg, gif, svg); no `..`, no hidden folders.
+
+## deck.yaml
+
+```yaml
+id: english-a2                   # folder name in decks/ when imported
+name: Английский A2
+version: 1.0.0                   # optional, shown on update
+lang: { target: en-GB, native: ru }   # any BCP 47 tags; codes name the content fields
+limits: { new_cards_per_day: 8, reviews_per_day: 250 }
+fsrs: { retention: { recall: 0.9 }, params: null }   # params: personal, written by the optimizer
+voice: { en: bf_emma }           # Kokoro voice per language, optional
+source:                          # written by the app on import, never by hand
+  url: github:owner/repo/decks/x@main
+  media: https://raw.githubusercontent.com/owner/repo/main/decks/x   # audio fetched from here when not copied
+```
+
 ## Layout
 
 ```
@@ -35,9 +62,14 @@ order: [hair, curly, wavy, ...]  # introduction order, every card of the topic e
 
 ## card.yaml
 
+Content fields may be named by language code of `lang` (`en`, `ru`, `alt_ru`; `es`, `ru` …) or neutrally
+(`term`, `meaning`, `alt`, and `term`/`meaning` in examples). Templates see only the neutral names.
+Old template ids (`en-ru-choice`, `ru-en-type`, `listen-choose-ru`, `sentence-build-*`) keep working as aliases.
+
 ```yaml
 id: curly
 kind: word                       # word | phrase | idiom | grammar
+tags: [appearance]               # optional, used by search and practice filters
 content:
   en: curly
   ru: кудрявый, вьющийся
@@ -64,7 +96,7 @@ Audio rule: the only audio files are `word.mp3` (from `content.en`, voiced by IP
 
 ```yaml
 - id: e3                         # unique within the card
-  template: sentence-build-ru-en # template id (see below) or ./views/<id>
+  template: build-term # template id (see below) or ./views/<id>
   skill: context                 # one skill or a list
   status: ready                  # draft | ready | off
   from: examples.ex1             # optional: the content the exercise was built from
@@ -84,14 +116,14 @@ Common optional params for every gradable template: `explanation` (markdown, sho
 | template | skills | params | check |
 |---|---|---|---|
 | `intro` | — | `{}` (renders card content) | none |
-| `en-ru-choice` | recognize | `word`, `answer`, `options[4]` (answer included), `audio?` | choice |
-| `en-ru-flip` | recognize | `front`, `back`, `audio?`, `note?` | manual 1–4 |
-| `ru-en-type` | recall, spell | `prompt`, `answer`, `accept[]`, `hint?` | fuzzy |
-| `ru-en-choice` | recall | `prompt`, `answer`, `options[4]` | choice |
-| `sentence-build-ru-en` | context | `prompt` (ru), `answer` (en), `accept[]`, `extra[2–4]`, `audio?` | tokens |
-| `sentence-build-en-ru` | context | `prompt` (en), `audio?`, `answer` (ru), `accept[]`, `extra[2–4]` | tokens |
+| `meaning-choice` | recognize | `word`, `answer`, `options[4]` (answer included), `audio?` | choice |
+| `meaning-flip` | recognize | `front`, `back`, `audio?`, `note?` | manual 1–4 |
+| `term-type` | recall, spell | `prompt`, `answer`, `accept[]`, `hint?` | fuzzy |
+| `term-choice` | recall | `prompt`, `answer`, `options[4]` | choice |
+| `build-term` | context | `prompt` (ru), `answer` (en), `accept[]`, `extra[2–4]`, `audio?` | tokens |
+| `build-meaning` | context | `prompt` (en), `audio?`, `answer` (ru), `accept[]`, `extra[2–4]` | tokens |
 | `listen-type` | listen, spell | `audio`, `answer`, `accept[]`, `translation` | fuzzy |
-| `listen-choose-ru` | listen | `audio`, `answer` (ru), `options[4]` | choice |
+| `listen-choice` | listen | `audio`, `answer` (ru), `options[4]` | choice |
 | `cloze-type` | context / apply | `text` (gap as `___`), `answer`, `accept[]`, `hint?`, `translation?`, `audio?` | fuzzy |
 | `cloze-choice` | context / apply | `text` (gap as `___`), `answer`, `options[2–4]`, `instruction?`, `translation?`, `audio?` | choice |
 | `grammar-fix` | apply | `wrong`, `answer`, `accept[]`, `translation?`, `audio?` | fuzzy |
@@ -99,7 +131,7 @@ Common optional params for every gradable template: `explanation` (markdown, sho
 | `match-pairs` | recognize | `pairs: [[en, ru], ...]` (4–6) — topic `exercises.yaml` only | pairs |
 | `md` | any | markdown file in `exercises/` | from markup |
 
-`audio` for `en-ru-choice`, `en-ru-flip` defaults to `word.mp3` when omitted.
+`audio` for `meaning-choice`, `meaning-flip` defaults to `word.mp3` when omitted.
 
 Token rules for `tokens` check: answer is split by spaces; punctuation stays attached to the word (`luggage.`), so chips look like `I` `can't` `find` `my` `luggage.`. `extra` words must not be tokens of the answer or of any `accept` variant.
 
@@ -140,7 +172,7 @@ A markdown exercise uses one interaction kind: options, gaps, or one chips line.
 
 ## Minimum exercise set per word card
 
-`intro`, `en-ru-choice`, `ru-en-type`, `listen-choose-ru` or `listen-type` (word), `sentence-build-ru-en` (ex1), `sentence-build-en-ru` (ex2), `listen-type` (a short example), `cloze-type` (an example with the word gapped). Add trap exercises (`cloze-choice`) for confusable pairs. All curated exercises get `status: ready`.
+`intro`, `meaning-choice`, `term-type`, `listen-choice` or `listen-type` (word), `build-term` (ex1), `build-meaning` (ex2), `listen-type` (a short example), `cloze-type` (an example with the word gapped). Add trap exercises (`cloze-choice`) for confusable pairs. All curated exercises get `status: ready`.
 
 ## progress (written by the app, never by hand)
 

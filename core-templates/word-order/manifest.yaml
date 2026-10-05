@@ -1,7 +1,7 @@
 id: word-order
 name: Расставь по порядку
 trains: [apply]
-reveals: [en]
+reveals: [term]
 asks: []
 difficulty: 3
 modes: [learn, review, practice]

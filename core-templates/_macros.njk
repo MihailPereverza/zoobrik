@@ -20,20 +20,20 @@
   {% else %}
     <div class="ci-head">
       <div>
-        <div class="ci-word">{{ card.content.en }}</div>
+        <div class="ci-word">{{ card.content.term }}</div>
         <div class="ci-meta">{% if card.content.ipa %}/{{ card.content.ipa }}/{% endif %}{% if card.content.pos %} · {{ card.content.pos }}{% endif %}</div>
       </div>
       {{ play(media(card.content.audio or 'word.mp3')) }}
     </div>
-    {% set alts = card.content.alt_ru | notIn(card.content.ru) %}
-    <div class="ci-ru">{{ card.content.ru }}{% if alts.length %}<span class="ci-alt">также: {{ alts | join(', ') }}</span>{% endif %}</div>
+    {% set alts = card.content.alt | notIn(card.content.meaning) %}
+    <div class="ci-ru">{{ card.content.meaning }}{% if alts.length %}<span class="ci-alt">также: {{ alts | join(', ') }}</span>{% endif %}</div>
   {% endif %}
   {% if card.content.note %}<div class="ci-tip"><span class="ci-avatar">{{ zubrik('think', 34, 'head') | safe }}</span><div class="ci-note zb-md">{{ card.content.note | md | safe }}</div></div>{% endif %}
   {% if card.content.examples and card.content.examples.length %}
   <div class="ci-sep"></div>
   <ul class="ci-examples">
     {% for ex in card.content.examples %}
-    <li>{{ playSmall(media(ex.audio)) }}<div><div class="ci-en">{{ ex.en }}</div><div class="ci-tr">{{ ex.ru }}</div></div></li>
+    <li>{{ playSmall(media(ex.audio)) }}<div><div class="ci-en">{{ ex.term }}</div><div class="ci-tr">{{ ex.meaning }}</div></div></li>
     {% endfor %}
   </ul>
   {% endif %}

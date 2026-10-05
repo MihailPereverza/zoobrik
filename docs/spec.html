@@ -224,12 +224,13 @@ td code { white-space: nowrap; }
     <li><a href="#intro"><span>09</span>Ввод новых слов</a></li>
     <li><a href="#session"><span>10</span>Сессия</a></li>
     <li><a href="#sync"><span>11</span>Прогресс и синхронизация</a></li>
-    <li><a href="#hooks"><span>12</span>Хуки и плагины</a></li>
-    <li><a href="#voice"><span>13</span>Озвучка</a></li>
-    <li><a href="#stats"><span>14</span>Статистика</a></li>
-    <li><a href="#design"><span>15</span>Дизайн</a></li>
-    <li><a href="#roadmap"><span>16</span>Этапы</a></li>
-    <li><a href="#open"><span>17</span>Решения</a></li>
+    <li><a href="#library"><span>12</span>Колоды и обмен</a></li>
+    <li><a href="#hooks"><span>13</span>Хуки и плагины</a></li>
+    <li><a href="#voice"><span>14</span>Озвучка</a></li>
+    <li><a href="#stats"><span>15</span>Статистика</a></li>
+    <li><a href="#design"><span>16</span>Дизайн</a></li>
+    <li><a href="#roadmap"><span>17</span>Этапы</a></li>
+    <li><a href="#open"><span>18</span>Решения</a></li>
   </ol>
 </nav>
 
@@ -237,7 +238,7 @@ td code { white-space: nowrap; }
 <div class="wrap">
 
 <header class="hero">
-  <div class="eyebrow">Спецификация · v0.3 · 5 октября 2026 · есть первая версия приложения</div>
+  <div class="eyebrow">Спецификация · v0.4 · 5 октября 2026 · несколько колод, обмен, любые языки</div>
   <h1>Zoobrik: слова учатся <em>гнёздами</em>, а не россыпью</h1>
   <p class="lede">Приложение для изучения английских слов и грамматики. Интервальные повторения по алгоритму Anki (FSRS), колоды в виде простых YAML-файлов в GitHub-репозитории, задания на шаблонах, которые можно переверстать целиком.</p>
   <div class="meta">
@@ -285,10 +286,10 @@ td code { white-space: nowrap; }
   <div class="table-wrap"><table>
     <thead><tr><th>Навык</th><th>Что проверяет</th><th>Примеры шаблонов</th><th>Цель удержания</th></tr></thead>
     <tbody>
-      <tr><td><span class="skill">recognize</span></td><td>en → смысл</td><td>en-ru-choice, en-ru-flip, match-pairs</td><td>0.92</td></tr>
-      <tr><td><span class="skill">recall</span></td><td>смысл → en</td><td>ru-en-type, ru-en-letters, picture-word</td><td>0.90</td></tr>
-      <tr><td><span class="skill">listen</span></td><td>звук → форма или смысл</td><td>listen-type, listen-choose-ru, minimal-pairs</td><td>0.88</td></tr>
-      <tr><td><span class="skill">spell</span></td><td>точное написание</td><td>ru-en-type, listen-type, cloze-type</td><td>0.85</td></tr>
+      <tr><td><span class="skill">recognize</span></td><td>en → смысл</td><td>meaning-choice, meaning-flip, match-pairs</td><td>0.92</td></tr>
+      <tr><td><span class="skill">recall</span></td><td>смысл → en</td><td>term-type, ru-en-letters, picture-word</td><td>0.90</td></tr>
+      <tr><td><span class="skill">listen</span></td><td>звук → форма или смысл</td><td>listen-type, listen-choice, minimal-pairs</td><td>0.88</td></tr>
+      <tr><td><span class="skill">spell</span></td><td>точное написание</td><td>term-type, listen-type, cloze-type</td><td>0.85</td></tr>
       <tr><td><span class="skill">context</span></td><td>употребление в предложении</td><td>sentence-build, cloze, collocation</td><td>0.88</td></tr>
       <tr><td><span class="skill">apply</span></td><td>грамматическое правило</td><td>grammar-choose-form, grammar-fix, grammar-transform</td><td>0.88</td></tr>
     </tbody>
@@ -363,7 +364,7 @@ td code { white-space: nowrap; }
     params: { word: luggage, translation: багаж, image: luggage.webp, audio: luggage.mp3, examples: [ex1, ex2] }
 
   - id: e1
-    template: en-ru-choice
+    template: meaning-choice
     skill: recognize
     status: ready
     params:
@@ -373,7 +374,7 @@ td code { white-space: nowrap; }
       options: [багаж, посадочный талон, выход на посадку, таможня]
 
   - id: e2
-    template: ru-en-type
+    template: term-type
     skill: [recall, spell]
     status: ready
     params:
@@ -382,7 +383,7 @@ td code { white-space: nowrap; }
       hint: "l _ _ _ _ _ e"
 
   - id: e3
-    template: sentence-build-ru-en
+    template: build-term
     skill: context
     status: ready
     from: examples.ex1                <span class="c"># собрано рецептом из примера ex1</span>
@@ -468,7 +469,7 @@ td code { white-space: nowrap; }
   leech_threshold: 8
 <span class="k">templates</span>: [core, gh:someone/zoobrik-duo-style@v1]
 <span class="k">recipes</span>:                                <span class="c"># какие черновики собирать для новой карточки</span>
-  word: [intro, en-ru-choice, ru-en-type, sentence-build-ru-en, sentence-build-en-ru, listen-type, listen-choose-ru]
+  word: [intro, meaning-choice, term-type, build-term, build-meaning, listen-type, listen-choice]
   grammar: [grammar-intro, grammar-choose-form, grammar-fix, grammar-transform]
 <span class="k">voice</span>: { engine: kokoro-1.0, en: bf_emma, format: mp3 }</code></pre>
 </section>
@@ -485,11 +486,11 @@ td code { white-space: nowrap; }
   </div>
 
   <h3>Путь одного задания: от файла до экрана</h3>
-  <p>Задание <code>e3</code> из карточки <code>luggage</code>, шаблон <code>sentence-build-ru-en</code>.</p>
+  <p>Задание <code>e3</code> из карточки <code>luggage</code>, шаблон <code>build-term</code>.</p>
 
   <h4>Шаг 1. Шаблон объявляет параметры</h4>
-  <span class="file">core/sentence-build-ru-en/manifest.yaml</span>
-<pre><code><span class="k">id</span>: sentence-build-ru-en
+  <span class="file">core/build-term/manifest.yaml</span>
+<pre><code><span class="k">id</span>: build-term
 <span class="k">name</span>: Собери перевод (ru → en)
 <span class="k">trains</span>: [context]
 <span class="k">reveals</span>: [en]
@@ -517,7 +518,7 @@ td code { white-space: nowrap; }
 
   <h4>Шаг 2. Задание в карточке заполняет параметры</h4>
 <pre><code>- id: e3
-  template: sentence-build-ru-en
+  template: build-term
   skill: context
   status: ready
   from: examples.ex1
@@ -530,7 +531,7 @@ td code { white-space: nowrap; }
 
   <h4>Шаг 3. Вёрстка получает данные</h4>
   <p>В шаблон передаются: <code>params</code> — параметры задания, <code>card</code> — весь контент карточки (картинка, транскрипция, заметка), <code>exercise</code> (id, навык), <code>topic</code>, <code>mode</code> (learn или review), <code>seed</code> для перемешивания.</p>
-  <span class="file">core/sentence-build-ru-en/view.njk</span>
+  <span class="file">core/build-term/view.njk</span>
 <pre><code>{% set bank = (params.answer | tokens) | concat(params.extra) | shuffle(seed) %}
 &lt;div class="prompt"&gt;
   &lt;span class="lang"&gt;RU&lt;/span&gt;
@@ -572,9 +573,9 @@ td code { white-space: nowrap; }
     <div class="ed-list">
       <div class="ed-head">luggage · 6 заданий</div>
       <div class="ed-row"><span class="st ready">ready</span><b>intro</b><small>знакомство</small></div>
-      <div class="ed-row"><span class="st ready">ready</span><b>e1</b><small>en-ru-choice · recognize</small></div>
-      <div class="ed-row"><span class="st ready">ready</span><b>e2</b><small>ru-en-type · recall, spell</small></div>
-      <div class="ed-row on"><span class="st ready">ready</span><b>e3</b><small>sentence-build-ru-en · context</small></div>
+      <div class="ed-row"><span class="st ready">ready</span><b>e1</b><small>meaning-choice · recognize</small></div>
+      <div class="ed-row"><span class="st ready">ready</span><b>e2</b><small>term-type · recall, spell</small></div>
+      <div class="ed-row on"><span class="st ready">ready</span><b>e3</b><small>build-term · context</small></div>
       <div class="ed-row"><span class="st draft">draft</span><b>e4</b><small>listen-type · listen, spell</small></div>
       <div class="ed-row"><span class="st ready">ready</span><b>e5</b><small>./views/uncountable · context</small></div>
       <div class="ed-actions"><span>+ Задание</span><span>Собрать черновики</span></div>
@@ -627,8 +628,8 @@ td code { white-space: nowrap; }
   <p>Шаблон ищется по каскаду, от частного к общему. Первый найденный побеждает:</p>
   <div class="flow"><span>карточка<br><code>luggage/views/X</code></span><i>→</i><span>тема<br><code>travel-airport/views/X</code></span><i>→</i><span>колода<br><code>templates/X</code></span><i>→</i><span>подключённые пакеты</span><i>→</i><span><code>core/X</code></span></div>
   <ul>
-    <li><strong>Целиком</strong>: положить на нужный уровень папку с тем же id. Например, <code>travel-airport/views/en-ru-choice/</code> меняет вёрстку выбора перевода только в этой теме.</li>
-    <li><strong>Частично</strong>: <code>{% extends "core/en-ru-choice" %}</code> и переопределить один блок — <code>{% block prompt %}</code>, <code>{% block options %}</code>, <code>{% block feedback %}</code>. Все шаблоны <code>core</code> размечены блоками.</li>
+    <li><strong>Целиком</strong>: положить на нужный уровень папку с тем же id. Например, <code>travel-airport/views/meaning-choice/</code> меняет вёрстку выбора перевода только в этой теме.</li>
+    <li><strong>Частично</strong>: <code>{% extends "core/meaning-choice" %}</code> и переопределить один блок — <code>{% block prompt %}</code>, <code>{% block options %}</code>, <code>{% block feedback %}</code>. Все шаблоны <code>core</code> размечены блоками.</li>
     <li><strong>Только стили</strong>: CSS собирается каскадом от <code>core</code> через тему колоды, <code>topic/views/style.css</code>, <code>card/views/style.css</code> до <code>style:</code> у задания. На корневом элементе есть атрибуты <code>data-template</code>, <code>data-topic</code>, <code>data-card</code>, <code>data-skill</code>, <code>data-mode</code>, так что можно писать <code>[data-topic="travel-airport"] .prompt { … }</code>.</li>
     <li><strong>Для одного задания</strong>: поля <code>view:</code> и <code>style:</code> прямо в записи задания.</li>
   </ul>
@@ -731,15 +732,15 @@ status: ready
 <pre><code><span class="c"># kinds/irregular-verb.yaml</span>
 <span class="k">content</span>: { v1: text, v2: text, v3: text, ru: text, examples: list }
 <span class="k">skills</span>: [recognize, recall, forms]     <span class="c"># forms — новый навык</span>
-<span class="k">recipes</span>: [intro, ru-en-type, verb-forms-table, cloze-type]</code></pre>
+<span class="k">recipes</span>: [intro, term-type, verb-forms-table, cloze-type]</code></pre>
 </section>
 
 
 <section id="templates">
   <h2><span class="num">05</span>Шаблоны: справочник автора</h2>
   <span class="decision">Согласовано</span>
-  <p>Шаблон — папка с манифестом, вёрсткой на <strong>Nunjucks</strong> (порт Jinja2 для JavaScript, тот же синтаксис <code>{{ }}</code> и <code>{% %}</code>), стилями и необязательной логикой. Рендерится в изолированном <code>iframe sandbox="allow-scripts"</code> без доступа к токену GitHub, сети и данным приложения. С приложением общается только через мост <code>zb</code> (<a href="#hooks">§12</a>).</p>
-<pre><code>sentence-build-ru-en/
+  <p>Шаблон — папка с манифестом, вёрсткой на <strong>Nunjucks</strong> (порт Jinja2 для JavaScript, тот же синтаксис <code>{{ }}</code> и <code>{% %}</code>), стилями и необязательной логикой. Рендерится в изолированном <code>iframe sandbox="allow-scripts"</code> без доступа к токену GitHub, сети и данным приложения. С приложением общается только через мост <code>zb</code> (<a href="#hooks">§13</a>).</p>
+<pre><code>build-term/
 ├── manifest.yaml     <span class="c"># параметры, проверка, навыки, рецепт, lint</span>
 ├── view.njk          <span class="c"># вёрстка</span>
 ├── style.css
@@ -752,13 +753,13 @@ status: ready
     <tbody>
       <tr><td><code>id</code>, <code>name</code>, <code>version</code></td><td>Идентификатор (используется в <code>template:</code>), название в редакторе, версия пакета</td></tr>
       <tr><td><code>trains</code></td><td>Навыки по умолчанию. Задание может сузить их полем <code>skill</code></td></tr>
-      <tr><td><code>reveals</code></td><td>Что задание показывает ученику (<code>en</code>, <code>ru</code>, <code>audio</code>). Нужно, чтобы задания одного слова в цикле не подсказывали друг другу (<a href="#hybrid">§8</a>)</td></tr>
+      <tr><td><code>reveals</code></td><td>Что задание показывает ученику (<code>term</code>, <code>meaning</code>, <code>audio</code>). Нужно, чтобы задания одного слова в цикле не подсказывали друг другу (<a href="#hybrid">§8</a>)</td></tr>
       <tr><td><code>params</code></td><td>Схема параметров. Типы: <code>text</code>, <code>markdown</code>, <code>word</code>, <code>list</code>, <code>choice</code>, <code>audio</code>, <code>image</code>, <code>ref</code> (ссылка на пример карточки), <code>object</code>. По схеме строится форма редактора и проверяются данные</td></tr>
       <tr><td><code>check</code></td><td>Проверка ответа: <code>exact</code>, <code>fuzzy</code> (Левенштейн, регистр, пунктуация), <code>tokens</code> (порядок слов), <code>choice</code>, <code>pairs</code>, <code>custom</code></td></tr>
       <tr><td><code>recipe</code></td><td>Как собрать черновики из <code>content</code> карточки: <code>for_each</code>, <code>when</code>, шаблоны значений, помощники <code>suggest.*</code></td></tr>
       <tr><td><code>lint</code></td><td>Правила проверки заданий этого типа при сохранении</td></tr>
       <tr><td><code>difficulty</code></td><td>1–5, для порядка в цикле и раундов знакомства</td></tr>
-      <tr><td><code>modes</code></td><td>Где допустим: <code>intro</code>, <code>learn</code>, <code>review</code>. Например, <code>en-ru-choice</code> слишком лёгок для зрелых слов и в review не попадает при S &gt; 30 дн.</td></tr>
+      <tr><td><code>modes</code></td><td>Где допустим: <code>intro</code>, <code>learn</code>, <code>review</code>. Например, <code>meaning-choice</code> слишком лёгок для зрелых слов и в review не попадает при S &gt; 30 дн.</td></tr>
       <tr><td><code>extends</code></td><td>Унаследовать другой шаблон и переопределить блоки или стили</td></tr>
       <tr><td><code>keys</code></td><td>Горячие клавиши шаблона</td></tr>
     </tbody>
@@ -846,15 +847,15 @@ status: ready
     <thead><tr><th>Шаблон</th><th>Ученик видит</th><th>Ученик делает</th><th>Навыки</th><th>Оценка</th></tr></thead>
     <tbody>
       <tr><td><code>intro</code></td><td>Слово, звук, картинку, перевод, примеры, заметку</td><td>Читает, слушает</td><td>—</td><td>нет</td></tr>
-      <tr><td><code>en-ru-flip</code></td><td>en-слово</td><td>Вспоминает, переворачивает</td><td><span class="skill">recognize</span></td><td>вручную 1–4</td></tr>
-      <tr><td><code>en-ru-choice</code></td><td>en-слово и 4 перевода</td><td>Выбирает</td><td><span class="skill">recognize</span></td><td>авто</td></tr>
+      <tr><td><code>meaning-flip</code></td><td>en-слово</td><td>Вспоминает, переворачивает</td><td><span class="skill">recognize</span></td><td>вручную 1–4</td></tr>
+      <tr><td><code>meaning-choice</code></td><td>en-слово и 4 перевода</td><td>Выбирает</td><td><span class="skill">recognize</span></td><td>авто</td></tr>
       <tr><td><code>ru-en-flip</code></td><td>ru-слово</td><td>Вспоминает, переворачивает</td><td><span class="skill">recall</span></td><td>вручную 1–4</td></tr>
-      <tr><td><code>ru-en-type</code></td><td>ru-слово</td><td>Печатает en</td><td><span class="skill">recall</span><span class="skill">spell</span></td><td>авто, опечатка → Hard</td></tr>
+      <tr><td><code>term-type</code></td><td>ru-слово</td><td>Печатает en</td><td><span class="skill">recall</span><span class="skill">spell</span></td><td>авто, опечатка → Hard</td></tr>
       <tr><td><code>ru-en-letters</code></td><td>ru-слово и перемешанные буквы с лишними</td><td>Собирает слово по буквам</td><td><span class="skill">recall</span></td><td>авто</td></tr>
-      <tr><td><code>sentence-build-ru-en</code></td><td>ru-предложение и банк en-слов с подкидышами</td><td>Собирает перевод</td><td><span class="skill">context</span></td><td>авто, допускаются варианты из <code>alt</code></td></tr>
-      <tr><td><code>sentence-build-en-ru</code></td><td>en-предложение и банк ru-слов с подкидышами</td><td>Собирает перевод</td><td><span class="skill">context</span><span class="skill">recognize</span></td><td>авто</td></tr>
+      <tr><td><code>build-term</code></td><td>ru-предложение и банк en-слов с подкидышами</td><td>Собирает перевод</td><td><span class="skill">context</span></td><td>авто, допускаются варианты из <code>alt</code></td></tr>
+      <tr><td><code>build-meaning</code></td><td>en-предложение и банк ru-слов с подкидышами</td><td>Собирает перевод</td><td><span class="skill">context</span><span class="skill">recognize</span></td><td>авто</td></tr>
       <tr><td><code>listen-type</code></td><td>Аудио слова или предложения</td><td>Печатает услышанное на en</td><td><span class="skill">listen</span><span class="skill">spell</span></td><td>авто</td></tr>
-      <tr><td><code>listen-choose-ru</code></td><td>Аудио и 4 перевода</td><td>Выбирает перевод</td><td><span class="skill">listen</span></td><td>авто</td></tr>
+      <tr><td><code>listen-choice</code></td><td>Аудио и 4 перевода</td><td>Выбирает перевод</td><td><span class="skill">listen</span></td><td>авто</td></tr>
       <tr><td><code>listen-type-ru</code></td><td>Аудио</td><td>Печатает перевод на ru</td><td><span class="skill">listen</span><span class="skill">recognize</span></td><td>авто, синонимы из <code>alt_ru</code></td></tr>
       <tr><td><code>listen-build</code></td><td>Аудио предложения и банк en-слов</td><td>Собирает услышанное</td><td><span class="skill">listen</span><span class="skill">context</span></td><td>авто</td></tr>
       <tr><td><code>cloze-type</code></td><td>en-предложение с пропуском и ru-подсказку</td><td>Вписывает слово в нужной форме</td><td><span class="skill">context</span><span class="skill">spell</span></td><td>авто</td></tr>
@@ -1101,16 +1102,97 @@ stateDiagram-v2
   </table></div>
 
   <h3>Распространение колод</h3>
+  <p>Как колодами делятся и как их обновляют — <a href="#library">§12</a>.</p>
+</section>
+
+
+<section id="library">
+  <h2><span class="num">12</span>Колоды: библиотека, обмен, языки</h2>
+  <span class="decision">Согласовано</span>
+  <p>Приложение не привязано к английскому и к одной колоде. Колод сколько угодно, учится одна за раз: у каждой своё расписание, лимиты и журнал. Прогресс по-прежнему живёт в карточке (§3) — поэтому делятся не самой рабочей копией, а <strong>пакетом</strong>, из которого прогресс вырезан.</p>
+
+  <h3>Библиотека</h3>
+  <p>Подключённый репозиторий GitHub — это библиотека. В ней колода в корне (так устроены колоды, созданные раньше) и сколько угодно колод в <code>decks/&lt;id&gt;/</code>, у каждой свой <code>deck.yaml</code>, <code>topics/</code> и <code>journal/</code>. Без GitHub колоды хранятся на устройстве (IndexedDB): так можно попробовать приложение без регистрации, но прогресс не синхронизируется.</p>
+<pre><code>my-decks/                     <span class="c"># репозиторий-библиотека</span>
+├── deck.yaml                 <span class="c"># колода в корне — по желанию</span>
+├── topics/ …
+├── journal/ …
+└── decks/
+    ├── phrasal-verbs/
+    │   ├── deck.yaml         <span class="c"># source: откуда импортирована</span>
+    │   ├── topics/ …
+    │   └── journal/ …
+    └── spanish-a1/ …</code></pre>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Хранилище</th><th>Где лежит</th><th>Синхронизация</th></tr></thead>
+    <tbody>
+      <tr><td>GitHub</td><td>корень и <code>decks/*</code> подключённого репозитория</td><td>коммиты, слияние прогресса (§11)</td></tr>
+      <tr><td>Это устройство</td><td>IndexedDB браузера</td><td>нет; переносится файлом</td></tr>
+      <tr><td>Файлы на Mac</td><td>папка колоды у dev-сервера</td><td>git commit / pull / push</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Пакет <code>.zoobrik</code></h3>
+  <p>Обычный zip с файлами колоды в том же виде, что в репозитории, плюс <code>zoobrik.json</code> (формат, id, название, языки, число карточек, дата). При упаковке и при импорте вырезается всё личное: секция <code>progress</code> из карточек, <code>journal/</code>, оптимизированные веса <code>fsrs.params</code> и <code>source</code>. Аудио кладётся без повторного сжатия. Импорт принимает и архив, где колода лежит в одной папке, как в «Download ZIP» на GitHub. Пути с <code>..</code>, скрытые папки и неизвестные типы файлов отбрасываются.</p>
+
+  <h3>Добавить колоду</h3>
   <ul>
-    <li><strong>Опубликовать</strong>: экспорт в отдельную ветку или репозиторий без <code>progress</code> и без <code>journal/</code>. Задания со статусом <code>draft</code> по желанию тоже вырезаются.</li>
-    <li><strong>Подписаться на колоду</strong>: <code>upstream: gh:author/english-a2</code> в <code>deck.yaml</code>. Обновления автора вливаются в <code>content</code> и <code>exercises</code>, прогресс не затрагивается. Новые задания приходят готовыми, удалённые автором становятся <code>off</code> и сохраняют статистику.</li>
-    <li><strong>Импорт из Anki</strong> (.apkg) с переносом истории в журнал — этап 4.</li>
+    <li><strong>Из файла</strong> <code>.zoobrik</code> — колода целиком, с озвучкой.</li>
+    <li><strong>По ссылке</strong>: <code>owner/repo</code>, адрес на github.com (можно на папку: <code>/tree/main/decks/spanish</code>), <code>github:owner/repo/путь@ветка</code> или прямая ссылка на файл. Публичные репозитории читаются без токена: дерево — одним запросом к API, файлы — через <code>raw.githubusercontent.com</code>, где нет лимита API.</li>
+    <li><strong>Ссылка-приглашение</strong>: <code>…/zoobrik/#/add?src=github:owner/repo</code> открывает экран добавления с уже подставленной колодой.</li>
+    <li>Перед добавлением показывается превью: карточки, задания, файлы озвучки, размер, языки, и предупреждение, если в колоде есть свои скрипты (они работают в изолированной рамке, §5).</li>
+    <li>Колода, добавленная по ссылке в GitHub-библиотеку, <strong>не копирует аудио</strong>: в <code>deck.yaml</code> пишется <code>source.media</code>, и звук берётся из источника. Иначе каждый mp3 стоил бы отдельного запроса к API, а у GitHub лимит — 500 созданий в час. Из файла аудио загружается в репозиторий.</li>
+  </ul>
+<pre><code><span class="k">source</span>:
+  <span class="k">url</span>: github:friend/decks/decks/phrasal-verbs@main
+  <span class="k">media</span>: https://raw.githubusercontent.com/friend/decks/main/decks/phrasal-verbs
+  <span class="k">version</span>: 1.2.0
+  <span class="k">imported</span>: 2026-10-05</code></pre>
+
+  <h3>Поделиться</h3>
+  <ul>
+    <li><strong>Файлом</strong>: «Поделиться файлом» собирает <code>.zoobrik</code> и открывает системное меню «Поделиться» (на iPhone — AirDrop, мессенджеры), а где его нет — скачивает файл.</li>
+    <li><strong>Ссылкой</strong>: для колоды в GitHub — ссылка-приглашение на её папку. Откроется у тех, кто может читать репозиторий: для всех — сделайте его публичным. Для импортированной колоды ссылка ведёт на исходный источник.</li>
+  </ul>
+
+  <h3>Обновление от автора</h3>
+  <p>«Обновить из источника» (или «из файла») скачивает новую версию и строит план: что добавится, изменится и удалится. Применяется одним коммитом.</p>
+  <ul>
+    <li>В карточках берётся новый контент и задания автора, секция <code>progress</code> — своя.</li>
+    <li>В <code>deck.yaml</code> сохраняются свои <code>fsrs.params</code> и <code>source</code>.</li>
+    <li>Файлы, которые автор удалил, удаляются, кроме карточек с прогрессом: они остаются, история не теряется.</li>
+    <li>Аудио загружается только новое.</li>
+  </ul>
+
+  <h3>Любой изучаемый язык</h3>
+  <p>Пара языков задаётся в <code>deck.yaml</code>: <code>lang: { target: es-ES, native: ru }</code>. Поля карточки называются по коду языка (<code>es</code>, <code>ru</code>, <code>alt_ru</code>, в примерах — так же) или нейтрально: <code>term</code>, <code>meaning</code>, <code>alt</code>. Приложение приводит их к нейтральным, шаблоны работают только с ними и с переменной <code>lang</code> (<code>lang.target.adverb</code> — «по-испански» для подсказки в поле ввода).</p>
+  <p>Шаблоны переименованы без языков в названии; старые имена продолжают работать:</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Было</th><th>Стало</th><th>Что делает</th></tr></thead>
+    <tbody>
+      <tr><td><code>en-ru-choice</code></td><td><code>meaning-choice</code></td><td>слово → выбрать перевод</td></tr>
+      <tr><td><code>en-ru-flip</code></td><td><code>meaning-flip</code></td><td>слово → вспомнить перевод</td></tr>
+      <tr><td><code>ru-en-choice</code></td><td><code>term-choice</code></td><td>перевод → выбрать слово</td></tr>
+      <tr><td><code>ru-en-type</code></td><td><code>term-type</code></td><td>перевод → написать слово</td></tr>
+      <tr><td><code>listen-choose-ru</code></td><td><code>listen-choice</code></td><td>на слух → выбрать перевод</td></tr>
+      <tr><td><code>sentence-build-en-ru</code></td><td><code>build-meaning</code></td><td>собрать перевод фразы</td></tr>
+      <tr><td><code>sentence-build-ru-en</code></td><td><code>build-term</code></td><td>собрать фразу на изучаемом языке</td></tr>
+    </tbody>
+  </table></div>
+  <p>Озвучка: <code>zoobrik-voice</code> берёт язык из <code>lang.target</code> и голос из <code>voice.&lt;код&gt;</code> или по умолчанию: Kokoro говорит по-английски (британский и американский), по-испански, по-французски, по-итальянски, по-португальски, на хинди, японском и китайском. Для других языков — свои файлы или (позже) голос браузера.</p>
+
+  <h3>Темы не видны в интерфейсе</h3>
+  <p>Когда тем сотни, список тем перестаёт помогать. Поэтому темы остались только в данных: они задают порядок новых слов, порции и гейты (§9) — это автопилот. В интерфейсе вместо тем:</p>
+  <ul>
+    <li><strong>Главная</strong> — что сделать сегодня, цель дня, переключатель колоды.</li>
+    <li><strong>«Слова»</strong> — поиск по слову, переводу и примерам по всей колоде; фильтры «к повторению / новые / учу / знаю / трудные / на паузе», вид (слова, фразы, правила) и теги <code>tags: [travel, phrasal]</code> из карточек. Любую выборку можно потренировать — это практика, расписание она не двигает. Фильтр живёт в адресе, так что «назад» с карточки возвращает к той же выборке.</li>
+    <li><strong>«Колоды»</strong> в профиле — переключить, поделиться, обновить, удалить, добавить.</li>
   </ul>
 </section>
 
 
 <section id="hooks">
-  <h2><span class="num">12</span>Хуки и плагины</h2>
+  <h2><span class="num">13</span>Хуки и плагины</h2>
   <p>Расширение работает на двух уровнях. <strong>Мост шаблона</strong> управляет одним заданием. <strong>Хуки приложения</strong> управляют очередью, оценкой, контентом, синхронизацией.</p>
 
   <h3>Мост шаблона: команды</h3>
@@ -1156,12 +1238,12 @@ stateDiagram-v2
   <ul>
     <li><strong>Тема</strong> — CSS-файл, который переопределяет токены (<code>--zb-bg</code>, <code>--zb-ink</code>, <code>--zb-accent</code>, <code>--zb-radius</code>, <code>--zb-font-*</code>). Токены пробрасываются во все iframe шаблонов.</li>
     <li><strong>Слоты оболочки</strong>: верхняя панель, полоска прогресса, панель оценок, экран итогов. Каждый переопределяется отдельным <code>.njk</code> в <code>themes/&lt;id&gt;/slots/</code>.</li>
-    <li><strong>Переопределение шаблона</strong>: положить в колоду шаблон с тем же <code>id</code> или указать <code>extends: core/ru-en-type</code> и поменять только <code>style.css</code>.</li>
+    <li><strong>Переопределение шаблона</strong>: положить в колоду шаблон с тем же <code>id</code> или указать <code>extends: core/term-type</code> и поменять только <code>style.css</code>.</li>
   </ul>
 </section>
 
 <section id="voice">
-  <h2><span class="num">13</span>Озвучка</h2>
+  <h2><span class="num">14</span>Озвучка</h2>
   <span class="decision">Согласовано</span>
   <p>Аудио не синтезируется в момент задания. Его заранее готовит фоновый процесс и сохраняет файлами в папку карточки, так что каждый текст озвучивается один раз. Приложение может распространяться коммерчески, поэтому берём только модели с открытой лицензией.</p>
   <p><strong>Модель — Kokoro-82M</strong> (Apache 2.0). Среди открытых моделей, разрешённых для коммерческого использования, у неё самый высокий рейтинг в слепых сравнениях, вровень с Magpie 357M. У Kokoro есть британские голоса и вход по транскрипции. Модели, которые звучат лучше (Fish S2 Pro, Voxtral, Breeze), запрещают коммерческое использование.</p>
@@ -1196,7 +1278,7 @@ stateDiagram-v2
 </section>
 
 <section id="stats">
-  <h2><span class="num">14</span>Статистика</h2>
+  <h2><span class="num">15</span>Статистика</h2>
   <div class="grid-2">
     <div class="tile"><span class="tag">карточка</span><h5>Профиль навыков</h5><p>Полоски R и S по каждому навыку слова, история ответов, какие шаблоны давались труднее.</p></div>
     <div class="tile"><span class="tag">тема</span><h5>Освоенность темы</h5><p>Сколько карточек в каждой стадии, состояние гейта, когда откроется следующая порция.</p></div>
@@ -1209,7 +1291,7 @@ stateDiagram-v2
 </section>
 
 <section id="design">
-  <h2><span class="num">15</span>Дизайн-направление</h2>
+  <h2><span class="num">16</span>Дизайн-направление</h2>
   <p>Визуальная метафора — <strong>учётная карточка</strong>: белый лист, тонкие голубые линейки, красная линия сверху. Это прямой предок флеш-карт, и метафора узнаётся без пояснений. Никаких градиентов и фиолетового. Цвет используется по смыслу: красная линия маркирует активное, четыре цвета оценок совпадают с цветами Anki, чтобы переход был привычным.</p>
   <div class="grid-2">
     <div class="tile"><span class="tag">шрифты</span><h5>Unbounded · Golos Text · JetBrains Mono</h5><p>Заголовки широкие и короткие, текст — Golos (сделан под кириллицу), транскрипции и ввод — моноширинный.</p></div>
@@ -1221,19 +1303,20 @@ stateDiagram-v2
 </section>
 
 <section id="roadmap">
-  <h2><span class="num">16</span>Этапы</h2>
+  <h2><span class="num">17</span>Этапы</h2>
   <ul class="timeline">
     <li><b>Этап 0</b><p><strong>Спецификация</strong>Этот документ, согласование открытых вопросов, JSON-схемы файлов.</p></li>
-    <li><b>Этап 1</b><p><strong>Ядро, офлайн</strong>Формат карточек и журнала, JSON-схемы, редактор карточки с черновиками по рецептам и превью, ts-fsrs, гибридный планировщик, сборка сессии, 8 базовых шаблонов (intro, en-ru-choice, ru-en-type, sentence-build ×2, listen-type, listen-choose-ru, match-pairs), фоновая озвучка Kokoro в браузере, импорт папки колоды. Параллельно — утилита <code>zoobrik-voice</code> для Mac.</p></li>
+    <li><b>Этап 1</b><p><strong>Ядро, офлайн</strong>Формат карточек и журнала, JSON-схемы, редактор карточки с черновиками по рецептам и превью, ts-fsrs, гибридный планировщик, сборка сессии, 8 базовых шаблонов (intro, meaning-choice, term-type, sentence-build ×2, listen-type, listen-choice, match-pairs), фоновая озвучка Kokoro в браузере, импорт папки колоды. Параллельно — утилита <code>zoobrik-voice</code> для Mac.</p></li>
     <li><b>Этап 2</b><p><strong>GitHub-синхронизация</strong>PAT, деревья и коммиты, слияние логов, PWA и офлайн-режим, публикация колоды без прогресса.</p></li>
     <li><b>Этап 3</b><p><strong>Расширяемость</strong>SDK шаблонов, свои шаблоны в карточках и темах, каскад и <code>extends</code>, inline-задания, плагины в воркерах, редактор шаблонов, темы, подключение шаблонов из репозиториев, OAuth через прокси.</p></li>
-    <li><b>Этап 4</b><p><strong>Качество обучения</strong>Оптимизатор FSRS, статистика, пиявки, грамматические шаблоны, импорт из Anki.</p></li>
+    <li><b>Этап 4</b><p><strong>Качество обучения</strong>Оптимизатор FSRS, статистика, пиявки, грамматические шаблоны.</p></li>
+    <li><b>Этап 5</b><p><strong>Колоды и обмен</strong>Библиотека из нескольких колод, пакет <code>.zoobrik</code>, добавление по ссылке, обновление от автора с сохранением прогресса, любые языки, «Слова» вместо тем. Сделано в v0.4.</p></li>
   </ul>
   <p>Предлагаемый стек: TypeScript, Svelte 5 + Vite (лёгкий рантайм, удобно для PWA), Dexie поверх IndexedDB, <code>ts-fsrs</code>, <code>nunjucks</code> (браузерная сборка), <code>yaml</code> (сохраняет комментарии и порядок ключей при перезаписи файла), Workbox.</p>
 </section>
 
 <section id="open">
-  <h2><span class="num">17</span>Решения</h2>
+  <h2><span class="num">18</span>Решения</h2>
   <span class="decision">Согласовано</span>
   <div class="table-wrap"><table>
     <thead><tr><th>Вопрос</th><th>Решение</th></tr></thead>
@@ -1242,10 +1325,15 @@ stateDiagram-v2
       <tr><td>Easy</td><td>Только вручную. Автооценка ставит не выше Good, «Легко» — клавиша 4 или кнопка после ответа.</td></tr>
       <tr><td>Порядок заданий слова</td><td>Задания перемешиваются внутри цикла, подряд не идут (§8, §10).</td></tr>
       <tr><td>Генерация контента нейросетью</td><td>Пока не делаем. Хук <code>suggest.provide</code> и плагины оставляют возможность добавить её позже.</td></tr>
-      <tr><td>Озвучка</td><td>Kokoro-82M: лучшая открытая модель с коммерческой лицензией. Утилита <code>zoobrik-voice</code> на Mac, файлы mp3 в папке карточки (§13).</td></tr>
+      <tr><td>Озвучка</td><td>Kokoro-82M: лучшая открытая модель с коммерческой лицензией. Утилита <code>zoobrik-voice</code> на Mac, файлы mp3 в папке карточки (§14).</td></tr>
       <tr><td>Название</td><td>Zoobrik.</td></tr>
       <tr><td>Сборка заданий</td><td>Задания — явные записи в карточке. Черновики собираются по рецептам шаблонов, в ротацию попадают только одобренные автором (§4).</td></tr>
       <tr><td>Хранение карточки</td><td>Папка на слово: <code>card.yaml</code>, медиа, свои шаблоны (§3).</td></tr>
+      <tr><td>Несколько колод</td><td>Библиотека: корень репозитория и <code>decks/&lt;id&gt;/</code>, плюс колоды на устройстве. Учится одна колода за раз (§12).</td></tr>
+      <tr><td>Обмен колодами</td><td>Прогресс остаётся в карточке. Делятся пакетом <code>.zoobrik</code> (zip без прогресса) или ссылкой на GitHub; обновление от автора сохраняет свой прогресс (§12).</td></tr>
+      <tr><td>Языки</td><td>Любая пара языков из <code>deck.yaml</code>; поля <code>term</code>/<code>meaning</code> или по коду языка; шаблоны без языков в названии (§12).</td></tr>
+      <tr><td>Темы в интерфейсе</td><td>Не показываются. Порядок по темам — автопилот; вместо списка тем — поиск и фильтры «Слова» (§12).</td></tr>
+      <tr><td>Импорт</td><td>Только свой формат: ссылка на колоду или файл <code>.zoobrik</code>. Импорт из Anki не планируется (§12).</td></tr>
       <tr><td>История ответов</td><td>Итог в карточке, полная история — в журнале по месяцам и устройствам (§3, §11).</td></tr>
     </tbody>
   </table></div>

@@ -256,10 +256,9 @@ export function balanceDue(data: DeckData, card: Card, state: SkillState): Skill
   return { ...state, due: new Date(last.getTime() + best * 86_400_000).toISOString() };
 }
 
-export function practiceSession(data: DeckData, topicId: string, now: Date): QueueItem[] {
-  const topic = data.topics.find((t) => t.id === topicId);
-  if (!topic) return [];
-  const cards = topic.cards.filter((c) => isIntroduced(c) && !isSuspended(c));
+/** Extra practice on chosen cards (a search, a tag, the hard ones); answers do not move the schedule. */
+export function practiceSession(data: DeckData, chosen: Card[], _now: Date): QueueItem[] {
+  const cards = chosen.filter((c) => isIntroduced(c) && !isSuspended(c));
   const lists = cards.map((card) => {
     const pool = card.exercises.filter((e) => usable(data, card, e, 'practice'));
     const picked = [...pool].sort(() => Math.random() - 0.5).slice(0, 2);

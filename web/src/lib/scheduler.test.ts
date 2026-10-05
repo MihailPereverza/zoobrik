@@ -17,7 +17,7 @@ const exercises = (): Exercise[] => [
 ];
 
 function mkCard(topic: string, id: string, progress?: Progress): Card {
-  return { id, kind: 'word', topic, path: `topics/${topic}/${id}`, content: { en: id, ru: id }, theory: null, exercises: exercises(), templates: [], progress };
+  return { id, kind: 'word', topic, path: `topics/${topic}/${id}`, content: { term: id, meaning: id }, theory: null, exercises: exercises(), templates: [], progress };
 }
 
 function mkTopic(id: string, n: number, extra: Partial<Topic> = {}): Topic {
@@ -27,7 +27,7 @@ function mkTopic(id: string, n: number, extra: Partial<Topic> = {}): Topic {
 
 function mkDeck(topics: Topic[], over: Partial<DeckConfig> = {}): DeckData {
   const deck: DeckConfig = { name: 'test', limits: { new_cards_per_day: 8, reviews_per_day: 250 }, fsrs: { retention: {}, learning_steps: ['1m', '10m'], relearning_steps: ['10m'] }, cycle: { cards: 4, min_gap: 2, max_exercises_per_card: 5 }, ...over };
-  return { deck, topics, templates: CORE.templates, partials: CORE.partials, baseCss: CORE.baseCss };
+  return { root: '', deck, topics, templates: CORE.templates, partials: CORE.partials, baseCss: CORE.baseCss };
 }
 
 function reviewState(dueOffsetDays: number, s = 10): SkillState {
@@ -232,24 +232,24 @@ describe('practice', () => {
   it('uses only started cards of the topic and marks items as practice', () => {
     const data = mkDeck([mkTopic('a', 5)]);
     data.topics[0].cards.slice(0, 2).forEach((c) => mature(c, 5));
-    const q = practiceSession(data, 'a', NOW);
+    const q = practiceSession(data, data.topics.find((t) => t.id === 'a')!.cards, NOW);
     expect(q.length).toBeGreaterThan(0);
     expect(q.every((x) => x.mode === 'practice' && ['a-0', 'a-1'].includes(x.card.id))).toBe(true);
   });
 });
 
 describe('priming rule', () => {
-  const seen = new Map([['en', 3], ['ru', 3]]);
+  const seen = new Map([['term', 3], ['meaning', 3]]);
   it('treats a review answer as practice when the cycle already revealed the asked form', () => {
-    expect(isPrimed(['en'], seen, 6, 'review')).toBe(true);
+    expect(isPrimed(['term'], seen, 6, 'review')).toBe(true);
   });
   it('never applies while a word is being learned or introduced', () => {
-    expect(isPrimed(['en'], seen, 6, 'learn')).toBe(false);
-    expect(isPrimed(['ru'], seen, 4, 'intro')).toBe(false);
+    expect(isPrimed(['term'], seen, 6, 'learn')).toBe(false);
+    expect(isPrimed(['meaning'], seen, 4, 'intro')).toBe(false);
   });
   it('expires after the window and needs every asked form', () => {
-    expect(isPrimed(['en'], seen, 30, 'review')).toBe(false);
-    expect(isPrimed(['en', 'audio'], seen, 5, 'review')).toBe(false);
+    expect(isPrimed(['term'], seen, 30, 'review')).toBe(false);
+    expect(isPrimed(['term', 'audio'], seen, 5, 'review')).toBe(false);
     expect(isPrimed([], seen, 5, 'review')).toBe(false);
   });
 });

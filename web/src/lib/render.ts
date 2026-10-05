@@ -3,6 +3,7 @@ import { parseMdExercise, renderMarkdown, type MdExercise } from './md';
 import { RUNTIME } from './runtime';
 import { zubrikSvg, type Mood } from './mascot';
 import { fontFaceCss } from './fonts';
+import { deckLangs } from './lang';
 import type { Card, DeckData, Exercise, Mode, TemplateSource, Topic } from './types';
 
 export interface Rendered {
@@ -78,6 +79,12 @@ export function topicOf(data: DeckData, card: Card): Topic {
   return data.topics.find((t) => t.id === card.topic)!;
 }
 
+/** Template ids from before decks became language-neutral; cards written with them keep working. */
+export const LEGACY_TEMPLATES: Record<string, string> = {
+  'en-ru-choice': 'meaning-choice', 'en-ru-flip': 'meaning-flip', 'ru-en-choice': 'term-choice', 'ru-en-type': 'term-type',
+  'listen-choose-ru': 'listen-choice', 'sentence-build-en-ru': 'build-meaning', 'sentence-build-ru-en': 'build-term',
+};
+
 export function resolveTemplate(data: DeckData, card: Card, exercise: Exercise): TemplateSource | null {
   if (exercise.template === 'inline') {
     return { id: `inline-${exercise.id}`, scope: 'inline', manifest: { id: 'inline', check: exercise.check, trains: [] }, view: exercise.view ?? '', style: exercise.style ?? '', logic: null };
@@ -86,9 +93,11 @@ export function resolveTemplate(data: DeckData, card: Card, exercise: Exercise):
   const id = local ? exercise.template.slice('./views/'.length) : exercise.template;
   const topic = topicOf(data, card);
   const chain = [card.templates, local ? [] : topic.templates, local ? [] : data.templates.filter((t) => t.scope === 'deck'), local ? [] : data.templates.filter((t) => t.scope === 'core')];
-  for (const list of chain) {
-    const found = list.find((t) => t.id === id);
-    if (found) return found;
+  for (const wanted of local || !LEGACY_TEMPLATES[id] ? [id] : [id, LEGACY_TEMPLATES[id]]) {
+    for (const list of chain) {
+      const found = list.find((t) => t.id === wanted);
+      if (found) return found;
+    }
   }
   return null;
 }
@@ -122,7 +131,7 @@ export function render(data: DeckData, card: Card, exercise: Exercise, mode: Mod
   const seed = hashSeed(`${card.id}:${exercise.id}:${new Date().toISOString().slice(0, 10)}${salt}`);
   const context = {
     params: exercise.params ?? {}, card, exercise, topic: { id: topic.id, title: topic.title }, mode, seed, md,
-    theory: card.theory, media, skills: card.progress?.skills ?? {},
+    theory: card.theory, media, skills: card.progress?.skills ?? {}, lang: deckLangs(data.deck),
   };
   try {
     const e = environment(data);

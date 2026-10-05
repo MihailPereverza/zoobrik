@@ -15,13 +15,14 @@
   import { check } from '../lib/check';
   import { formatInterval, preview } from '../lib/fsrs';
   import { applyAnswer, applyIntro, bury, suspend } from '../lib/progress';
-  import { mediaUrl, render, topicOf, type Rendered } from '../lib/render';
+  import { mediaUrl, render, type Rendered } from '../lib/render';
+  import { filterCards, queryToFilter } from '../lib/words';
   import { balanceDue, buildSession, isPrimed, LEARN_AHEAD, manifestOf, practiceSession, replacementItem } from '../lib/scheduler';
   import type { CheckResult, Grade, QueueItem, Skill } from '../lib/types';
 
   type Phase = 'answer' | 'reveal' | 'graded' | 'flipped' | 'wait' | 'done';
   const FLIP_MS = 220;
-  let { practiceTopic = '' }: { practiceTopic?: string } = $props();
+  let { practice: practiceMode = false, practiceQuery = '' }: { practice?: boolean; practiceQuery?: string } = $props();
   const data = app.data!;
   const GRADES: { g: Grade; label: string; cls: string }[] = [
     { g: 1, label: 'Снова', cls: 'again' }, { g: 2, label: 'Трудно', cls: 'hard' },
@@ -77,9 +78,9 @@
   }
 
   function start(aheadMs = 0) {
-    if (practiceTopic) {
+    if (practiceMode) {
       if (queue.length) { phase = 'done'; nextDue = null; if (answered) sync(); return; }
-      queue = practiceSession(data, practiceTopic, new Date());
+      queue = practiceSession(data, filterCards(data, queryToFilter(practiceQuery), new Date()), new Date());
       index = 0;
       if (!queue.length) { phase = 'done'; return; }
       prefetch(queue); revealed.clear(); show();
@@ -192,7 +193,7 @@
       const skills = current.topicCards ? [current.exercise.cards![card.id]] : current.skills;
       const effect = applyAnswer({ deck: data.deck, card, exercise: current.exercise, skills, grade: g, practice: isPractice, ms: answerMs, now, device: app.device });
       if (!isPractice) for (const s of skills) if (effect.progress.skills[s]) effect.progress.skills[s] = balanceDue(data, card, effect.progress.skills[s]!);
-      if (effect.becameLeech) { notice = `«${card.content.en ?? card.content.title}» стало пиявкой: слишком много ошибок. Загляните в карточку — поможет своя заметка или пример.`; log('session', 'leech', card.id); }
+      if (effect.becameLeech) { notice = `«${card.content.term ?? card.content.title}» стало пиявкой: слишком много ошибок. Загляните в карточку — поможет своя заметка или пример.`; log('session', 'leech', card.id); }
       card.progress = effect.progress;
       updates.push({ cardPath: card.path, progress: $state.snapshot(effect.progress) });
       lines.push(...effect.lines);
@@ -283,7 +284,7 @@
     persist([{ cardPath: card.path, progress: $state.snapshot(progress) }], []);
     queue = [...queue.slice(0, index + 1), ...queue.slice(index + 1).filter((q) => q.card !== card)];
     log('session', kind, card.id);
-    notice = kind === 'bury' ? `«${card.content.en ?? card.content.title}» отложено до завтра.` : `«${card.content.en ?? card.content.title}» приостановлено. Вернуть можно на странице карточки.`;
+    notice = kind === 'bury' ? `«${card.content.term ?? card.content.title}» отложено до завтра.` : `«${card.content.term ?? card.content.title}» приостановлено. Вернуть можно на странице карточки.`;
     menuOpen = false;
     touch();
     advance();
@@ -333,7 +334,7 @@
     const p = item.exercise.params ?? {};
     const md = rendered && 'md' in rendered ? rendered.md : undefined;
     const explanation = p.explanation ? renderMarkdown(p.explanation) : md?.back ?? '';
-    const sentence = phase === 'flipped' && p.back ? String(p.back) : typeof p.answer === 'string' && p.answer !== item.card.content.en && /\s/.test(p.answer) && /[a-z]/i.test(p.answer) ? p.answer : '';
+    const sentence = phase === 'flipped' && p.back ? String(p.back) : typeof p.answer === 'string' && p.answer !== item.card.content.term && /\s/.test(p.answer) && !/\p{Script=Cyrillic}/u.test(p.answer) ? p.answer : '';
     return { explanation, translation: p.translation ?? '', sentence };
   });
 
@@ -419,7 +420,7 @@
 
     <div class="kicker">
       {#if item.mode === 'intro'}
-        <span class="chip amber">Новое {item.card.kind === 'grammar' ? 'правило' : 'слово'}</span><span class="muted small">{topicOf(data, item.card).title}</span>
+        <span class="chip amber">Новое {item.card.kind === 'grammar' ? 'правило' : 'слово'}</span>
       {:else}
         <span class="kname">{item.mode === 'practice' ? 'Практика · ' : ''}{exerciseName}</span>
         <span class="skills">{#each item.skills as s (s)}<span class="chip">{s}</span>{/each}</span>

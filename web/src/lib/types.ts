@@ -30,12 +30,12 @@ export interface Progress {
   leech?: boolean;
 }
 
-export interface Example { id: string; en: string; ru: string; audio?: string }
+export interface Example { id: string; term: string; meaning: string; audio?: string }
 
 export interface CardContent {
-  en?: string;
-  ru?: string;
-  alt_ru?: string[];
+  term?: string;
+  meaning?: string;
+  alt?: string[];
   pos?: string;
   ipa?: string;
   audio?: string;
@@ -85,6 +85,7 @@ export interface TemplateManifest {
 
 export interface Card {
   id: string;
+  tags?: string[];
   kind: 'word' | 'phrase' | 'idiom' | 'grammar';
   topic: string;
   path: string;
@@ -111,8 +112,13 @@ export interface Topic {
 }
 
 export interface DeckConfig {
+  id?: string;
   name: string;
   description?: string;
+  lang?: { target?: string; native?: string };
+  version?: string;
+  author?: string;
+  source?: DeckSource;
   limits: { new_cards_per_day: number; reviews_per_day: number; max_backlog_ratio?: number };
   fsrs: {
     retention: Partial<Record<Skill, number>>;
@@ -128,7 +134,11 @@ export interface DeckConfig {
   cycle?: { cards?: number; min_gap?: number; max_exercises_per_card?: number };
 }
 
+export interface DeckSource { url: string; imported?: string; version?: string; media?: string }
+
 export interface DeckData {
+  /** Folder of the deck inside its library: '' for a deck at the repository root, 'decks/<id>/' otherwise. */
+  root: string;
   deck: DeckConfig;
   topics: Topic[];
   templates: TemplateSource[];

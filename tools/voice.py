@@ -20,6 +20,21 @@ MODEL_ID = 'mlx-community/Kokoro-82M-bf16'
 SAMPLE_RATE = 24000
 HOMEBREW_ESPEAK_LIBRARY = Path('/opt/homebrew/lib/libespeak-ng.1.dylib')
 HOMEBREW_ESPEAK_DATA = Path('/opt/homebrew/opt/espeak-ng/share/espeak-ng-data')
+# Kokoro picks the language from the first letter of the voice name, so one default voice per supported language is enough.
+DEFAULT_VOICES: dict[str, str] = {
+    'en-gb': 'bf_emma', 'en': 'af_heart', 'en-us': 'af_heart', 'es': 'ef_dora', 'fr': 'ff_siwis', 'it': 'if_sara',
+    'pt': 'pf_dora', 'hi': 'hf_alpha', 'ja': 'jf_alpha', 'zh': 'zf_xiaobei',
+}
+
+
+@dataclass
+class DeckVoice:
+    """Which card fields to voice and with which Kokoro voice."""
+
+    field: str
+    """Content key of the studied language, e.g. `en` or `es`; `term` is always accepted too."""
+    voice: str
+    """Kokoro voice name."""
 
 
 @dataclass
@@ -27,7 +42,7 @@ class Clip:
     """One text to voice and where to store it."""
 
     text: str
-    """English text to speak."""
+    """Text in the studied language."""
     target: Path
     """Destination mp3 file."""
 
@@ -48,22 +63,37 @@ def speakable(text: str) -> str:
     return re.sub(r'\s+', ' ', without_brackets.replace('…', '...').replace('—', ', ')).strip()
 
 
-def card_clips(card_dir: Path) -> list[Clip]:
+def deck_voice(*, deck_dir: Path, voice: str | None) -> DeckVoice:
+    deck = yaml.safe_load((deck_dir / 'deck.yaml').read_text(encoding='utf-8')) or {}
+    target = str((deck.get('lang') or {}).get('target') or 'en-GB').lower()
+    code = target.split('-')[0]
+    configured = (deck.get('voice') or {}).get(code)
+    chosen = voice or configured or DEFAULT_VOICES.get(target) or DEFAULT_VOICES.get(code)
+    if not chosen:
+        raise SystemExit(f'Kokoro has no voice for {target}; pass --voice or use the browser voice in the app.')
+    return DeckVoice(field=code, voice=chosen)
+
+
+def spoken_text(*, item: dict, field: str) -> str:
+    return item.get('term') or item.get(field) or ''
+
+
+def card_clips(*, card_dir: Path, field: str) -> list[Clip]:
     card = yaml.safe_load((card_dir / 'card.yaml').read_text(encoding='utf-8'))
     content = card.get('content') or {}
     clips = []
-    if content.get('en') and content.get('audio'):
-        clips.append(Clip(text=speakable(content['en']), target=card_dir / content['audio']))
+    if spoken_text(item=content, field=field) and content.get('audio'):
+        clips.append(Clip(text=speakable(spoken_text(item=content, field=field)), target=card_dir / content['audio']))
     for example in content.get('examples') or []:
-        if example.get('en') and example.get('audio'):
-            clips.append(Clip(text=speakable(example['en']), target=card_dir / example['audio']))
+        if spoken_text(item=example, field=field) and example.get('audio'):
+            clips.append(Clip(text=speakable(spoken_text(item=example, field=field)), target=card_dir / example['audio']))
     return clips
 
 
-def collect_clips(*, deck_dir: Path, force: bool) -> list[Clip]:
+def collect_clips(*, deck_dir: Path, field: str, force: bool) -> list[Clip]:
     clips = []
     for card_file in sorted(deck_dir.glob('topics/*/*/card.yaml')):
-        clips.extend(card_clips(card_file.parent))
+        clips.extend(card_clips(card_dir=card_file.parent, field=field))
     return [clip for clip in clips if force or not clip.target.exists()]
 
 
@@ -93,17 +123,18 @@ def generate(*, clips: list[Clip], voice: str, speed: float) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description='Generate missing deck audio with Kokoro.')
-    parser.add_argument('deck', type=Path)
-    parser.add_argument('--voice', default='bf_emma')
+    parser.add_argument('deck', type=Path, help='deck folder: the one with deck.yaml, e.g. a library root or decks/<id>')
+    parser.add_argument('--voice', default=None, help='Kokoro voice; defaults to deck.yaml voice.<lang> or a voice for lang.target')
     parser.add_argument('--speed', type=float, default=0.95)
     parser.add_argument('--force', action='store_true', help='regenerate existing files')
     args = parser.parse_args()
-    clips = collect_clips(deck_dir=args.deck, force=args.force)
+    voice = deck_voice(deck_dir=args.deck, voice=args.voice)
+    clips = collect_clips(deck_dir=args.deck, field=voice.field, force=args.force)
     if not clips:
         print('Nothing to voice.')
         return
     configure_espeak()
-    generate(clips=clips, voice=args.voice, speed=args.speed)
+    generate(clips=clips, voice=voice.voice, speed=args.speed)
 
 
 if __name__ == '__main__':

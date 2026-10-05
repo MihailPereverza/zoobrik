@@ -1,5 +1,6 @@
 import YAML from 'yaml';
 import { splitFrontmatter } from './cardyaml';
+import { deckLangs, normalizeContent, type DeckLangs } from './lang';
 import type { Card, DeckData, Exercise, TemplateSource, Topic } from './types';
 
 export type FileMap = Map<string, string>;
@@ -39,8 +40,8 @@ function mdExercises(files: FileMap, cardDir: string): Exercise[] {
     });
 }
 
-function buildCard(files: FileMap, topicId: string, cardId: string): Card {
-  const dir = `topics/${topicId}/${cardId}`;
+function buildCard(files: FileMap, root: string, langs: DeckLangs, topicId: string, cardId: string): Card {
+  const dir = `${root}topics/${topicId}/${cardId}`;
   const raw = parse(files.get(`${dir}/card.yaml`)) ?? {};
   const theoryFile = raw.content?.theory;
   return {
@@ -48,42 +49,58 @@ function buildCard(files: FileMap, topicId: string, cardId: string): Card {
     id: raw.id ?? cardId,
     topic: topicId,
     path: dir,
-    content: raw.content ?? {},
+    content: normalizeContent(raw.content ?? {}, langs),
     theory: theoryFile ? files.get(`${dir}/${theoryFile}`) ?? null : null,
     exercises: [...(raw.exercises ?? []), ...mdExercises(files, dir)],
     templates: templatesUnder(files, `${dir}/views/`, `card:${topicId}/${cardId}`),
   };
 }
 
-function buildTopic(files: FileMap, topicId: string): Topic {
-  const raw = parse(files.get(`topics/${topicId}/topic.yaml`)) ?? {};
+function buildTopic(files: FileMap, root: string, langs: DeckLangs, topicId: string): Topic {
+  const dir = `${root}topics/${topicId}`;
+  const raw = parse(files.get(`${dir}/topic.yaml`)) ?? {};
   const cardIds = [...files.keys()]
-    .map((p) => new RegExp(`^topics/${topicId}/([^/]+)/card\\.yaml$`).exec(p)?.[1])
+    .map((p) => (p.startsWith(`${dir}/`) ? /^([^/]+)\/card\.yaml$/.exec(p.slice(dir.length + 1))?.[1] : undefined))
     .filter((id): id is string => Boolean(id))
     .sort();
   return {
     ...raw,
     id: raw.id ?? topicId,
     title: raw.title ?? topicId,
-    cards: cardIds.map((id) => buildCard(files, topicId, id)),
-    exercises: parse(files.get(`topics/${topicId}/exercises.yaml`)) ?? [],
-    templates: templatesUnder(files, `topics/${topicId}/views/`, `topic:${topicId}`),
+    cards: cardIds.map((id) => buildCard(files, root, langs, topicId, id)),
+    exercises: parse(files.get(`${dir}/exercises.yaml`)) ?? [],
+    templates: templatesUnder(files, `${dir}/views/`, `topic:${topicId}`),
   };
 }
 
-export function buildDeck(files: FileMap, core: CoreBundle): DeckData {
-  const deck = parse(files.get('deck.yaml'));
-  if (!deck) throw new Error('В репозитории нет deck.yaml');
-  const found = [...files.keys()].map((p) => /^topics\/([^/]+)\/topic\.yaml$/.exec(p)?.[1]).filter((id): id is string => Boolean(id)).sort();
+export function buildDeck(files: FileMap, core: CoreBundle, root = ''): DeckData {
+  const deck = parse(files.get(`${root}deck.yaml`));
+  if (!deck) throw new Error(`Нет ${root}deck.yaml`);
+  const langs = deckLangs(deck);
+  const found = [...files.keys()]
+    .map((p) => (p.startsWith(root) ? /^topics\/([^/]+)\/topic\.yaml$/.exec(p.slice(root.length))?.[1] : undefined))
+    .filter((id): id is string => Boolean(id)).sort();
   const order: string[] = deck.topics ?? [];
   const ids = [...order.filter((t) => found.includes(t)), ...found.filter((t) => !order.includes(t))];
   return {
+    root,
     deck,
-    topics: ids.map((id) => buildTopic(files, id)),
-    templates: [...core.templates, ...templatesUnder(files, 'templates/', 'deck')],
+    topics: ids.map((id) => buildTopic(files, root, langs, id)),
+    templates: [...core.templates, ...templatesUnder(files, `${root}templates/`, 'deck')],
     partials: core.partials,
     baseCss: core.baseCss,
   };
+}
+
+/** Deck folders in a library: the repository root (legacy single-deck layout) and every decks/<id>/. */
+export function deckRoots(paths: Iterable<string>): string[] {
+  const roots: string[] = [];
+  for (const p of paths) {
+    if (p === 'deck.yaml') roots.push('');
+    const m = /^decks\/([^/]+)\/deck\.yaml$/.exec(p);
+    if (m) roots.push(`decks/${m[1]}/`);
+  }
+  return roots.sort();
 }
 
 export const isTextFile = (path: string) => /\.(ya?ml|md|njk|css|js|json|txt)$/i.test(path);

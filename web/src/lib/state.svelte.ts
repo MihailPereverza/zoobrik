@@ -1,5 +1,8 @@
-import { GitHubBackend, serverBackend, type Backend } from './backend';
+import YAML from 'yaml';
+import { GitHubBackend, LocalBackend, localRoots, ServerBackend, serverFiles, type Backend, type StoreKind } from './backend';
+import { deckRoots } from './deckfs';
 import type { RepoConfig } from './github';
+import { deckLangs } from './lang';
 import type { DeckData } from './types';
 import { log } from './log';
 
@@ -43,7 +46,54 @@ export const app = $state({
   online: navigator.onLine,
   goal: Number(stored('zb.goal', '30')) || 30,
   activity: {} as Record<string, number>,
+  decks: [] as DeckRef[],
+  deckKey: stored('zb.deck', ''),
+  scanned: false,
 });
+
+/** A deck in one of the stores: the GitHub library repository, the files on this Mac (dev) or this device. */
+export interface DeckRef { key: string; store: StoreKind; root: string; name: string; lang: string; description: string; source: string; cards: number }
+
+export function openDeck(ref: Pick<DeckRef, 'store' | 'root'>): Backend {
+  if (ref.store === 'github' && app.repo) return new GitHubBackend(app.repo, ref.root);
+  if (ref.store === 'local') return new LocalBackend(ref.root);
+  return new ServerBackend(ref.root);
+}
+
+function describe(store: StoreKind, root: string, files: Map<string, string> | Record<string, string>): DeckRef {
+  const get = (p: string) => (files instanceof Map ? files.get(p) : files[p]);
+  let deck: any = {};
+  try { deck = YAML.parse(get(`${root}deck.yaml`) ?? '') ?? {}; } catch { /* a broken deck.yaml still shows up, so it can be fixed or removed */ }
+  const langs = deckLangs(deck);
+  const keys = files instanceof Map ? [...files.keys()] : Object.keys(files);
+  const cards = keys.filter((p) => p.startsWith(`${root}topics/`) && p.endsWith('/card.yaml') && !(root === '' && p.startsWith('decks/'))).length;
+  return { key: `${store}:${root}`, store, root, name: deck.name ?? (root || 'Колода'), lang: `${langs.target.short} → ${langs.native.short}`, description: deck.description ?? '', source: deck.source?.url ?? '', cards };
+}
+
+/** Lists decks of every available store; a store that fails (offline, revoked token) is skipped, not fatal. */
+export async function scanLibrary(): Promise<DeckRef[]> {
+  const found: DeckRef[] = [];
+  if (app.mode === 'server') {
+    try { const l = await serverFiles(true); found.push(...deckRoots(Object.keys(l.texts)).map((r) => describe('server', r, l.texts))); } catch (e) { log('library', 'server unavailable', String(e)); }
+  } else if (app.repo) {
+    const gh = new GitHubBackend(app.repo);
+    const texts = await gh.allTexts();
+    found.push(...deckRoots(texts.keys()).map((r) => describe('github', r, texts)));
+  }
+  for (const root of await localRoots()) {
+    const { texts } = await new LocalBackend(root).listing();
+    found.push(describe('local', root, new Map([...texts].map(([p, t]) => [root + p, t]))));
+  }
+  return found;
+}
+
+export function setActiveDeck(key: string) {
+  app.deckKey = key;
+  store('zb.deck', key);
+  current = null;
+}
+
+export const activeDeck = (): DeckRef | undefined => app.decks.find((d) => d.key === app.deckKey) ?? app.decks[0];
 
 export async function refreshActivity() {
   try { app.activity = await backend().activity(); } catch { /* activity is decorative: keep the previous numbers */ }
@@ -56,11 +106,15 @@ export function setGoal(goal: number) {
 
 let current: Backend | null = null;
 export function backend(): Backend {
-  if (!current) current = app.mode === 'github' && app.repo ? new GitHubBackend(app.repo) : serverBackend;
+  if (!current) {
+    const ref = activeDeck();
+    current = ref ? openDeck(ref) : app.mode === 'github' && app.repo ? new GitHubBackend(app.repo) : new ServerBackend('');
+  }
   return current;
 }
 
-export const needsSetup = () => app.mode === 'github' && !app.repo;
+/** Nothing to study yet: no repository connected and no deck on the device. */
+export const needsSetup = () => app.scanned && !app.decks.length;
 
 const media = matchMedia('(prefers-color-scheme: dark)');
 
@@ -109,8 +163,12 @@ export async function refreshPending() {
 }
 
 export async function reload() {
-  if (needsSetup()) { app.data = null; app.error = ''; return; }
   try {
+    app.decks = await scanLibrary();
+    app.scanned = true;
+    if (!app.decks.length) { app.data = null; app.error = ''; return; }
+    if (!app.decks.some((d) => d.key === app.deckKey)) setActiveDeck(app.decks[0].key);
+    current = null;
     app.data = await backend().load();
     app.error = '';
     app.version += 1;
@@ -131,7 +189,7 @@ export async function sync(): Promise<string> {
     const res = await backend().sync(app.device);
     log('sync', res.ok ? 'done' : 'failed', res.log);
     app.syncMessage = res.log;
-    if (res.ok && backend().kind === 'github') app.data = await backend().load();
+    if (res.ok && backend().kind === 'github') { app.data = await backend().load(); app.decks = await scanLibrary(); }
     app.version += 1;
     await refreshPending();
     return res.log;

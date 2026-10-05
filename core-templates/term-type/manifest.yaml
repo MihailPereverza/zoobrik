@@ -1,13 +1,13 @@
-id: ru-en-type
-name: Напиши по-английски
+id: term-type
+name: Напиши слово
 trains: [recall, spell]
-reveals: [en, ru]
-asks: [en]
+reveals: [term, meaning]
+asks: [term]
 difficulty: 3
 modes: [learn, review, practice]
 check: { type: fuzzy }
 params:
-  prompt: { type: text, label: На русском, required: true }
+  prompt: { type: text, label: Перевод, required: true }
   answer: { type: text, label: Ответ, required: true }
   accept: { type: list, of: text, label: Тоже верно }
   hint: { type: text, label: Подсказка }
