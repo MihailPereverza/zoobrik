@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
+  import { fly, fade } from 'svelte/transition';
   import ExerciseFrame from './ExerciseFrame.svelte';
   import { app, backend, refreshPending, scheduleSync, sync, touch } from '../lib/state.svelte';
   import { check } from '../lib/check';
@@ -94,6 +95,7 @@
     suggested = grade;
     practice = res.correct && isPrimed(current);
     phase = 'graded';
+    navigator.vibrate?.(res.correct ? 12 : [20, 40, 20]);
     frame?.send({ type: 'graded', correct: res.correct, expected: res.expected, marks: res.marks });
   }
 
@@ -214,10 +216,11 @@
 
 <div class="narrow session">
   {#if phase === 'done' || phase === 'wait'}
-    <section class="finish">
+    <section class="finish surface" in:fly={{ y: 12, duration: 400 }}>
+      <div class="badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg></div>
       <h1 class="display">{phase === 'wait' ? 'Небольшой перерыв' : answered ? 'Готово' : 'Сейчас нечего повторять'}</h1>
-      {#if answered}<p class="num">{answered} заданий, {Math.round((correct / answered) * 100)}% верно</p>{/if}
-      {#if nextDue}<p class="muted">Следующее повторение через {timeTo(nextDue)}.</p>{/if}
+      {#if answered}<p class="num">{answered} заданий · {Math.round((correct / answered) * 100)}% верно</p>{/if}
+      {#if nextDue}<p class="muted">Следующее повторение через {timeTo(nextDue)}</p>{/if}
       <div class="actions">
         {#if phase === 'wait'}<button class="btn" type="button" onclick={() => start(LEARN_AHEAD)}>Продолжить сейчас</button>{/if}
         <a class="btn ghost" href="#/">На главную</a>
@@ -229,29 +232,36 @@
       <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax={queue.length} aria-valuenow={index}><i style:width={progressPct}></i></div>
       <span class="count num">{index + 1}/{queue.length}</span>
     </div>
-    <p class="meta">{modeLabel} · {topicOf(data, item.card).title}{#if item.skills.length} · {item.skills.map((s) => SKILL_LABEL[s]).join(', ')}{/if}</p>
 
-    <article class="exercise">
-      {#if rendered && 'error' in rendered}
-        <p class="err">{rendered.error}</p>
-        <button class="btn small ghost" type="button" onclick={advance}>Пропустить</button>
-      {:else if rendered}
-        {#key item.key}<ExerciseFrame bind:this={frame} srcdoc={rendered.srcdoc} {onevent} />{/key}
-      {/if}
-    </article>
+    {#key item.key}
+      <div class="step" in:fly={{ y: 14, duration: 320, opacity: 0 }}>
+        <p class="meta">{[modeLabel, topicOf(data, item.card).title, item.skills.map((s) => SKILL_LABEL[s]).join(', ')].filter(Boolean).join(' · ')}</p>
+        <article class="exercise surface">
+          {#if rendered && 'error' in rendered}
+            <p class="err">{rendered.error}</p>
+            <button class="btn small ghost" type="button" onclick={advance}>Пропустить</button>
+          {:else if rendered}
+            <ExerciseFrame bind:this={frame} srcdoc={rendered.srcdoc} {onevent} />
+          {/if}
+        </article>
+      </div>
+    {/key}
 
     {#if phase === 'graded' || phase === 'flipped'}
       {#if phase === 'graded' && result}
-        <p class="verdict" class:ok={result.correct} class:bad={!result.correct}>
-          <b>{result.correct ? (result.typo ? 'Верно, с опечаткой' : 'Верно') : 'Неверно'}</b>
-          {#if result.typo && result.expected}<span>— правильно {result.expected}</span>{/if}
-          {#if practice}<span class="muted note">Ответ уже встречался в этом цикле, засчитано как практика.</span>{/if}
-        </p>
+        <div class="verdict" class:ok={result.correct} class:bad={!result.correct} in:fly={{ y: 8, duration: 260 }}>
+          <span class="icon" aria-hidden="true">{#if result.correct}<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>{:else}<svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17" /></svg>{/if}</span>
+          <div>
+            <b>{result.correct ? (result.typo ? 'Верно, но с опечаткой' : 'Верно') : 'Пока неверно'}</b>
+            {#if result.typo && result.expected}<span>Правильно: {result.expected}</span>{/if}
+            {#if practice}<span>Ответ уже встречался в этом цикле — засчитано как практика</span>{/if}
+          </div>
+        </div>
       {/if}
       {#if backRendered && 'srcdoc' in backRendered}
-        <section class="back">{#key item.key}<ExerciseFrame srcdoc={backRendered.srcdoc} onevent={onBackEvent} autofocus={false} />{/key}</section>
+        <section class="back surface" in:fly={{ y: 10, duration: 320, delay: 80 }}>{#key item.key}<ExerciseFrame srcdoc={backRendered.srcdoc} onevent={onBackEvent} autofocus={false} />{/key}</section>
       {/if}
-      <div class="grades">
+      <div class="grades" in:fly={{ y: 24, duration: 300 }}>
         {#each GRADES as { g, label, cls } (g)}
           <button type="button" class="{cls}" class:suggested={g === (phase === 'flipped' ? 3 : suggested)} onclick={() => grade(g)}>
             <span>{label}</span>{#if intervals}<small class="num">{intervals[g]}</small>{/if}
@@ -259,7 +269,7 @@
         {/each}
       </div>
     {:else if item.mode !== 'intro'}
-      <div class="tools">
+      <div class="tools" in:fade={{ duration: 200 }}>
         <button class="link" type="button" onclick={giveUp}>Не знаю</button>
         <button class="link" type="button" onclick={skip}>Пропустить</button>
       </div>
@@ -269,31 +279,41 @@
 </div>
 
 <style>
-  .session { padding-top: 16px; padding-bottom: 24px; }
-  .head { display: flex; align-items: center; gap: 14px; }
-  .close { display: grid; place-items: center; width: 28px; height: 28px; color: var(--ink-3); }
+  .session { padding-top: 14px; padding-bottom: 24px; }
+  .head { display: flex; align-items: center; gap: 14px; height: 36px; }
+  .close { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: var(--ink-3); transition: background-color .2s; }
+  .close:hover { background: var(--soft); color: var(--ink); }
   .close svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; }
-  .progress { flex: 1; height: 2px; background: var(--rule); overflow: hidden; }
-  .progress i { display: block; height: 100%; background: var(--ink); transition: width .3s; }
-  .count { font-size: 13px; color: var(--ink-3); }
-  .meta { margin: 18px 0 22px; font-size: 13px; color: var(--ink-3); }
-  .exercise { min-height: 220px; }
+  .progress { flex: 1; height: 6px; border-radius: 3px; background: var(--rule); overflow: hidden; }
+  .progress i { display: block; height: 100%; border-radius: 3px; background: var(--good); transition: width .5s var(--ease); }
+  .count { font-size: 13px; color: var(--ink-3); min-width: 40px; text-align: right; }
+  .meta { margin: 14px 4px 10px; font-size: 13px; color: var(--ink-3); }
+  .exercise { padding: 26px 24px 22px; min-height: 240px; }
+  @media (max-width: 520px) { .exercise { padding: 22px 18px 18px; } }
   .err { color: var(--again); }
-  .tools { display: flex; justify-content: space-between; margin-top: 18px; }
-  .link { background: none; border: 0; color: var(--ink-3); font-size: 14px; cursor: pointer; padding: 6px 0; }
+  .tools { display: flex; justify-content: space-between; margin: 14px 4px 0; }
+  .link { background: none; border: 0; color: var(--ink-3); font-size: 14px; cursor: pointer; padding: 8px 4px; border-radius: 8px; transition: color .2s; }
   .link:hover { color: var(--ink); }
-  .verdict { margin: 18px 0 0; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
-  .verdict.ok b { color: var(--good); }
-  .verdict.bad b { color: var(--again); }
-  .note { flex-basis: 100%; font-size: 13px; }
-  .back { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--rule); }
-  .grades { position: sticky; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 18px; padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0px)); background: var(--paper); }
-  .grades button { display: grid; gap: 2px; padding: 11px 4px 9px; border-radius: 10px; border: 1px solid var(--rule-strong); background: var(--paper); cursor: pointer; font-size: 15px; }
-  .grades button small { font-size: 12px; color: var(--ink-3); }
-  .grades button:hover { border-color: var(--ink-3); }
-  .grades button.suggested { border-color: var(--ink); }
-  .grades .again span { color: var(--again); } .grades .hard span { color: var(--hard); } .grades .good span { color: var(--good); } .grades .easy span { color: var(--easy); }
-  .finish { padding-top: 48px; }
-  .actions { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
-  .toast { margin-top: 12px; font-size: 13px; color: var(--again); }
+  .verdict { margin-top: 12px; display: flex; gap: 12px; align-items: center; padding: 12px 16px; border-radius: 16px; }
+  .verdict.ok { background: var(--good-bg); color: var(--good); }
+  .verdict.bad { background: var(--again-bg); color: var(--again); }
+  .verdict div { display: grid; gap: 2px; }
+  .verdict b { font-weight: 600; }
+  .verdict span:not(.icon) { font-size: 14px; opacity: .85; }
+  .icon { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: currentColor; flex: none; }
+  .icon svg { width: 16px; height: 16px; fill: none; stroke: var(--card); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .back { margin-top: 12px; padding: 22px 24px; }
+  @media (max-width: 520px) { .back { padding: 18px; } }
+  .grades { position: sticky; bottom: 0; z-index: 5; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(to bottom, transparent, var(--paper) 22%); }
+  .grades button { display: grid; gap: 2px; padding: 12px 4px 10px; border-radius: 14px; border: 1.5px solid transparent; background: var(--card); box-shadow: var(--shadow); cursor: pointer; font-size: 15px; font-weight: 500; transition: transform .15s var(--ease), border-color .2s; }
+  .grades button:active { transform: scale(.96); }
+  .grades button small { font-size: 12px; font-weight: 400; color: var(--ink-3); }
+  .grades button.suggested { border-color: currentColor; }
+  .grades .again { color: var(--again); } .grades .hard { color: var(--hard); } .grades .good { color: var(--good); } .grades .easy { color: var(--easy); }
+  .finish { margin-top: 36px; padding: 36px 28px 30px; display: grid; justify-items: center; text-align: center; gap: 2px; }
+  .finish p { margin: 2px 0; }
+  .badge { width: 56px; height: 56px; border-radius: 50%; background: var(--good-bg); display: grid; place-items: center; margin-bottom: 10px; }
+  .badge svg { width: 26px; height: 26px; fill: none; stroke: var(--good); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
+  .toast { margin: 12px 4px 0; font-size: 13px; color: var(--again); }
 </style>

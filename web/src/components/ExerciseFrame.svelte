@@ -10,6 +10,7 @@
   let { srcdoc, onevent, autofocus = true }: Props = $props();
   let iframe: HTMLIFrameElement;
   let height = $state(280);
+  let shown = $state(false);
 
   export function send(message: Record<string, unknown>) {
     iframe?.contentWindow?.postMessage({ zb: 1, ...message }, '*');
@@ -26,7 +27,7 @@
     const onMessage = (event: MessageEvent) => {
       if (event.source !== iframe?.contentWindow || !event.data?.zb) return;
       const { type, ...data } = event.data;
-      if (type === 'resize') { height = Math.max(160, data.height); return; }
+      if (type === 'resize') { height = Math.max(120, data.height); shown = true; return; }
       onevent(type, data);
     };
     window.addEventListener('message', onMessage);
@@ -40,9 +41,11 @@
   sandbox="allow-scripts"
   title="Задание"
   style:height="{height}px"
+  class:shown
   onload={() => autofocus && focus()}
 ></iframe>
 
 <style>
-  iframe { display: block; width: 100%; border: 0; background: transparent; }
+  iframe { display: block; width: 100%; border: 0; background: transparent; opacity: 0; transition: opacity .25s var(--ease), height .25s var(--ease); }
+  iframe.shown { opacity: 1; }
 </style>

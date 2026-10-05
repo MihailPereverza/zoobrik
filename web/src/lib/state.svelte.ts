@@ -46,7 +46,7 @@ export function applyTheme() {
   const effective = app.theme === 'system' ? (media.matches ? 'dark' : 'light') : app.theme;
   app.effectiveTheme = effective;
   document.documentElement.dataset.theme = effective;
-  document.querySelector('meta[name="theme-color"]:not([media])')?.setAttribute('content', effective === 'dark' ? '#121212' : '#FFFFFF');
+  document.querySelector('meta[name="theme-color"]:not([media])')?.setAttribute('content', effective === 'dark' ? '#0F1013' : '#F3F4F6');
 }
 media.addEventListener('change', applyTheme);
 

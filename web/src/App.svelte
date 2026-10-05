@@ -56,7 +56,7 @@
   {#if needsSetup()}
     <div class="narrow"><Connect /></div>
   {:else if app.error}
-    <div class="narrow error panel">
+    <div class="narrow error panel appear">
       <b>Не удалось загрузить колоду.</b>
       <p class="mono">{app.error}</p>
       <button class="btn small" type="button" onclick={reload}>Повторить</button>
@@ -81,14 +81,17 @@
 </main>
 
 <style>
-  .top { position: sticky; top: 0; z-index: 10; background: var(--paper); border-bottom: 1px solid var(--rule); padding-top: env(safe-area-inset-top, 0px); }
-  .bar { display: flex; align-items: center; gap: 18px; height: 54px; max-width: 980px; }
+  .top { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--paper) 82%, transparent); backdrop-filter: saturate(1.4) blur(14px); -webkit-backdrop-filter: saturate(1.4) blur(14px); padding-top: env(safe-area-inset-top, 0px); }
+  .bar { display: flex; align-items: center; gap: 18px; height: 56px; max-width: 1000px; }
   .brand { font: 600 16px/1 var(--font-body); text-decoration: none; letter-spacing: -.01em; }
   nav { display: flex; gap: 18px; margin-left: auto; }
-  nav a { text-decoration: none; font-size: 14px; color: var(--ink-3); padding: 6px 0; }
-  nav a:hover, nav a.on { color: var(--ink); }
+  nav { gap: 4px; }
+  nav a { text-decoration: none; font-size: 14px; color: var(--ink-3); padding: 7px 12px; border-radius: 999px; transition: background-color .2s, color .2s; }
+  nav a:hover { color: var(--ink); }
+  nav a.on { color: var(--ink); background: var(--card); box-shadow: var(--shadow); }
   .theme, .sync { position: relative; width: 32px; height: 32px; border-radius: 8px; border: 0; background: transparent; display: grid; place-items: center; cursor: pointer; color: var(--ink-3); }
-  .theme:hover, .sync:hover { color: var(--ink); }
+  .theme:hover, .sync:hover { color: var(--ink); background: var(--soft); }
+  .theme, .sync { border-radius: 50%; transition: background-color .2s, color .2s; }
   .theme svg, .sync svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
   .theme small { display: none; }
   .sync.busy svg { animation: spin 1s linear infinite; }
@@ -97,6 +100,7 @@
   .sync .dot.offline { background: var(--ink-3); }
   main { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
   .error, .loading { margin-top: 40px; }
-  .error { padding: 16px; }
-  @media (max-width: 520px) { .bar { gap: 12px; } nav { gap: 14px; } }
+  .error { padding: 18px; }
+  .loading { text-align: center; animation: fade .6s ease both; }
+  @media (max-width: 520px) { .bar { gap: 6px; } nav a { padding: 7px 9px; font-size: 13px; } }
 </style>
