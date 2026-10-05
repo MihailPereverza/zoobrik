@@ -6,7 +6,10 @@ import { deckApi } from './server/deckApi.ts';
 
 const root = path.resolve(import.meta.dirname, '..');
 
+const build = new Date().toISOString().slice(0, 16).replace('T', ' ');
+
 export default defineConfig({
+  define: { __BUILD__: JSON.stringify(build) },
   base: process.env.ZOOBRIK_BASE ?? '/',
   plugins: [
     svelte(),

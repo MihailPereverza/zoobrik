@@ -20,6 +20,19 @@
     downloading = `Скачано ${urls.length} файлов — аудио доступно офлайн.`;
   }
 
+  let updating = $state(false);
+  async function hardUpdate() {
+    updating = true;
+    try {
+      const regs = await navigator.serviceWorker?.getRegistrations?.() ?? [];
+      await Promise.all(regs.map((r) => r.unregister()));
+      const keys = await caches?.keys?.() ?? [];
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    } finally {
+      location.reload();
+    }
+  }
+
   function useServer(server: boolean) {
     setRepo(app.repo, server ? 'server' : 'github');
     reload();
@@ -78,6 +91,12 @@
       <input id="device" class="mono" bind:value={device} aria-label="Имя устройства" />
       <button class="btn small" type="button" onclick={() => setDevice(device)} disabled={device === app.device}>Сохранить</button>
     </div>
+  </section>
+
+  <section class="panel box">
+    <h2>Версия приложения</h2>
+    <p class="muted">Сборка от {__BUILD__} (UTC). Обновления подтягиваются сами при открытии. Если что-то выглядит по-старому — обновите вручную, ваш прогресс и колода сохранятся.</p>
+    <button class="btn ghost" type="button" onclick={hardUpdate} disabled={updating}>{updating ? 'Обновляю…' : 'Обновить приложение'}</button>
   </section>
 
   <section class="panel box">
