@@ -34,3 +34,15 @@ cd decks/english-notebook && git remote add origin git@github.com:<you>/english-
 Для озвучки нужен `brew install espeak-ng` (уже установлен).
 
 `app/` — Android-модуль (Jetpack Compose, `ru.zoobrik`), сборка через Gradle из корня.
+
+## Телефон
+
+Приложение: https://mihailpereverza.github.io/zoobrik/ (собирается GitHub Actions при каждом push в `web/` или `core-templates/`).
+
+1. Выпустить fine-grained токен: GitHub → Settings → Developer settings → Fine-grained tokens → доступ только к
+   `MihailPereverza/english-notebook`, Repository permissions → Contents: Read and write.
+2. Открыть адрес на телефоне: Android (Chrome) — ⋮ → «Установить приложение»; iPhone (Safari) — «Поделиться» → «На экран Домой».
+3. Ввести `MihailPereverza/english-notebook` и токен. Колода и прогресс кешируются на устройстве, работают офлайн,
+   ответы уходят коммитами в репозиторий колоды.
+
+Локальная копия колоды на Mac обновляется обычным `git pull` в `decks/english-notebook`.
