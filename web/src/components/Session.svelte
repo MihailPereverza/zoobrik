@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
-  import { fly, fade, slide } from 'svelte/transition';
+  import { fly, fade } from 'svelte/transition';
   import { renderMarkdown } from '../lib/md';
   import ExerciseFrame from './ExerciseFrame.svelte';
   import { app, backend, refreshPending, scheduleSync, sync, touch } from '../lib/state.svelte';
@@ -97,7 +97,6 @@
     practice = res.correct && isPrimed(current);
     phase = 'graded';
     navigator.vibrate?.(res.correct ? 12 : [20, 40, 20]);
-    frame?.send({ type: 'graded', correct: res.correct, expected: res.expected, marks: res.marks });
   }
 
   function giveUp() {
@@ -105,7 +104,6 @@
     const expected = String(item.exercise.params?.answer ?? '');
     result = { correct: false, typo: false, expected, suggested: 1 };
     suggested = 1; phase = 'graded';
-    frame?.send({ type: 'graded', correct: false, expected });
   }
 
   function skip() {
@@ -247,7 +245,7 @@
     {#key item.key}
       <div class="step" in:fly={{ y: 14, duration: 320, opacity: 0 }}>
         <p class="meta">{[modeLabel, topicOf(data, item.card).title, item.skills.map((s) => SKILL_LABEL[s]).join(', ')].filter(Boolean).join(' · ')}</p>
-        {#if phase === 'answer'}<article class="exercise surface" out:slide={{ duration: 260 }}>
+        {#if phase === 'answer'}<article class="exercise surface">
           {#if rendered && 'error' in rendered}
             <p class="err">{rendered.error}</p>
             <button class="btn small ghost" type="button" onclick={advance}>Пропустить</button>

@@ -16,6 +16,7 @@ export default defineConfig({
     }),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: false,
       includeAssets: ['icon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'Zoobrik',
