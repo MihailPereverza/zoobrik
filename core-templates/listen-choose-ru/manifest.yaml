@@ -1,0 +1,13 @@
+id: listen-choose-ru
+name: Послушай и выбери перевод
+trains: [listen]
+reveals: [ru, audio]
+asks: [ru]
+difficulty: 2
+modes: [learn, review, practice]
+check: { type: choice }
+params:
+  audio: { type: audio, label: Аудио, required: true }
+  answer: { type: text, label: Перевод, required: true }
+  options: { type: list, of: text, label: Варианты, min: 3, max: 5 }
+autoplay: true

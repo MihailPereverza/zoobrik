@@ -1,0 +1,10 @@
+{% import "core/_macros" as m %}
+<div class="zb">
+  <div class="zb-kicker">Вспомни перевод</div>
+  <div class="zb-row">{{ m.play(media(params.audio or 'word.mp3')) }}<h1 class="zb-prompt word">{{ params.front }}</h1></div>
+  <button class="zb-flip" type="button" data-zb="flip">Показать ответ</button>
+  <div class="zb-back" data-zb-back hidden>
+    <div class="zb-answer">{{ params.back }}</div>
+    {% if params.note %}<div class="zb-note zb-md">{{ params.note | md | safe }}</div>{% endif %}
+  </div>
+</div>

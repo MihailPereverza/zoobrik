@@ -1,0 +1,16 @@
+import { chromium } from 'playwright';
+const [,, shots] = process.argv;
+const browser = await chromium.launch();
+const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 2 });
+const errors = [];
+page.on('pageerror', (e) => errors.push(e.message));
+await page.goto('http://localhost:5173/#/card/grammar-present-simple/present-simple-he-she');
+await page.waitForSelector('iframe');
+await page.locator('.row', { hasText: 'md' }).first().click().catch(() => {});
+await page.waitForTimeout(800);
+await page.screenshot({ path: `${shots}/card.png`, fullPage: true });
+await page.goto('http://localhost:5173/#/stats');
+await page.waitForTimeout(800);
+await page.screenshot({ path: `${shots}/stats.png`, fullPage: true });
+console.log('errors', errors);
+await browser.close();

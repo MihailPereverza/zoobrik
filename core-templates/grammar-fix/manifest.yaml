@@ -1,0 +1,14 @@
+id: grammar-fix
+name: Исправь ошибку
+trains: [apply]
+reveals: [en]
+asks: []
+difficulty: 4
+modes: [learn, review, practice]
+check: { type: fuzzy }
+params:
+  wrong: { type: text, label: Предложение с ошибкой, required: true }
+  answer: { type: text, label: Исправленное, required: true }
+  accept: { type: list, of: text, label: Тоже верно }
+  translation: { type: text, label: Перевод }
+  audio: { type: audio, label: Озвучка исправленного }

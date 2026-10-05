@@ -1,0 +1,10 @@
+id: match-pairs
+name: Соедини пары
+trains: [recognize]
+reveals: [en, ru]
+asks: []
+difficulty: 1
+modes: [learn, review, practice]
+check: { type: pairs }
+params:
+  pairs: { type: list, of: pair, label: Пары en — ru, min: 3, max: 6 }

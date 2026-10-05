@@ -1,0 +1,193 @@
+<script lang="ts">
+  import YAML from 'yaml';
+  import ExerciseFrame from './ExerciseFrame.svelte';
+  import { app, touch } from '../lib/state.svelte';
+  import { patchExercise } from '../lib/api';
+  import { check } from '../lib/check';
+  import { formatInterval, retrievability } from '../lib/fsrs';
+  import { renderMarkdown } from '../lib/md';
+  import { mediaUrl, render, topicOf, type Rendered } from '../lib/render';
+  import { cardSkills, exerciseSkills, manifestOf } from '../lib/scheduler';
+  import { STAGE_LABEL, stageOf } from '../lib/summary';
+  import type { CheckResult, Exercise, ExerciseStatus } from '../lib/types';
+
+  let { topicId, cardId }: { topicId: string; cardId: string } = $props();
+  const data = $derived(app.data!);
+  const card = $derived(data.topics.find((t) => t.id === topicId)?.cards.find((c) => c.id === cardId));
+  const now = $derived.by(() => { void app.version; return new Date(); });
+
+  let selectedId = $state('');
+  let salt = $state(0);
+  let frame = $state<ExerciseFrame>();
+  let verdict = $state<CheckResult | null>(null);
+  let editing = $state(false);
+  let draft = $state('');
+  let message = $state('');
+  const audio = new Audio();
+
+  const selected = $derived(card?.exercises.find((e) => e.id === selectedId) ?? card?.exercises[0]);
+  const rendered = $derived<Rendered | { error: string } | null>(card && selected ? render(data, card, selected, selected.template === 'intro' ? 'intro' : 'review', app.effectiveTheme, `p${salt}`) : null);
+
+  function select(ex: Exercise) { selectedId = ex.id; verdict = null; editing = false; message = ''; }
+  function replay() { salt += 1; verdict = null; }
+
+  function onevent(type: string, d: any) {
+    if (!card || !selected || !rendered || !('template' in rendered)) return;
+    if (type === 'play') { audio.src = d.src; audio.playbackRate = d.rate ?? 1; audio.play().catch(() => {}); }
+    if (type === 'answer') {
+      verdict = check(selected, rendered.template.manifest, d.value, rendered.md);
+      frame?.send({ type: 'graded', correct: verdict.correct, expected: verdict.expected, marks: verdict.marks });
+    }
+  }
+
+  async function setStatus(ex: Exercise, status: ExerciseStatus) {
+    if (!card) return;
+    try {
+      await patchExercise({ cardPath: card.path, exerciseId: ex.id, file: ex.file, patch: { status } });
+      ex.status = status; touch(); message = '';
+    } catch (e) { message = (e as Error).message; }
+  }
+
+  function startEdit() {
+    if (!selected) return;
+    draft = selected.file ? selected.params.markdown : YAML.stringify(selected.params, { lineWidth: 0 });
+    editing = true; message = '';
+  }
+
+  async function saveEdit() {
+    if (!card || !selected) return;
+    try {
+      const params = selected.file ? { markdown: draft } : YAML.parse(draft);
+      await patchExercise({ cardPath: card.path, exerciseId: selected.id, file: selected.file, patch: { params } });
+      selected.params = params; editing = false; salt += 1; touch(); message = 'Сохранено';
+    } catch (e) { message = `Не сохранено: ${(e as Error).message}`; }
+  }
+
+  const stat = (id: string) => card?.progress?.exercises?.[id];
+</script>
+
+<div class="wrap">
+  {#if !card}
+    <p class="muted" style="margin-top:40px">Карточка не найдена. <a href="#/">На главную</a></p>
+  {:else}
+    <a class="back muted" href="#/topic/{card.topic}">← {topicOf(data, card).title}</a>
+    <div class="layout">
+      <section class="content">
+        <div class="eyebrow">{card.kind} · <span class="chip {stageOf(card)}">{STAGE_LABEL[stageOf(card)]}</span></div>
+        <div class="title">
+          {#if card.content.audio}<button class="play" type="button" aria-label="Прослушать" onclick={() => { audio.src = mediaUrl(card, card.content.audio!); audio.play(); }}><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z" /></svg></button>{/if}
+          <h1 class="display">{card.content.en ?? card.content.title}</h1>
+        </div>
+        {#if card.content.ipa}<div class="mono muted">/{card.content.ipa}/ {card.content.pos ? `· ${card.content.pos}` : ''}</div>{/if}
+        {#if card.content.formula}<div class="mono formula">{card.content.formula}</div>{/if}
+        {#if card.content.ru}<p class="ru">{card.content.ru}{#if card.content.alt_ru?.length}<span class="muted"> · {card.content.alt_ru.join(', ')}</span>{/if}</p>{/if}
+        {#if card.content.note}<div class="md note">{@html renderMarkdown(card.content.note)}</div>{/if}
+        {#if card.theory}<details class="theory"><summary>Теория</summary><div class="md">{@html renderMarkdown(card.theory)}</div></details>{/if}
+
+        <h2 class="section">Примеры</h2>
+        <ul class="examples">
+          {#each card.content.examples ?? [] as ex (ex.id)}
+            <li>
+              <button class="play small" type="button" aria-label="Прослушать" onclick={() => { audio.src = mediaUrl(card, ex.audio ?? ''); audio.play(); }}><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z" /></svg></button>
+              <div><div>{ex.en}</div><div class="muted small">{ex.ru}</div></div>
+            </li>
+          {/each}
+        </ul>
+
+        <h2 class="section">Навыки</h2>
+        <table class="skills">
+          <thead><tr><th>Навык</th><th>Память</th><th>Стабильность</th><th>Следующий</th></tr></thead>
+          <tbody>
+            {#each cardSkills(data, card) as s (s)}
+              {@const st = card.progress?.skills?.[s]}
+              <tr>
+                <td>{s}</td>
+                <td class="mono">{st ? `${Math.round(retrievability(data.deck, s, st, now) * 100)}%` : '—'}</td>
+                <td class="mono">{st ? `${st.s} дн` : '—'}</td>
+                <td class="mono">{st ? (new Date(st.due) <= now ? 'сейчас' : `через ${formatInterval(now, new Date(st.due))}`) : 'новый'}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </section>
+
+      <section class="editor">
+        <div class="list panel">
+          <div class="eyebrow">{card.exercises.length} заданий</div>
+          {#each card.exercises as ex (ex.id)}
+            {@const s = stat(ex.id)}
+            <button type="button" class="row" class:on={ex.id === selected?.id} onclick={() => select(ex)}>
+              <span class="chip {ex.status}">{ex.status}</span>
+              <b>{ex.id}</b>
+              <small class="mono">{ex.template}{exerciseSkills(data, card, ex).length ? ` · ${exerciseSkills(data, card, ex).join(', ')}` : ''}</small>
+              {#if s}<small class="mono stat">{Math.round((s.correct / Math.max(1, s.shown)) * 100)}% · {s.shown}</small>{/if}
+            </button>
+          {/each}
+        </div>
+
+        {#if selected}
+          <div class="preview">
+            <div class="bar">
+              <span class="mono muted">{manifestOf(data, card, selected)?.name ?? selected.template}</span>
+              <div class="actions">
+                {#each ['ready', 'draft', 'off'] as const as st (st)}
+                  <button type="button" class="btn small ghost" class:active={selected.status === st} onclick={() => setStatus(selected, st)}>{st}</button>
+                {/each}
+                <button type="button" class="btn small ghost" onclick={replay}>Заново</button>
+                <button type="button" class="btn small ghost" onclick={startEdit}>Параметры</button>
+              </div>
+            </div>
+            <article class="paper-card frame">
+              {#if rendered && 'error' in rendered}<p class="err">{rendered.error}</p>
+              {:else if rendered}{#key rendered.srcdoc}<ExerciseFrame bind:this={frame} srcdoc={rendered.srcdoc} {onevent} />{/key}{/if}
+            </article>
+            {#if verdict}<p class="verdict" class:ok={verdict.correct}>{verdict.correct ? (verdict.typo ? 'Верно, с опечаткой' : 'Верно') : `Неверно · правильно: ${verdict.expected}`} → оценка {verdict.suggested}</p>{/if}
+            {#if editing}
+              <textarea class="mono" bind:value={draft} rows="12" spellcheck="false"></textarea>
+              <div class="actions"><button class="btn small" type="button" onclick={saveEdit}>Сохранить</button><button class="btn small ghost" type="button" onclick={() => (editing = false)}>Отмена</button></div>
+            {/if}
+            {#if message}<p class="muted small">{message}</p>{/if}
+          </div>
+        {/if}
+      </section>
+    </div>
+  {/if}
+</div>
+
+<style>
+  .back { display: inline-block; margin: 24px 0 14px; font-size: 14px; text-decoration: none; }
+  .layout { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 32px; align-items: start; }
+  @media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+  .title { display: flex; gap: 14px; align-items: center; }
+  .play { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--ink); background: var(--card); display: grid; place-items: center; cursor: pointer; flex: none; padding: 0; }
+  .play svg { width: 40%; fill: currentColor; margin-left: 8%; }
+  .play.small { width: 32px; height: 32px; }
+  .ru { font-size: 19px; font-weight: 500; margin: 10px 0; }
+  .formula { color: var(--accent); margin-top: 6px; }
+  .note { color: var(--ink-2); font-size: 15px; padding: 12px 14px; background: var(--card); border-radius: 10px; border: 1px solid var(--rule); }
+  .theory { margin-top: 12px; background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 10px 14px; }
+  .theory summary { cursor: pointer; font-weight: 600; }
+  .examples { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+  .examples li { display: grid; grid-template-columns: 32px 1fr; gap: 12px; align-items: center; }
+  .small { font-size: 14px; }
+  .skills { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .skills th, .skills td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--rule); }
+  .skills th { font: 500 11px/1 var(--font-mono); text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3); }
+  .editor { display: grid; gap: 14px; position: sticky; top: 72px; }
+  @media (max-width: 900px) { .editor { position: static; } }
+  .list { padding: 10px; display: grid; gap: 2px; max-height: 300px; overflow-y: auto; }
+  .list .eyebrow { padding: 4px 6px 8px; }
+  .row { display: grid; grid-template-columns: 52px 46px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px; border: 0; border-radius: 7px; background: none; text-align: left; cursor: pointer; }
+  .row:hover { background: var(--soft); }
+  .row.on { background: var(--soft); box-shadow: inset 2px 0 0 var(--accent); }
+  .row small { color: var(--ink-3); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .chip { justify-content: center; }
+  .bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; font-size: 13px; }
+  .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .btn.active { border-color: var(--ink); background: var(--soft); }
+  .frame { padding: 18px; }
+  .verdict { font-size: 14px; color: var(--again); margin: 8px 0 0; }
+  .verdict.ok { color: var(--good); }
+  textarea { width: 100%; margin-top: 10px; font-size: 13px; padding: 10px; border-radius: 8px; border: 1px solid var(--rule-strong); background: var(--card); color: var(--ink); resize: vertical; }
+  .err { color: var(--again); }
+</style>

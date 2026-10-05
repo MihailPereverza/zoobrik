@@ -1,0 +1,7 @@
+{% import "core/_macros" as m %}
+<div class="zb">
+  <div class="zb-kicker">Как это по-английски?</div>
+  <h1 class="zb-prompt">{{ params.prompt }}</h1>
+  {{ m.options(params.options, seed) }}
+  <div class="zb-back" data-zb-back hidden>{{ m.explanation(params) }}</div>
+</div>

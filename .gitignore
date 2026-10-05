@@ -1,0 +1,21 @@
+# Web
+node_modules/
+dist/
+# Python tools
+.venv/
+.venv-*/
+__pycache__/
+# Android / Gradle
+.gradle/
+.kotlin/
+build/
+local.properties
+*.iml
+.idea/
+captures/
+.externalNativeBuild/
+.cxx/
+# OS
+.DS_Store
+# Decks are separate git repositories (progress is committed there on every sync).
+decks/*/

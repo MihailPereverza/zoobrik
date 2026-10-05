@@ -1,0 +1,15 @@
+id: cloze-type
+name: Впиши пропущенное
+trains: [context]
+reveals: [en]
+asks: [en]
+difficulty: 3
+modes: [learn, review, practice]
+check: { type: fuzzy }
+params:
+  text: { type: text, label: Предложение с ___, required: true }
+  answer: { type: text, label: Что вписать, required: true }
+  accept: { type: list, of: text, label: Тоже верно }
+  hint: { type: text, label: Подсказка }
+  translation: { type: text, label: Перевод }
+  audio: { type: audio, label: Озвучка полного предложения }

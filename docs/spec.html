@@ -1,0 +1,1362 @@
+<title>Спецификация Zoobrik</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky table of contents + one reading column; exercise mockups are drawn as ruled index cards with a red header line. */
+:root {
+  --paper: #F3F5F8;
+  --card: #FFFFFF;
+  --ink: #141820;
+  --ink-2: #485164;
+  --ink-3: #7B8496;
+  --rule: #DCE3EE;
+  --rule-strong: #B3C3DA;
+  --margin: #E0464B;
+  --code-bg: #EBEFF5;
+  --again: #CF3F3A;
+  --hard: #B97C0C;
+  --good: #23824F;
+  --easy: #2A64CC;
+  --font-display: 'Unbounded', 'Arial Black', system-ui, sans-serif;
+  --font-body: 'Golos Text', -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --step--1: 0.8125rem;
+  --step-0: 1rem;
+  --step-1: 1.1875rem;
+  --step-2: 1.5rem;
+  --step-3: clamp(1.9rem, 4.5vw, 2.9rem);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0E1116; --card: #161A21; --ink: #E7EBF1; --ink-2: #A8B1C0; --ink-3: #79839A;
+    --rule: #232B38; --rule-strong: #34425A; --margin: #FF6A6E; --code-bg: #1A1F28;
+    --again: #F06A62; --hard: #E0A93A; --good: #4CC384; --easy: #6E9BF2;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0E1116; --card: #161A21; --ink: #E7EBF1; --ink-2: #A8B1C0; --ink-3: #79839A;
+  --rule: #232B38; --rule-strong: #34425A; --margin: #FF6A6E; --code-bg: #1A1F28;
+  --again: #F06A62; --hard: #E0A93A; --good: #4CC384; --easy: #6E9BF2;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
+body {
+  background: var(--paper); color: var(--ink);
+  font: 400 var(--step-0)/1.62 var(--font-body);
+  padding-inline: 16px; padding-block: 0 96px;
+  -webkit-font-smoothing: antialiased;
+}
+.shell { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 56px; }
+@media (max-width: 900px) { .shell { grid-template-columns: minmax(0, 1fr); gap: 0; } }
+
+/* TOC */
+nav.toc { position: sticky; top: env(safe-area-inset-top, 0px); align-self: start; padding-block: 40px; max-height: 100vh; overflow-y: auto; }
+nav.toc .brand { font: 700 1.05rem/1 var(--font-display); letter-spacing: -0.01em; display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+nav.toc .brand i { width: 22px; height: 16px; border-radius: 3px; background: var(--card); border: 1px solid var(--rule-strong); border-top: 3px solid var(--margin); display: inline-block; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+nav.toc a { display: grid; grid-template-columns: 26px 1fr; padding: 5px 8px; border-radius: 6px; color: var(--ink-2); text-decoration: none; font-size: var(--step--1); }
+nav.toc a span { font-family: var(--font-mono); color: var(--ink-3); font-size: 0.72rem; padding-top: 2px; }
+nav.toc a:hover, nav.toc a:focus-visible { background: var(--card); color: var(--ink); outline: none; }
+@media (max-width: 900px) {
+  nav.toc { position: static; max-height: none; padding-block: 24px 0; }
+  nav.toc ol { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+}
+
+main { min-width: 0; padding-block: 40px; }
+.wrap { max-width: 760px; }
+
+/* Hero */
+header.hero { padding-block: 8px 40px; border-bottom: 1px solid var(--rule); margin-bottom: 8px; }
+.eyebrow { font: 500 0.72rem/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+h1 { font: 700 var(--step-3)/1.05 var(--font-display); letter-spacing: -0.025em; margin: 14px 0 18px; text-wrap: balance; }
+h1 em { font-style: normal; color: var(--margin); }
+.lede { font-size: var(--step-1); color: var(--ink-2); max-width: 62ch; margin: 0; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 24px; font: 400 var(--step--1)/1.4 var(--font-mono); color: var(--ink-3); }
+.meta b { color: var(--ink); font-weight: 500; }
+
+/* Sections */
+section { padding-block: 48px 8px; border-top: 1px solid var(--rule); }
+section:first-of-type { border-top: 0; }
+h2 { font: 700 var(--step-2)/1.15 var(--font-display); letter-spacing: -0.02em; margin: 0 0 18px; display: flex; gap: 14px; align-items: baseline; text-wrap: balance; }
+h2 .num { font: 500 0.8rem/1 var(--font-mono); color: var(--margin); letter-spacing: 0; }
+h3 { font: 600 var(--step-1)/1.3 var(--font-body); margin: 32px 0 10px; text-wrap: balance; }
+h4 { font: 600 0.72rem/1 var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); margin: 24px 0 10px; }
+p, li { max-width: 68ch; }
+p { margin: 0 0 14px; }
+ul, ol { padding-left: 1.25em; margin: 0 0 16px; }
+li { margin-bottom: 6px; }
+li::marker { color: var(--ink-3); }
+a { color: inherit; text-decoration-color: var(--margin); text-underline-offset: 3px; }
+strong { font-weight: 600; }
+code { font: 400 0.86em/1 var(--font-mono); background: var(--code-bg); padding: 2px 5px; border-radius: 4px; }
+pre { font: 400 0.8rem/1.6 var(--font-mono); background: var(--code-bg); border-radius: 10px; padding: 16px 18px; overflow-x: auto; margin: 0 0 18px; tab-size: 2; }
+pre code { background: none; padding: 0; font-size: inherit; }
+pre .c { color: var(--ink-3); }
+pre .k { color: var(--margin); }
+.file { font: 500 0.72rem/1 var(--font-mono); color: var(--ink-3); margin: 0 0 6px; display: block; }
+
+.callout { border-left: 3px solid var(--margin); padding: 4px 0 4px 16px; margin: 20px 0; color: var(--ink-2); }
+.callout strong { color: var(--ink); }
+.decision { display: inline-flex; gap: 6px; align-items: center; font: 500 0.7rem/1 var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--good); border: 1px solid currentColor; border-radius: 99px; padding: 4px 9px; margin-bottom: 10px; }
+.decision.open { color: var(--hard); }
+
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin: 16px 0 22px; }
+.tile { background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; min-width: 0; }
+.tile h5 { margin: 0 0 6px; font: 600 var(--step-0)/1.3 var(--font-body); }
+.tile p { margin: 0; font-size: 0.92rem; color: var(--ink-2); }
+.tile .tag { font: 500 0.7rem/1 var(--font-mono); color: var(--ink-3); display: block; margin-bottom: 8px; }
+
+.table-wrap { overflow-x: auto; margin: 12px 0 22px; border: 1px solid var(--rule); border-radius: 10px; background: var(--card); }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; min-width: 640px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 500 0.7rem/1.2 var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); background: var(--paper); position: sticky; top: 0; }
+tr:last-child td { border-bottom: 0; }
+td code { white-space: nowrap; }
+.skill { display: inline-block; font: 500 0.7rem/1 var(--font-mono); padding: 3px 6px; border-radius: 4px; border: 1px solid var(--rule-strong); color: var(--ink-2); margin: 1px 2px 1px 0; white-space: nowrap; }
+
+.grades { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 18px; }
+.g { flex: 1 1 110px; border: 1px solid var(--rule); border-radius: 10px; padding: 10px 12px; background: var(--card); }
+.g b { display: block; font: 600 0.95rem/1.2 var(--font-body); }
+.g small { color: var(--ink-3); font: 400 0.75rem/1.3 var(--font-mono); }
+.g.again b { color: var(--again); } .g.hard b { color: var(--hard); } .g.good b { color: var(--good); } .g.easy b { color: var(--easy); }
+
+/* Index-card mockups */
+.mock-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin: 22px 0 28px; }
+.icard {
+  background-color: var(--card);
+  background-image: repeating-linear-gradient(to bottom, transparent 0 27px, var(--rule) 27px 28px);
+  background-position: 0 58px;
+  border: 1px solid var(--rule-strong); border-top: 3px solid var(--margin);
+  border-radius: 6px; padding: 14px 16px 18px; min-width: 0;
+  box-shadow: 0 1px 0 var(--rule), 0 10px 24px -18px rgba(20, 24, 32, 0.35);
+}
+.icard .bar { display: flex; justify-content: space-between; align-items: center; font: 500 0.68rem/1 var(--font-mono); color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 22px; }
+.icard .dots { display: flex; gap: 3px; }
+.icard .dots i { width: 14px; height: 4px; border-radius: 2px; background: var(--rule-strong); }
+.icard .dots i.on { background: var(--ink); }
+.icard .prompt { font: 600 1.25rem/1.35 var(--font-body); margin: 0 0 4px; }
+.icard .hint { color: var(--ink-3); font-size: 0.82rem; margin: 0 0 14px; }
+.icard .field { font: 400 0.98rem/1 var(--font-mono); border: 0; border-bottom: 2px solid var(--ink); padding: 8px 2px; width: 100%; background: transparent; color: var(--ink); margin-bottom: 14px; }
+.icard .field:focus { outline: none; border-bottom-color: var(--margin); }
+.icard .answer-line { min-height: 44px; border-bottom: 2px solid var(--ink); display: flex; flex-wrap: wrap; gap: 6px; padding-bottom: 6px; margin-bottom: 14px; align-items: flex-end; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 500 0.88rem/1 var(--font-body); padding: 8px 10px; border: 1px solid var(--rule-strong); border-bottom-width: 2px; border-radius: 7px; background: var(--card); color: var(--ink); cursor: pointer; }
+.chip:hover { border-color: var(--ink-3); }
+.chip:focus-visible, .btn:focus-visible, .play:focus-visible { outline: 2px solid var(--margin); outline-offset: 2px; }
+.chip.used { visibility: hidden; }
+.chip.ok { border-color: var(--good); color: var(--good); }
+.chip.bad { border-color: var(--again); color: var(--again); }
+.btn { font: 600 0.88rem/1 var(--font-body); padding: 11px 14px; border-radius: 8px; border: 1px solid var(--ink); background: var(--ink); color: var(--card); cursor: pointer; width: 100%; margin-top: 14px; }
+.play { width: 56px; height: 56px; border-radius: 50%; border: 2px solid var(--ink); background: var(--card); color: var(--ink); display: grid; place-items: center; cursor: pointer; margin: 4px 0 16px; }
+.play svg { width: 20px; height: 20px; fill: currentColor; }
+.feedback { font-size: 0.85rem; min-height: 1.3em; margin-top: 8px; }
+.feedback.ok { color: var(--good); } .feedback.bad { color: var(--again); }
+.gradebar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 16px; }
+.gradebar button { font: 600 0.78rem/1.2 var(--font-body); padding: 9px 4px 7px; border-radius: 7px; border: 1px solid var(--rule-strong); background: var(--card); cursor: pointer; color: var(--ink); }
+.gradebar button small { display: block; font: 400 0.66rem/1.2 var(--font-mono); color: var(--ink-3); margin-top: 3px; }
+.gradebar .a { color: var(--again); } .gradebar .h { color: var(--hard); } .gradebar .o { color: var(--good); } .gradebar .e { color: var(--easy); }
+
+/* FSRS calculator */
+.calc { background: var(--card); border: 1px solid var(--rule); border-radius: 12px; padding: 18px; margin: 18px 0 24px; }
+.calc .ctrls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px 24px; margin-bottom: 12px; }
+.calc label { display: grid; gap: 6px; font: 500 0.75rem/1.2 var(--font-mono); color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.05em; }
+.calc label output { color: var(--ink); font-size: 0.95rem; text-transform: none; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.calc input[type=range] { width: 100%; accent-color: var(--margin); }
+.calc .readout { font: 400 var(--step-0)/1.4 var(--font-body); margin: 4px 0 8px; }
+.calc .readout b { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.calc svg { width: 100%; height: auto; display: block; }
+
+.diagram { background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 16px; overflow-x: auto; margin: 16px 0 22px; }
+.flow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 14px 0 20px; font-size: 0.86rem; }
+.flow span { background: var(--card); border: 1px solid var(--rule-strong); border-radius: 6px; padding: 6px 10px; }
+.flow i { color: var(--ink-3); font-style: normal; font-family: var(--font-mono); }
+
+.timeline { list-style: none; padding: 0; display: grid; gap: 0; }
+.timeline li { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 16px; padding: 14px 0; border-top: 1px solid var(--rule); max-width: none; margin: 0; }
+.timeline li b { font: 500 0.75rem/1.5 var(--font-mono); color: var(--margin); }
+.timeline li p { margin: 0; color: var(--ink-2); }
+.timeline li strong { display: block; color: var(--ink); margin-bottom: 2px; }
+
+.q { background: var(--card); border: 1px dashed var(--rule-strong); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
+.q b { display: block; margin-bottom: 4px; }
+.q p { margin: 0; color: var(--ink-2); font-size: 0.92rem; }
+
+/* Card editor mockup */
+.editor { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, 1fr); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 12px; overflow: hidden; margin: 16px 0 24px; font-size: 0.84rem; }
+@media (max-width: 860px) { .editor { grid-template-columns: minmax(0, 1fr); } }
+.editor > div { background: var(--card); padding: 12px; min-width: 0; }
+.ed-head { font: 500 0.7rem/1.3 var(--font-mono); color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+.ed-row { display: grid; grid-template-columns: 46px 26px minmax(0, 1fr); gap: 6px; align-items: baseline; padding: 6px; border-radius: 6px; }
+.ed-row.on { background: var(--code-bg); box-shadow: inset 2px 0 0 var(--margin); }
+.ed-row small { color: var(--ink-3); font-family: var(--font-mono); font-size: 0.7rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st { font: 500 0.62rem/1 var(--font-mono); padding: 3px 4px; border-radius: 4px; border: 1px solid currentColor; text-align: center; }
+.st.ready { color: var(--good); } .st.draft { color: var(--hard); }
+.ed-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.ed-actions span { font-size: 0.78rem; border: 1px dashed var(--rule-strong); border-radius: 6px; padding: 5px 8px; color: var(--ink-2); }
+.ed-form label { display: grid; gap: 4px; font: 500 0.7rem/1.2 var(--font-mono); color: var(--ink-3); margin-bottom: 10px; }
+.ed-form .in { font: 400 0.86rem/1.3 var(--font-body); color: var(--ink); border: 1px solid var(--rule-strong); border-radius: 6px; padding: 6px 8px; }
+.chips-in { display: flex; gap: 4px; flex-wrap: wrap; }
+.chips-in i { font-style: normal; background: var(--code-bg); border-radius: 4px; padding: 1px 6px; }
+.ed-lint { font: 400 0.72rem/1.4 var(--font-mono); color: var(--good); }
+.icard.mini { padding: 10px 12px 12px; box-shadow: none; background-position: 0 44px; }
+.icard.mini .bar { margin-bottom: 12px; }
+.icard.mini .prompt { font-size: 1rem; }
+.icard.mini .answer-line { min-height: 30px; }
+.icard.mini .chip { font-size: 0.78rem; padding: 5px 7px; cursor: default; }
+</style>
+
+<div class="shell">
+<nav class="toc" aria-label="Содержание">
+  <div class="brand"><i></i>Zoobrik</div>
+  <ol>
+    <li><a href="#concept"><span>01</span>Концепция</a></li>
+    <li><a href="#model"><span>02</span>Модель данных</a></li>
+    <li><a href="#format"><span>03</span>Формат файлов</a></li>
+    <li><a href="#assembly"><span>04</span>Сборка заданий</a></li>
+    <li><a href="#templates"><span>05</span>Шаблоны</a></li>
+    <li><a href="#exercises"><span>06</span>Каталог шаблонов</a></li>
+    <li><a href="#fsrs"><span>07</span>Интервалы (FSRS)</a></li>
+    <li><a href="#hybrid"><span>08</span>Гибридный планировщик</a></li>
+    <li><a href="#intro"><span>09</span>Ввод новых слов</a></li>
+    <li><a href="#session"><span>10</span>Сессия</a></li>
+    <li><a href="#sync"><span>11</span>Прогресс и синхронизация</a></li>
+    <li><a href="#hooks"><span>12</span>Хуки и плагины</a></li>
+    <li><a href="#voice"><span>13</span>Озвучка</a></li>
+    <li><a href="#stats"><span>14</span>Статистика</a></li>
+    <li><a href="#design"><span>15</span>Дизайн</a></li>
+    <li><a href="#roadmap"><span>16</span>Этапы</a></li>
+    <li><a href="#open"><span>17</span>Решения</a></li>
+  </ol>
+</nav>
+
+<main>
+<div class="wrap">
+
+<header class="hero">
+  <div class="eyebrow">Спецификация · v0.3 · 5 октября 2026 · есть первая версия приложения</div>
+  <h1>Zoobrik: слова учатся <em>гнёздами</em>, а не россыпью</h1>
+  <p class="lede">Приложение для изучения английских слов и грамматики. Интервальные повторения по алгоритму Anki (FSRS), колоды в виде простых YAML-файлов в GitHub-репозитории, задания на шаблонах, которые можно переверстать целиком.</p>
+  <div class="meta">
+    <span>Платформа: <b>Web / PWA</b></span>
+    <span>Алгоритм: <b>FSRS-6</b></span>
+    <span>Планирование: <b>гибрид</b></span>
+    <span>Шаблоны: <b>Nunjucks + CSS + JS</b></span>
+    <span>Хранилище: <b>GitHub</b></span>
+  </div>
+</header>
+
+<section id="concept">
+  <h2><span class="num">01</span>Концепция</h2>
+  <p>В Anki каждая сторона слова — отдельная карточка со своим расписанием. Карточки разных слов перемешиваются, и за сессию человек видит сотню несвязанных фрагментов. Zoobrik строит работу вокруг <strong>карточки изучения</strong> (слово, фраза, грамматическое правило). За один <strong>цикл</strong> её проверяют несколькими разными заданиями, перемешанными с заданиями соседних слов той же темы.</p>
+  <div class="grid-2">
+    <div class="tile"><span class="tag">принцип 1</span><h5>Одна карточка — много граней</h5><p>У слова есть навыки: узнать, вспомнить, расслышать, написать, употребить в предложении. У каждого навыка свой интервал.</p></div>
+    <div class="tile"><span class="tag">принцип 2</span><h5>Много заданий за один цикл</h5><p>Если пора повторить хотя бы один навык, слово получает в текущем цикле 2–5 разных заданий. Они разнесены по циклу вперемешку с соседями, подряд не идут.</p></div>
+    <div class="tile"><span class="tag">принцип 3</span><h5>Тема держит фокус</h5><p>Очередь собирается по темам: 3–5 слов одной темы чередуются между собой, потом следующая тема.</p></div>
+    <div class="tile"><span class="tag">принцип 4</span><h5>Новое — порциями с гейтом</h5><p>Следующая порция слов темы открывается только после того, как текущая закрепилась.</p></div>
+    <div class="tile"><span class="tag">принцип 5</span><h5>Папка — это всё о слове</h5><p>Контент, задания, прогресс, медиа и свои шаблоны лежат в папке карточки. При публикации колоды прогресс вырезается.</p></div>
+    <div class="tile"><span class="tag">принцип 6</span><h5>Задание видно до показа</h5><p>Каждое задание — явная запись в карточке: шаблон и конкретные данные. Автор проверяет и одобряет его заранее, вёрстку можно переопределить на любом уровне.</p></div>
+  </div>
+</section>
+
+<!-- 02 -->
+<section id="model">
+  <h2><span class="num">02</span>Модель данных</h2>
+  <div class="flow"><span>Колода</span><i>→</i><span>Тема</span><i>→</i><span>Карточка слова</span><i>→</i><span>Задания</span><i>→</i><span>Шаблон каждого задания</span></div>
+  <p>Ключевая идея: <strong>задание — явная запись в карточке</strong>. В карточке лежат конкретные данные каждого задания: что показать, какой правильный ответ, какие подкидыши. Шаблон знает, как эти данные сверстать и как проверить ответ, но сам ничего не придумывает в момент показа. Всё, что увидит ученик, можно открыть, проверить и поправить заранее.</p>
+
+  <div class="table-wrap"><table>
+    <thead><tr><th>Сущность</th><th>Что это</th><th>Где лежит</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Колода</strong></td><td>Набор тем и общие настройки: лимиты, FSRS, голос, подключённые пакеты шаблонов. Одна колода — один репозиторий.</td><td><code>deck.yaml</code></td></tr>
+      <tr><td><strong>Тема</strong></td><td>Группа карточек: порядок ввода, размер порции, зависимости. Может содержать свои шаблоны и задания на несколько слов сразу.</td><td><code>topics/&lt;тема&gt;/topic.yaml</code></td></tr>
+      <tr><td><strong>Карточка</strong></td><td>Всё про одно слово, фразу или правило: контент, список заданий, прогресс, медиа, свои шаблоны.</td><td>папка <code>topics/&lt;тема&gt;/&lt;слово&gt;/</code></td></tr>
+      <tr><td><strong>Задание</strong></td><td>Ссылка на шаблон, навык, который тренирует, статус и <code>params</code> — конкретные данные для этого шаблона.</td><td><code>card.yaml → exercises[]</code></td></tr>
+      <tr><td><strong>Шаблон</strong></td><td>Тип задания: схема параметров, способ проверки ответа, вёрстка, стили, логика, рецепт сборки черновиков.</td><td><code>core/</code>, <code>templates/</code>, папка темы или карточки</td></tr>
+      <tr><td><strong>Навык</strong></td><td>Грань знания слова со своим расписанием FSRS. Задания тренируют навыки.</td><td><code>card.yaml → progress.skills</code></td></tr>
+      <tr><td><strong>Журнал</strong></td><td>Полная история всех ответов, только дописывается.</td><td><code>journal/&lt;год-месяц&gt;/&lt;устройство&gt;.tsv</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Навыки</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Навык</th><th>Что проверяет</th><th>Примеры шаблонов</th><th>Цель удержания</th></tr></thead>
+    <tbody>
+      <tr><td><span class="skill">recognize</span></td><td>en → смысл</td><td>en-ru-choice, en-ru-flip, match-pairs</td><td>0.92</td></tr>
+      <tr><td><span class="skill">recall</span></td><td>смысл → en</td><td>ru-en-type, ru-en-letters, picture-word</td><td>0.90</td></tr>
+      <tr><td><span class="skill">listen</span></td><td>звук → форма или смысл</td><td>listen-type, listen-choose-ru, minimal-pairs</td><td>0.88</td></tr>
+      <tr><td><span class="skill">spell</span></td><td>точное написание</td><td>ru-en-type, listen-type, cloze-type</td><td>0.85</td></tr>
+      <tr><td><span class="skill">context</span></td><td>употребление в предложении</td><td>sentence-build, cloze, collocation</td><td>0.88</td></tr>
+      <tr><td><span class="skill">apply</span></td><td>грамматическое правило</td><td>grammar-choose-form, grammar-fix, grammar-transform</td><td>0.88</td></tr>
+    </tbody>
+  </table></div>
+  <p>Одно задание может тренировать несколько навыков: <code>listen-type</code> — и <span class="skill">listen</span>, и <span class="skill">spell</span>. Навык без единого готового задания в расписание не попадает, а редактор предупреждает об этом.</p>
+</section>
+
+<!-- 03 -->
+<section id="format">
+  <h2><span class="num">03</span>Формат файлов</h2>
+  <span class="decision">Согласовано</span>
+  <p>Данные — YAML 1.2, длинные тексты (заметки, теория правил) — Markdown внутри YAML. Для каждого файла есть JSON Schema: VS Code и JetBrains по ней подсказывают поля и подсвечивают ошибки. Почему YAML: он читается глазами, позволяет комментарии, многострочный текст и аккуратные диффы в git. JSON шумный и без комментариев, TOML неудобен для списков объектов вроде заданий.</p>
+
+  <h3>Структура репозитория</h3>
+<pre><code>my-english/
+├── deck.yaml
+├── topics/
+│   ├── travel-airport/
+│   │   ├── topic.yaml               <span class="c"># порядок, порции, зависимости</span>
+│   │   ├── exercises.yaml           <span class="c"># задания на несколько слов темы</span>
+│   │   ├── views/                   <span class="c"># шаблоны только для этой темы</span>
+│   │   ├── luggage/                 <span class="c"># ← карточка</span>
+│   │   │   ├── card.yaml            <span class="c"># контент + задания + прогресс</span>
+│   │   │   ├── luggage.mp3
+│   │   │   ├── luggage.ex1.mp3
+│   │   │   ├── luggage.webp
+│   │   │   ├── exercises/           <span class="c"># задания в Markdown (*.md)</span>
+│   │   │   └── views/               <span class="c"># шаблоны только для этого слова</span>
+│   │   │       └── uncountable/
+│   │   └── boarding-pass/
+│   └── grammar-present-perfect/
+│       └── present-perfect/card.yaml
+├── templates/                       <span class="c"># свои шаблоны колоды</span>
+├── themes/
+└── journal/                         <span class="c"># полная история ответов</span>
+    └── 2026-10/
+        ├── mac.tsv
+        └── iphone.tsv</code></pre>
+
+  <h3>Карточка целиком</h3>
+  <span class="file">topics/travel-airport/luggage/card.yaml</span>
+<pre><code><span class="k">id</span>: luggage
+<span class="k">kind</span>: word
+
+<span class="c"># ── 1. Контент: факты о слове, из них собираются черновики заданий</span>
+<span class="k">content</span>:
+  en: luggage
+  ru: багаж
+  alt_ru: [вещи, чемоданы]
+  pos: noun
+  ipa: ˈlʌɡ.ɪdʒ
+  audio: { file: luggage.mp3, engine: kokoro-1.0, voice: bf_emma }
+  image: luggage.webp
+  note: |
+    Неисчисляемое: **a piece of luggage**, но не ~~a luggage~~ и не ~~luggages~~.
+  confusables: [baggage, language]
+  examples:
+    - id: ex1
+      en: I can't find my luggage.
+      ru: Я не могу найти свой багаж.
+      audio: luggage.ex1.mp3
+    - id: ex2
+      en: How many pieces of luggage do you have?
+      ru: Сколько у вас мест багажа?
+      audio: luggage.ex2.mp3
+
+<span class="c"># ── 2. Задания: явные, проверенные, каждое видно и редактируется</span>
+<span class="k">exercises</span>:
+  - id: intro
+    template: intro
+    status: ready
+    params: { word: luggage, translation: багаж, image: luggage.webp, audio: luggage.mp3, examples: [ex1, ex2] }
+
+  - id: e1
+    template: en-ru-choice
+    skill: recognize
+    status: ready
+    params:
+      word: luggage
+      audio: luggage.mp3
+      answer: багаж
+      options: [багаж, посадочный талон, выход на посадку, таможня]
+
+  - id: e2
+    template: ru-en-type
+    skill: [recall, spell]
+    status: ready
+    params:
+      prompt: багаж
+      answer: luggage
+      hint: "l _ _ _ _ _ e"
+
+  - id: e3
+    template: sentence-build-ru-en
+    skill: context
+    status: ready
+    from: examples.ex1                <span class="c"># собрано рецептом из примера ex1</span>
+    params:
+      prompt: Я не могу найти свой багаж.
+      answer: I can't find my luggage.
+      accept: [I cannot find my luggage.]
+      extra: [luggages, the, found]
+      audio: luggage.ex1.mp3
+
+  - id: e4
+    template: listen-type
+    skill: [listen, spell]
+    status: draft                     <span class="c"># черновик: в ротацию не попадает</span>
+    from: examples.ex2
+    params:
+      audio: luggage.ex2.mp3
+      answer: How many pieces of luggage do you have?
+
+  - id: e5
+    template: ./views/uncountable     <span class="c"># свой шаблон только для этого слова</span>
+    skill: context
+    status: ready
+    params:
+      question: Как сказать «у меня три чемодана багажа»?
+      right: I have three pieces of luggage.
+      wrong: [I have three luggages., I have three luggage.]
+      picture: luggage.webp
+
+<span class="c"># ── 3. Прогресс: всё для расписания и статистики, размер не растёт со временем</span>
+<span class="k">progress</span>:
+  stage: review
+  introduced: 2026-03-02
+  as_of: mac:2026-10-05T14:10:31Z     <span class="c"># последняя строка журнала, учтённая здесь</span>
+  totals: { answers: 1184, correct: 1041, lapses: 23, relearned: 4, time_ms: 6120400 }
+  skills:
+    recognize: { state: review,     s: 61.2, d: 3.9, due: 2026-11-30, last: 2026-10-01, reps: 268, lapses: 3 }
+    recall:    { state: relearning, s: 2.1,  d: 6.8, due: 2026-10-05T14:20Z, step: 0, last: 2026-10-05, reps: 301, lapses: 9 }
+    listen:    { state: review,     s: 18.4, d: 5.2, due: 2026-10-19, last: 2026-10-01, reps: 199, lapses: 5 }
+    spell:     { state: review,     s: 9.7,  d: 6.1, due: 2026-10-09, last: 2026-10-05, reps: 240, lapses: 4 }
+    context:   { state: review,     s: 25.0, d: 4.8, due: 2026-10-27, last: 2026-10-02, reps: 176, lapses: 2 }
+  exercises:
+    e1: { shown: 140, correct: 136, avg_ms: 2100, last: 2026-10-01 }
+    e2: { shown: 301, correct: 262, avg_ms: 5600, last: 2026-10-05 }
+    e3: { shown: 88,  correct: 71,  avg_ms: 8400, last: 2026-10-02 }
+    e5: { shown: 12,  correct: 9,   avg_ms: 6900, last: 2026-09-20 }
+  recent:                              <span class="c"># 20 последних ответов, полная история — в journal/</span>
+    - 2026-10-05T14:10Z e2 recall 1 7400 iphone
+    - 2026-10-05T14:08Z e1 recognize 3 1900 iphone</code></pre>
+
+  <h3>Журнал</h3>
+  <p>Слово повторяется годами, переходит из Review в Relearning и обратно, за жизнь набирает 1000–2000 ответов. Поэтому полная история лежит отдельно от карточки, а карточка хранит итог: состояние навыков, счётчики, статистику заданий и хвост из 20 ответов. Размер <code>card.yaml</code> не растёт со временем и держится в пределах 3–8 КБ.</p>
+  <span class="file">journal/2026-10/iphone.tsv</span>
+<pre><code><span class="c"># время                  карточка                  задание навык     оценка мс    флаги</span>
+2026-10-05T14:08:12Z  travel-airport/luggage    e1      recognize 3      1900
+2026-10-05T14:10:31Z  travel-airport/luggage    e2      recall    1      7400  typo:lugage
+2026-10-05T14:10:31Z  travel-airport/luggage    e2      spell     1      7400</code></pre>
+  <ul>
+    <li>Каждое устройство пишет только в свой файл и только дописывает. При синхронизации журнал никогда не конфликтует.</li>
+    <li>Около 70 байт на ответ. 300 ответов в день — примерно 7–8 МБ в год, git хорошо сжимает такой текст.</li>
+    <li>Журнал — источник истины. <code>progress</code> в карточке можно пересчитать из него: строки после <code>as_of</code> прогоняются через FSRS.</li>
+    <li>Журнал нужен оптимизатору FSRS, календарю занятий и истории слова в статистике.</li>
+  </ul>
+
+  <h3>Тема и колода</h3>
+  <span class="file">topics/travel-airport/topic.yaml</span>
+<pre><code><span class="k">id</span>: travel-airport
+<span class="k">title</span>: В аэропорту
+<span class="k">level</span>: A2
+<span class="k">requires</span>: [basics-numbers]
+<span class="k">batch</span>: 4
+<span class="k">gate</span>: { min_stability: 2d, skills: [recognize, recall] }
+<span class="k">order</span>: [check-in, luggage, boarding-pass, gate, delay, departure, customs, carry-on]</code></pre>
+  <span class="file">deck.yaml</span>
+<pre><code><span class="k">name</span>: My English
+<span class="k">lang</span>: { target: en-GB, native: ru }
+<span class="k">limits</span>: { new_cards_per_day: 8, reviews_per_day: 250, max_backlog_ratio: 1.5 }
+<span class="k">fsrs</span>:
+  retention: { recognize: 0.92, recall: 0.90, listen: 0.88, spell: 0.85, context: 0.88, apply: 0.88 }
+  params: null
+  learning_steps: [1m, 10m]
+  relearning_steps: [10m]
+  leech_threshold: 8
+<span class="k">templates</span>: [core, gh:someone/zoobrik-duo-style@v1]
+<span class="k">recipes</span>:                                <span class="c"># какие черновики собирать для новой карточки</span>
+  word: [intro, en-ru-choice, ru-en-type, sentence-build-ru-en, sentence-build-en-ru, listen-type, listen-choose-ru]
+  grammar: [grammar-intro, grammar-choose-form, grammar-fix, grammar-transform]
+<span class="k">voice</span>: { engine: kokoro-1.0, en: bf_emma, format: mp3 }</code></pre>
+</section>
+
+<!-- 04 -->
+<section id="assembly">
+  <h2><span class="num">04</span>Как собирается задание</h2>
+  <span class="decision">Согласовано</span>
+  <p>Три слоя, каждый в своём файле и со своей зоной ответственности:</p>
+  <div class="grid-2">
+    <div class="tile"><span class="tag">шаблон · manifest.yaml + view.njk</span><h5>Как выглядит и как проверять</h5><p>Объявляет параметры, которые ему нужны, способ проверки ответа и навыки, которые тренирует. Пишется один раз, используется тысячами карточек.</p></div>
+    <div class="tile"><span class="tag">задание · card.yaml → exercises[]</span><h5>Что именно спросить</h5><p>Конкретные значения параметров для одного слова. Проверено автором, хранится в карточке.</p></div>
+    <div class="tile"><span class="tag">показ · runtime</span><h5>Как это встречается в сессии</h5><p>Планировщик выбирает задание, приложение передаёт его <code>params</code> в шаблон, проверяет ответ, ставит оценку, пишет журнал.</p></div>
+  </div>
+
+  <h3>Путь одного задания: от файла до экрана</h3>
+  <p>Задание <code>e3</code> из карточки <code>luggage</code>, шаблон <code>sentence-build-ru-en</code>.</p>
+
+  <h4>Шаг 1. Шаблон объявляет параметры</h4>
+  <span class="file">core/sentence-build-ru-en/manifest.yaml</span>
+<pre><code><span class="k">id</span>: sentence-build-ru-en
+<span class="k">name</span>: Собери перевод (ru → en)
+<span class="k">trains</span>: [context]
+<span class="k">reveals</span>: [en]
+<span class="k">params</span>:                            <span class="c"># схема → форма в редакторе и валидация</span>
+  prompt: { type: text,  label: Предложение на русском, required: true }
+  answer: { type: text,  label: Правильный перевод, required: true }
+  accept: { type: list,  of: text, label: Тоже верные варианты }
+  extra:  { type: list,  of: word, label: Лишние слова, min: 2, max: 5 }
+  audio:  { type: audio, label: Озвучка ответа }
+<span class="k">check</span>:                             <span class="c"># как сравнивать ответ</span>
+  type: tokens                       <span class="c"># exact | fuzzy | tokens | choice | custom</span>
+  expected: params.answer
+  also: params.accept
+<span class="k">recipe</span>:                            <span class="c"># как собрать черновики из контента карточки</span>
+  for_each: content.examples
+  from: examples.{{ item.id }}
+  params:
+    prompt: "{{ item.ru }}"
+    answer: "{{ item.en }}"
+    extra:  "{{ suggest.extra(item.en, 3) }}"   <span class="c"># формы слова, артикли, слова темы</span>
+    audio:  "{{ item.audio }}"
+<span class="k">lint</span>:                              <span class="c"># проверки при сохранении</span>
+  - extra не пересекается со словами answer
+  - в answer не больше 12 слов</code></pre>
+
+  <h4>Шаг 2. Задание в карточке заполняет параметры</h4>
+<pre><code>- id: e3
+  template: sentence-build-ru-en
+  skill: context
+  status: ready
+  from: examples.ex1
+  params:
+    prompt: Я не могу найти свой багаж.
+    answer: I can't find my luggage.
+    accept: [I cannot find my luggage.]
+    extra: [luggages, the, found]
+    audio: luggage.ex1.mp3</code></pre>
+
+  <h4>Шаг 3. Вёрстка получает данные</h4>
+  <p>В шаблон передаются: <code>params</code> — параметры задания, <code>card</code> — весь контент карточки (картинка, транскрипция, заметка), <code>exercise</code> (id, навык), <code>topic</code>, <code>mode</code> (learn или review), <code>seed</code> для перемешивания.</p>
+  <span class="file">core/sentence-build-ru-en/view.njk</span>
+<pre><code>{% set bank = (params.answer | tokens) | concat(params.extra) | shuffle(seed) %}
+&lt;div class="prompt"&gt;
+  &lt;span class="lang"&gt;RU&lt;/span&gt;
+  &lt;p class="source"&gt;{{ params.prompt }}&lt;/p&gt;
+  {% if card.note %}&lt;button data-zb="hint"&gt;Подсказка&lt;/button&gt;{% endif %}
+&lt;/div&gt;
+&lt;div class="answer" data-zb-slot="answer"&gt;&lt;/div&gt;
+&lt;div class="bank"&gt;
+  {% for w in bank %}&lt;button class="chip" data-zb-chip="{{ w }}"&gt;{{ w }}&lt;/button&gt;{% endfor %}
+&lt;/div&gt;
+&lt;button data-zb="submit"&gt;Проверить&lt;/button&gt;</code></pre>
+
+  <h4>Шаг 4. Ответ проверяется по манифесту</h4>
+  <div class="flow"><span>Ученик собрал «I can't find my luggage.»</span><i>→</i><span><code>zb.answer({ tokens })</code></span><i>→</i><span><code>check: tokens</code> — совпало с <code>answer</code></span><i>→</i><span>оценка Good</span><i>→</i><span>FSRS: <code>context</code> s 25 → 41 дн.</span><i>→</i><span>строка в журнал, итог в <code>progress</code></span></div>
+  <p>Шаблон не решает, верен ли ответ: он только передаёт ответ ученика. Проверка описана в манифесте, поэтому одинакова в любой вёрстке. Если нужна особая логика, есть <code>check.type: custom</code> с функцией <code>check(answer, params)</code> в <code>logic.js</code>.</p>
+
+  <h3>Откуда берутся задания</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Способ</th><th>Как работает</th><th>Когда удобен</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Черновики по рецептам</strong></td><td>Кнопка «Собрать черновики» в карточке или <code>zoobrik build topics/travel-airport</code>. Для каждого шаблона из <code>deck.recipes</code> выполняется его <code>recipe</code>, получаются задания со статусом <code>draft</code>. Уже существующие не дублируются.</td><td>Основной поток: из 2 примеров получается 7–9 заданий за секунду</td></tr>
+      <tr><td><strong>Вручную через форму</strong></td><td>«+ Задание» → выбрать шаблон → форма строится по <code>params</code> из манифеста → живое превью → сохранить.</td><td>Особые задания, исправление черновика</td></tr>
+      <tr><td><strong>Прямо в YAML</strong></td><td>Дописать запись в <code>exercises</code> в редакторе кода. Схема подсказывает поля.</td><td>Тем, кому удобнее текст</td></tr>
+      <tr><td><strong>Массово из таблицы</strong></td><td>Импорт CSV в выбранный шаблон: столбцы сопоставляются с <code>params</code>, строка — карточка.</td><td>Перенос готовых материалов</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Проверка автором: статусы</h3>
+  <ul>
+    <li><code>draft</code> — собран рецептом или создан, но не проверен. В сессии не показывается.</li>
+    <li><code>ready</code> — проверен в превью и одобрен. Участвует в ротации.</li>
+    <li><code>off</code> — выключен, но хранится вместе со статистикой.</li>
+    <li><code>stale</code> — выставляется автоматически, если изменился источник из <code>from</code> (например, поправили пример ex1). Задание продолжает показываться, а в редакторе предлагается пересобрать его и сравнить с текущей версией.</li>
+  </ul>
+  <p>При сохранении запускаются проверки: схема параметров, правила <code>lint</code> из манифеста, наличие медиа. Плюс общие предупреждения: «у навыка listen нет ни одного готового задания», «задание e2 верно в 99% ответов за 300 показов — слишком лёгкое».</p>
+
+  <h3>Редактор карточки</h3>
+  <div class="editor" aria-label="Макет редактора карточки">
+    <div class="ed-list">
+      <div class="ed-head">luggage · 6 заданий</div>
+      <div class="ed-row"><span class="st ready">ready</span><b>intro</b><small>знакомство</small></div>
+      <div class="ed-row"><span class="st ready">ready</span><b>e1</b><small>en-ru-choice · recognize</small></div>
+      <div class="ed-row"><span class="st ready">ready</span><b>e2</b><small>ru-en-type · recall, spell</small></div>
+      <div class="ed-row on"><span class="st ready">ready</span><b>e3</b><small>sentence-build-ru-en · context</small></div>
+      <div class="ed-row"><span class="st draft">draft</span><b>e4</b><small>listen-type · listen, spell</small></div>
+      <div class="ed-row"><span class="st ready">ready</span><b>e5</b><small>./views/uncountable · context</small></div>
+      <div class="ed-actions"><span>+ Задание</span><span>Собрать черновики</span></div>
+    </div>
+    <div class="ed-form">
+      <div class="ed-head">e3 · Собери перевод (ru → en)</div>
+      <label>Предложение на русском<span class="in">Я не могу найти свой багаж.</span></label>
+      <label>Правильный перевод<span class="in">I can't find my luggage.</span></label>
+      <label>Тоже верные варианты<span class="in">I cannot find my luggage.</span></label>
+      <label>Лишние слова<span class="in chips-in"><i>luggages</i><i>the</i><i>found</i></span></label>
+      <div class="ed-lint">✓ схема · ✓ подкидыши не совпадают с ответом · ✓ аудио есть</div>
+    </div>
+    <div class="ed-preview">
+      <div class="ed-head">Превью · 88 показов · 81% верно · 8.4 с</div>
+      <div class="icard mini">
+        <div class="bar"><span>Собери перевод</span></div>
+        <p class="prompt">Я не могу найти свой багаж.</p>
+        <div class="answer-line"></div>
+        <div class="chips"><span class="chip">found</span><span class="chip">I</span><span class="chip">luggage.</span><span class="chip">the</span><span class="chip">can't</span><span class="chip">my</span><span class="chip">luggages</span><span class="chip">find</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Свои задания для конкретного слова</h3>
+  <p>Если готового шаблона не хватает, шаблон кладётся прямо в папку карточки и подключается относительным путём. Пример: для <em>luggage</em> нужно отдельно отработать неисчисляемость с картинкой.</p>
+<pre><code>luggage/views/uncountable/
+├── manifest.yaml     <span class="c"># params: question, right, wrong[], picture; check: choice</span>
+├── view.njk
+└── style.css</code></pre>
+<pre><code>- id: e5
+  template: ./views/uncountable
+  skill: context
+  status: ready
+  params: { question: …, right: …, wrong: […], picture: luggage.webp }</code></pre>
+  <p>Для разовой мелочи манифест не обязателен: задание может нести вёрстку внутри себя.</p>
+<pre><code>- id: e6
+  template: inline
+  skill: recognize
+  status: ready
+  check: { type: choice, expected: "a piece of luggage" }
+  view: |
+    &lt;p class="q"&gt;Что можно сказать?&lt;/p&gt;
+    {% for o in ["a luggage", "a piece of luggage", "luggages"] | shuffle(seed) %}
+      &lt;button data-zb-choice="{{ o }}"&gt;{{ o }}&lt;/button&gt;
+    {% endfor %}
+  style: |
+    .q { font-size: 1.3rem }</code></pre>
+
+  <h3>Переопределить вёрстку на любом уровне</h3>
+  <p>Шаблон ищется по каскаду, от частного к общему. Первый найденный побеждает:</p>
+  <div class="flow"><span>карточка<br><code>luggage/views/X</code></span><i>→</i><span>тема<br><code>travel-airport/views/X</code></span><i>→</i><span>колода<br><code>templates/X</code></span><i>→</i><span>подключённые пакеты</span><i>→</i><span><code>core/X</code></span></div>
+  <ul>
+    <li><strong>Целиком</strong>: положить на нужный уровень папку с тем же id. Например, <code>travel-airport/views/en-ru-choice/</code> меняет вёрстку выбора перевода только в этой теме.</li>
+    <li><strong>Частично</strong>: <code>{% extends "core/en-ru-choice" %}</code> и переопределить один блок — <code>{% block prompt %}</code>, <code>{% block options %}</code>, <code>{% block feedback %}</code>. Все шаблоны <code>core</code> размечены блоками.</li>
+    <li><strong>Только стили</strong>: CSS собирается каскадом от <code>core</code> через тему колоды, <code>topic/views/style.css</code>, <code>card/views/style.css</code> до <code>style:</code> у задания. На корневом элементе есть атрибуты <code>data-template</code>, <code>data-topic</code>, <code>data-card</code>, <code>data-skill</code>, <code>data-mode</code>, так что можно писать <code>[data-topic="travel-airport"] .prompt { … }</code>.</li>
+    <li><strong>Для одного задания</strong>: поля <code>view:</code> и <code>style:</code> прямо в записи задания.</li>
+  </ul>
+
+  <h3>Задания на несколько слов</h3>
+  <p><code>match-pairs</code>, <code>odd-one-out</code>, диалоги и тексты с несколькими новыми словами лежат в <code>exercises.yaml</code> темы. Поле <code>cards</code> перечисляет, каким карточкам засчитывается результат и за какой навык.</p>
+<pre><code>- id: t1
+  template: match-pairs
+  status: ready
+  cards: { luggage: recognize, boarding-pass: recognize, gate: recognize, delay: recognize, customs: recognize }
+  params:
+    pairs: [[luggage, багаж], [boarding pass, посадочный талон], [gate, выход], [delay, задержка], [customs, таможня]]</code></pre>
+  <p>Такое задание попадает в цикл, когда в нём оказываются хотя бы 3 из его карточек. Каждая пара оценивается отдельно и идёт в навык своей карточки.</p>
+
+  <h3>Markdown: теория, заметки и задания</h3>
+  <p>Markdown используется в трёх местах. Везде поддерживается обычная разметка: жирный, курсив, списки, таблицы, цитаты, код.</p>
+
+  <h4>1. Длинные тексты карточки — отдельными .md-файлами</h4>
+  <p>Теория правила или развёрнутая заметка лежит рядом с <code>card.yaml</code>, а в YAML на неё ссылка. Её показывают задание-знакомство и кнопка «Правило» в любом задании карточки.</p>
+<pre><code>present-simple/
+├── card.yaml          <span class="c"># content.theory: theory.md</span>
+├── theory.md
+└── exercises/
+    ├── third-person.md
+    └── negative.md</code></pre>
+  <span class="file">present-simple/theory.md</span>
+<pre><code># Present Simple
+
+Регулярные действия, привычки, факты: **I work**, **she works**.
+
+| Лицо          | Утверждение     | Вопрос              | Отрицание               |
+|---------------|-----------------|---------------------|-------------------------|
+| I / you / we  | I **work**      | **Do** you work?    | I **don't** work        |
+| he / she / it | she **works**   | **Does** she work?  | she **doesn't** work    |
+
+&gt; После **does / doesn't** глагол без -s: ~~Does she works~~ → Does she **work**?
+
+Окончание: watch → watch**es**, study → stud**ies**, have → **has**.</code></pre>
+
+  <h4>2. Поля с типом markdown</h4>
+  <p>Параметры шаблона типа <code>markdown</code> (подсказки, пояснения, вопросы) пишутся прямо в YAML блоком <code>|</code>:</p>
+<pre><code>- id: e9
+  template: cloze-choice
+  skill: apply
+  status: ready
+  params:
+    text: She ___ in a bank.
+    answer: works
+    options: [work, works, is work]
+    explanation: |
+      **he / she / it** → глагол + **-s**.
+      Сравни: *I work* — *she work**s***.</code></pre>
+
+  <h4>3. Задание целиком в .md-файле</h4>
+  <p>Задание можно написать в Markdown без шаблона и без YAML-параметров. Файл кладётся в <code>exercises/</code> папки карточки и подхватывается автоматически, служебные поля — во frontmatter. Разметка задания:</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Синтаксис</th><th>Что получается</th></tr></thead>
+    <tbody>
+      <tr><td><code>- [x] верно</code><br><code>- [ ] неверно</code></td><td>Выбор варианта, проверка автоматическая</td></tr>
+      <tr><td><code>[[goes]]</code>, <code>[[don't|do not]]</code></td><td>Поле ввода прямо в тексте, через <code>|</code> — допустимые варианты</td></tr>
+      <tr><td><code>[[chips: She · goes · to · work | go · going]]</code></td><td>Сборка из фишек: до <code>|</code> — ответ по порядку, после — подкидыши</td></tr>
+      <tr><td><code>!audio(ex1.mp3)</code></td><td>Кнопка проигрывания файла карточки</td></tr>
+      <tr><td><code>???</code></td><td>Разделитель: ниже — обратная сторона, она показывается после ответа. Если в задании нет ни выбора, ни полей, получается карточка-переворот с оценкой 1–4</td></tr>
+    </tbody>
+  </table></div>
+  <span class="file">present-simple/exercises/third-person.md</span>
+<pre><code>---
+id: md1
+skill: apply
+status: ready
+---
+Поставь глагол в нужную форму.
+
+My brother [[plays]] football, and my sister [[watches]] TV every evening.
+
+!audio(ex2.mp3)
+
+???
+
+**he / she / it** → +s: play → play**s**, watch → watch**es** (после -ch, -sh, -s, -x, -o).</code></pre>
+  <span class="file">luggage/exercises/uncountable.md</span>
+<pre><code>---
+id: md2
+skill: context
+status: ready
+---
+Как сказать **«у меня три места багажа»**?
+
+- [ ] I have three luggages.
+- [x] I have three pieces of luggage.
+- [ ] I have three luggage.
+
+???
+
+**luggage** — неисчисляемое. Считаем через *a piece of*: one piece of luggage, two pieces of luggage.</code></pre>
+  <p>Внутри это задание шаблона <code>md</code>. Его вёрстку и стили можно переопределить по общему каскаду, как у любого шаблона.</p>
+
+  <h3>Свои виды карточек</h3>
+  <p>Кроме <code>word</code>, <code>phrase</code>, <code>grammar</code>, колода может объявить свой вид, например «неправильный глагол» с тремя формами. Вид задаёт схему <code>content</code>, набор навыков и рецепты по умолчанию.</p>
+<pre><code><span class="c"># kinds/irregular-verb.yaml</span>
+<span class="k">content</span>: { v1: text, v2: text, v3: text, ru: text, examples: list }
+<span class="k">skills</span>: [recognize, recall, forms]     <span class="c"># forms — новый навык</span>
+<span class="k">recipes</span>: [intro, ru-en-type, verb-forms-table, cloze-type]</code></pre>
+</section>
+
+
+<section id="templates">
+  <h2><span class="num">05</span>Шаблоны: справочник автора</h2>
+  <span class="decision">Согласовано</span>
+  <p>Шаблон — папка с манифестом, вёрсткой на <strong>Nunjucks</strong> (порт Jinja2 для JavaScript, тот же синтаксис <code>{{ }}</code> и <code>{% %}</code>), стилями и необязательной логикой. Рендерится в изолированном <code>iframe sandbox="allow-scripts"</code> без доступа к токену GitHub, сети и данным приложения. С приложением общается только через мост <code>zb</code> (<a href="#hooks">§12</a>).</p>
+<pre><code>sentence-build-ru-en/
+├── manifest.yaml     <span class="c"># параметры, проверка, навыки, рецепт, lint</span>
+├── view.njk          <span class="c"># вёрстка</span>
+├── style.css
+├── logic.js          <span class="c"># необязателен: без него работают data-zb-* атрибуты</span>
+└── examples.yaml     <span class="c"># тестовые params для превью в каталоге шаблонов</span></code></pre>
+
+  <h3>Поля манифеста</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Поле</th><th>Назначение</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code>, <code>name</code>, <code>version</code></td><td>Идентификатор (используется в <code>template:</code>), название в редакторе, версия пакета</td></tr>
+      <tr><td><code>trains</code></td><td>Навыки по умолчанию. Задание может сузить их полем <code>skill</code></td></tr>
+      <tr><td><code>reveals</code></td><td>Что задание показывает ученику (<code>en</code>, <code>ru</code>, <code>audio</code>). Нужно, чтобы задания одного слова в цикле не подсказывали друг другу (<a href="#hybrid">§8</a>)</td></tr>
+      <tr><td><code>params</code></td><td>Схема параметров. Типы: <code>text</code>, <code>markdown</code>, <code>word</code>, <code>list</code>, <code>choice</code>, <code>audio</code>, <code>image</code>, <code>ref</code> (ссылка на пример карточки), <code>object</code>. По схеме строится форма редактора и проверяются данные</td></tr>
+      <tr><td><code>check</code></td><td>Проверка ответа: <code>exact</code>, <code>fuzzy</code> (Левенштейн, регистр, пунктуация), <code>tokens</code> (порядок слов), <code>choice</code>, <code>pairs</code>, <code>custom</code></td></tr>
+      <tr><td><code>recipe</code></td><td>Как собрать черновики из <code>content</code> карточки: <code>for_each</code>, <code>when</code>, шаблоны значений, помощники <code>suggest.*</code></td></tr>
+      <tr><td><code>lint</code></td><td>Правила проверки заданий этого типа при сохранении</td></tr>
+      <tr><td><code>difficulty</code></td><td>1–5, для порядка в цикле и раундов знакомства</td></tr>
+      <tr><td><code>modes</code></td><td>Где допустим: <code>intro</code>, <code>learn</code>, <code>review</code>. Например, <code>en-ru-choice</code> слишком лёгок для зрелых слов и в review не попадает при S &gt; 30 дн.</td></tr>
+      <tr><td><code>extends</code></td><td>Унаследовать другой шаблон и переопределить блоки или стили</td></tr>
+      <tr><td><code>keys</code></td><td>Горячие клавиши шаблона</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Что доступно в вёрстке</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Переменная или фильтр</th><th>Что даёт</th></tr></thead>
+    <tbody>
+      <tr><td><code>params</code></td><td>Параметры задания из карточки, уже проверенные по схеме</td></tr>
+      <tr><td><code>card</code></td><td><code>content</code> карточки целиком: картинка, транскрипция, заметка, примеры</td></tr>
+      <tr><td><code>exercise</code></td><td><code>id</code>, <code>skill</code>, краткая статистика задания</td></tr>
+      <tr><td><code>skills</code></td><td>Текущие R и стадия навыков карточки, например чтобы прятать подсказку у зрелых слов</td></tr>
+      <tr><td><code>topic</code>, <code>mode</code>, <code>seed</code></td><td>Тема, режим (<code>intro</code> / <code>learn</code> / <code>review</code> / <code>practice</code>), сид для перемешивания</td></tr>
+      <tr><td><code>| tokens</code>, <code>| shuffle(seed)</code>, <code>| concat</code>, <code>| mask(word)</code>, <code>| letters</code>, <code>| md</code></td><td>Разбить на слова, перемешать, склеить списки, заменить слово пропуском, разбить на буквы, отрендерить markdown</td></tr>
+      <tr><td><code>media(file)</code></td><td>URL файла карточки (аудио, картинка)</td></tr>
+      <tr><td><code>t('key')</code></td><td>Строки интерфейса на языке пользователя</td></tr>
+    </tbody>
+  </table></div>
+  <p>Случайность в момент показа ограничена перемешиванием по <code>seed</code>. Содержание задания всегда то, что лежит в <code>params</code>.</p>
+
+  <h3>Без JS: декларативные атрибуты</h3>
+<pre><code>&lt;input data-zb-input&gt;                 <span class="c">→ значение уходит в zb.answer по Enter</span>
+&lt;button data-zb-choice="багаж"&gt;       <span class="c">→ zb.answer({ choice })</span>
+&lt;button data-zb-chip="luggage"&gt;       <span class="c">→ фишка для сборки, складывается в data-zb-slot</span>
+&lt;button data-zb="flip"&gt;               <span class="c">→ показать оборот, затем кнопки оценки</span>
+&lt;button data-zb="play" data-src="…"&gt; <span class="c">→ проиграть аудио</span>
+&lt;div data-zb-back hidden&gt;            <span class="c">→ оборот, раскрывается при flip</span></code></pre>
+
+  <h3>С JS: logic.js</h3>
+<pre><code><span class="k">export default function</span> (zb) {
+  <span class="k">const</span> picked = [];
+  zb.$$('[data-zb-chip]').forEach(chip =&gt; chip.addEventListener('click', () =&gt; {
+    picked.push(chip.dataset.zbChip);
+    zb.$('[data-zb-slot=answer]').append(chip);
+  }));
+  zb.on('submit', () =&gt; zb.answer({ tokens: picked }));
+  zb.on('graded', r =&gt; zb.$('.answer').classList.add(r.correct ? 'ok' : 'bad'));
+}
+
+<span class="c">// для check.type: custom</span>
+<span class="k">export function</span> check(answer, params) {
+  <span class="k">return</span> { correct: answer.tokens.join(' ') === params.answer, score: 1 };
+}</code></pre>
+
+  <h3>Распространение</h3>
+  <ul>
+    <li>Пакет шаблонов — GitHub-репозиторий, подключается в <code>deck.yaml</code>: <code>templates: [core, gh:user/zoobrik-duo-style@v1]</code>.</li>
+    <li>Версия фиксируется тегом. При обновлении пакета показываются дифф и превью на реальных заданиях колоды. Задания, которые не проходят новую схему, получают статус <code>stale</code>.</li>
+    <li>Каталог шаблонов в приложении показывает каждый шаблон на его <code>examples.yaml</code>.</li>
+  </ul>
+</section>
+
+
+<section id="exercises">
+  <h2><span class="num">06</span>Каталог шаблонов</h2>
+  <p>Встроенные шаблоны пакета <code>core/</code>. У каждого есть рецепт черновиков, так что из контента карточки сразу собираются задания всех этих типов. Любой шаблон переопределяется по каскаду (<a href="#assembly">§4</a>).</p>
+
+  <div class="mock-row">
+    <div class="icard" aria-label="Макет: сборка перевода">
+      <div class="bar"><span>Собери перевод</span><span class="dots"><i class="on"></i><i class="on"></i><i></i><i></i></span></div>
+      <p class="prompt">Я не могу найти свой багаж.</p>
+      <p class="hint">travel-airport · context</p>
+      <div class="answer-line" id="sb-answer"></div>
+      <div class="chips" id="sb-bank"></div>
+      <button class="btn" id="sb-check" type="button">Проверить</button>
+      <div class="feedback" id="sb-fb" aria-live="polite"></div>
+    </div>
+    <div class="icard" aria-label="Макет: диктант">
+      <div class="bar"><span>Напиши услышанное</span><span class="dots"><i class="on"></i><i></i><i></i></span></div>
+      <button class="play" type="button" id="lt-play" aria-label="Прослушать"><svg viewBox="0 0 24 24"><path d="M7 4v16l13-8z"/></svg></button>
+      <p class="hint">listen · spell · нажмите, чтобы послушать</p>
+      <input class="field" id="lt-input" autocomplete="off" spellcheck="false" placeholder="печатайте по-английски">
+      <div class="feedback" id="lt-fb" aria-live="polite"></div>
+      <div class="gradebar" aria-label="Оценка">
+        <button class="a" type="button">Снова<small>10м</small></button>
+        <button class="h" type="button">Трудно<small>2д</small></button>
+        <button class="o" type="button">Хорошо<small>6д</small></button>
+        <button class="e" type="button">Легко<small>14д</small></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-wrap"><table>
+    <thead><tr><th>Шаблон</th><th>Ученик видит</th><th>Ученик делает</th><th>Навыки</th><th>Оценка</th></tr></thead>
+    <tbody>
+      <tr><td><code>intro</code></td><td>Слово, звук, картинку, перевод, примеры, заметку</td><td>Читает, слушает</td><td>—</td><td>нет</td></tr>
+      <tr><td><code>en-ru-flip</code></td><td>en-слово</td><td>Вспоминает, переворачивает</td><td><span class="skill">recognize</span></td><td>вручную 1–4</td></tr>
+      <tr><td><code>en-ru-choice</code></td><td>en-слово и 4 перевода</td><td>Выбирает</td><td><span class="skill">recognize</span></td><td>авто</td></tr>
+      <tr><td><code>ru-en-flip</code></td><td>ru-слово</td><td>Вспоминает, переворачивает</td><td><span class="skill">recall</span></td><td>вручную 1–4</td></tr>
+      <tr><td><code>ru-en-type</code></td><td>ru-слово</td><td>Печатает en</td><td><span class="skill">recall</span><span class="skill">spell</span></td><td>авто, опечатка → Hard</td></tr>
+      <tr><td><code>ru-en-letters</code></td><td>ru-слово и перемешанные буквы с лишними</td><td>Собирает слово по буквам</td><td><span class="skill">recall</span></td><td>авто</td></tr>
+      <tr><td><code>sentence-build-ru-en</code></td><td>ru-предложение и банк en-слов с подкидышами</td><td>Собирает перевод</td><td><span class="skill">context</span></td><td>авто, допускаются варианты из <code>alt</code></td></tr>
+      <tr><td><code>sentence-build-en-ru</code></td><td>en-предложение и банк ru-слов с подкидышами</td><td>Собирает перевод</td><td><span class="skill">context</span><span class="skill">recognize</span></td><td>авто</td></tr>
+      <tr><td><code>listen-type</code></td><td>Аудио слова или предложения</td><td>Печатает услышанное на en</td><td><span class="skill">listen</span><span class="skill">spell</span></td><td>авто</td></tr>
+      <tr><td><code>listen-choose-ru</code></td><td>Аудио и 4 перевода</td><td>Выбирает перевод</td><td><span class="skill">listen</span></td><td>авто</td></tr>
+      <tr><td><code>listen-type-ru</code></td><td>Аудио</td><td>Печатает перевод на ru</td><td><span class="skill">listen</span><span class="skill">recognize</span></td><td>авто, синонимы из <code>alt_ru</code></td></tr>
+      <tr><td><code>listen-build</code></td><td>Аудио предложения и банк en-слов</td><td>Собирает услышанное</td><td><span class="skill">listen</span><span class="skill">context</span></td><td>авто</td></tr>
+      <tr><td><code>cloze-type</code></td><td>en-предложение с пропуском и ru-подсказку</td><td>Вписывает слово в нужной форме</td><td><span class="skill">context</span><span class="skill">spell</span></td><td>авто</td></tr>
+      <tr><td><code>cloze-choice</code></td><td>Предложение с пропуском и 3–4 варианта</td><td>Выбирает</td><td><span class="skill">context</span></td><td>авто</td></tr>
+      <tr><td><code>match-pairs</code></td><td>5 en и 5 ru слов темы</td><td>Соединяет пары</td><td><span class="skill">recognize</span> ×5</td><td>каждой паре отдельно</td></tr>
+      <tr><td><code>picture-word</code></td><td>Картинку</td><td>Выбирает или печатает слово</td><td><span class="skill">recall</span></td><td>авто</td></tr>
+      <tr><td><code>definition-en</code></td><td>Английское определение</td><td>Печатает слово (en → en)</td><td><span class="skill">recall</span></td><td>авто</td></tr>
+      <tr><td><code>collocation</code></td><td><em>make / do / take + ___ a decision</em></td><td>Выбирает пару</td><td><span class="skill">context</span></td><td>авто</td></tr>
+      <tr><td><code>minimal-pairs</code></td><td>Аудио <em>ship / sheep</em></td><td>Выбирает услышанное</td><td><span class="skill">listen</span></td><td>авто</td></tr>
+      <tr><td><code>odd-one-out</code></td><td>4 слова темы</td><td>Находит лишнее</td><td><span class="skill">recognize</span></td><td>только <code>exposure</code></td></tr>
+      <tr><td><code>dialogue-reply</code></td><td>Реплику мини-диалога</td><td>Выбирает уместный ответ</td><td><span class="skill">context</span></td><td>авто</td></tr>
+      <tr><td><code>grammar-choose-form</code></td><td><em>She ___ (lose) her passport.</em></td><td>Выбирает форму</td><td><span class="skill">apply</span></td><td>авто</td></tr>
+      <tr><td><code>grammar-fix</code></td><td>Предложение с ошибкой</td><td>Нажимает на ошибку и исправляет</td><td><span class="skill">apply</span></td><td>авто</td></tr>
+      <tr><td><code>grammar-transform</code></td><td>Утверждение и цель: вопрос, отрицание, прошедшее</td><td>Печатает или собирает</td><td><span class="skill">apply</span></td><td>авто</td></tr>
+      <tr><td><code>speak</code> <small>(плагин)</small></td><td>Слово или предложение</td><td>Произносит, распознаётся речь</td><td><span class="skill">speak</span></td><td>авто или вручную</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Подкидыши и отвлекающие варианты</h3>
+  <p>Подкидыши подбираются <strong>при сборке черновика</strong>, а не в момент показа. Помощник рецепта <code>suggest.extra(text, n)</code> / <code>suggest.options(word, n)</code> предлагает варианты, автор правит их в форме, и они сохраняются в <code>params</code>. Источники по приоритету:</p>
+  <ul>
+    <li><code>confusables</code> карточки: <em>luggage → baggage, language</em>;</li>
+    <li><code>batch</code> — слова текущей порции, чтобы учиться различать соседей;</li>
+    <li><code>topic</code> — та же тема и часть речи;</li>
+    <li><code>morphology</code> — формы того же слова для сборки предложений: <em>go / goes / went / going</em>, артикли <em>a / an / the</em>, предлоги;</li>
+    <li><code>plugin</code> — внешний генератор через хук <code>suggest.provide</code>.</li>
+  </ul>
+  <p>Банк слов для сборки предложения: токены правильного ответа плюс 2–4 подкидыша, перемешанные с сидом от <code>id задания + дата</code>. Повторный показ в тот же день даёт ту же раскладку, а на следующий день — новую.</p>
+
+</section>
+
+<section id="fsrs">
+  <h2><span class="num">07</span>Интервальные повторения: FSRS из Anki</h2>
+  <span class="decision">Согласовано</span>
+  <p>Берём FSRS — алгоритм, который в Anki включён по умолчанию с версии 23.10. Реализация — <a href="https://github.com/open-spaced-repetition/ts-fsrs">ts-fsrs</a> от авторов алгоритма, чтобы не расходиться с Anki в числах. У каждого навыка три переменные:</p>
+  <ul>
+    <li><strong>Stability (S)</strong> — через сколько дней вероятность вспомнить упадёт до 90%.</li>
+    <li><strong>Difficulty (D)</strong> — от 1 до 10, насколько трудно навык поддаётся укреплению.</li>
+    <li><strong>Retrievability (R)</strong> — вероятность вспомнить прямо сейчас, вычисляется из S и прошедшего времени.</li>
+  </ul>
+
+  <h3>Оценки</h3>
+  <div class="grades">
+    <div class="g again"><b>Снова</b><small>1 · Again · клавиша 1</small></div>
+    <div class="g hard"><b>Трудно</b><small>2 · Hard · клавиша 2</small></div>
+    <div class="g good"><b>Хорошо</b><small>3 · Good · клавиша 3 / пробел</small></div>
+    <div class="g easy"><b>Легко</b><small>4 · Easy · клавиша 4</small></div>
+  </div>
+
+  <h3>Формулы (FSRS-6)</h3>
+<pre><code><span class="c"># кривая забывания, t — дни с последнего повторения</span>
+R(t, S) = (1 + F · t / S) ^ (−w20)          где F = 0.9 ^ (−1 / w20) − 1
+
+<span class="c"># следующий интервал при желаемом удержании r</span>
+I(r, S) = S / F · (r ^ (−1 / w20) − 1)        <span class="c"># при r = 0.9 интервал равен S</span>
+
+<span class="c"># первое повторение</span>
+S0(G) = w[G−1]
+D0(G) = w4 − e^(w5·(G−1)) + 1
+
+<span class="c"># сложность после ответа: линейное затухание и возврат к среднему</span>
+D' = D − w6·(G−3) · (10 − D) / 9
+D″ = w7 · D0(4) + (1 − w7) · D'
+
+<span class="c"># успешное вспоминание (G ≥ 2)</span>
+S'r = S · (1 + e^w8 · (11 − D) · S^(−w9) · (e^(w10·(1−R)) − 1) · [w15 если Hard] · [w16 если Easy])
+
+<span class="c"># забыл (G = 1)</span>
+S'f = min(S, w11 · D^(−w12) · ((S+1)^w13 − 1) · e^(w14·(1−R)))
+
+<span class="c"># повтор в тот же день (шаги обучения)</span>
+S' = S · e^(w17·(G − 3 + w18)) · S^(−w19)</code></pre>
+
+  <div class="calc" id="calc">
+    <div class="ctrls">
+      <label for="s-in">Стабильность S, дней <output id="s-out">10</output>
+        <input type="range" id="s-in" min="1" max="120" value="10"></label>
+      <label for="r-in">Желаемое удержание <output id="r-out">0.90</output>
+        <input type="range" id="r-in" min="70" max="97" value="90"></label>
+    </div>
+    <p class="readout">Следующий показ через <b id="i-out">10 дн.</b> К этому моменту вероятность вспомнить опустится до выбранного уровня.</p>
+    <svg id="curve" viewBox="0 0 640 220" role="img" aria-label="Кривая забывания"></svg>
+  </div>
+
+  <h3>Что копируем из Anki</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Механика Anki</th><th>В Zoobrik</th></tr></thead>
+    <tbody>
+      <tr><td>Очереди New / Learning / Review / Relearning</td><td>Те же состояния, но у каждого навыка свои. Стадия карточки выводится из стадий её навыков (<a href="#hybrid">§8</a>).</td></tr>
+      <tr><td>Шаги обучения <code>1m 10m</code> и переобучения <code>10m</code></td><td>Да. Внутри сессии шаг считается выполненным, когда прошло нужное время <em>и</em> между показами было хотя бы 3 других задания.</td></tr>
+      <tr><td>Желаемое удержание</td><td>Да, отдельно по каждому навыку.</td></tr>
+      <tr><td>Fuzz — случайный разброс интервала</td><td>Да, ±5% для интервалов больше 2.5 дней, чтобы слова темы не слипались в один день.</td></tr>
+      <tr><td>Load balancer (Anki 24.11)</td><td>Да. Внутри окна fuzz выбирается день с меньшей нагрузкой.</td></tr>
+      <tr><td>Easy Days</td><td>Да, в настройках колоды: дни недели с уменьшенной нагрузкой.</td></tr>
+      <tr><td>Bury siblings</td><td>Не нужно: все навыки слова и так проверяются в одном цикле.</td></tr>
+      <tr><td>Пиявки (leeches)</td><td>8 провалов навыка → карточка помечается <code>leech</code>. Приложение предлагает отредактировать её: мнемоника, картинка, больше примеров. Можно приостановить.</td></tr>
+      <tr><td>Оптимизатор параметров</td><td>Да, по логам всех карточек колоды (в веб-воркере). Результат записывается в <code>deck.yaml</code>.</td></tr>
+      <tr><td>Дневные лимиты</td><td>Считаются в карточках (словах), а не в отдельных заданиях: 4 задания по одному слову за цикл — это 1 повторение.</td></tr>
+      <tr><td>Undo, Suspend, Bury, Reset, Set due date</td><td>Да, на уровне карточки и отдельного навыка.</td></tr>
+      <tr><td>Custom study, фильтрованные колоды</td><td>«Свободная практика» по теме или тегу. Ответы пишутся в лог, но расписание не меняют (флаг <code>practice</code>).</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="hybrid">
+  <h2><span class="num">08</span>Гибридный планировщик</h2>
+  <span class="decision">Согласовано</span>
+  <p>Главное отличие от Anki. Расписание ведётся по навыкам, а проверяется карточка целиком — за один цикл.</p>
+  <p><strong>Цикл</strong> — отрезок сессии, в котором вместе прорабатываются 3–5 карточек одной темы. Задания всех этих карточек перемешиваются: между двумя заданиями одного слова идёт минимум 2 задания других слов. Цикл заканчивается, когда у каждой его карточки пройдены все назначенные задания. Затем начинается следующий цикл — с той же темой или со следующей.</p>
+
+  <h3>Когда карточка попадает в очередь</h3>
+  <p>Карточка считается «к повторению», если хотя бы у одного навыка <code>due ≤ сегодня</code>. Приоритет — минимальная текущая R среди её навыков: чем сильнее забыто, тем раньше показ.</p>
+
+  <h3>Какие задания получает карточка в цикле</h3>
+  <ol>
+    <li><strong>Обязательные навыки</strong> — все, у которых наступил срок.</li>
+    <li><strong>Попутные навыки</strong> — до двух навыков без срока с наименьшей R, если R &lt; 0.95. FSRS корректно учитывает досрочное повторение: при высокой R прирост стабильности небольшой, поэтому сильный навык не раздувается.</li>
+    <li>На карточку за цикл приходится 2–5 заданий. Если навыков больше, лишние переносятся на следующий цикл, в котором эта карточка окажется.</li>
+    <li>На каждый навык выбирается <strong>задание из карточки</strong>: только со статусом <code>ready</code>, тренирующее этот навык, допустимое в текущем режиме (<code>modes</code>). Среди подходящих — то, что дольше всех не показывалось. При равенстве — с большей долей ошибок. Если у навыка нет ни одного готового задания, навык пропускается, а в редакторе карточки появляется предупреждение.</li>
+    <li>Одно задание может закрыть сразу два навыка (<code>listen-type</code> → listen + spell). Тогда второй навык в этом цикле отдельным заданием не проверяется.</li>
+  </ol>
+
+  <h3>Порядок заданий в цикле и «подсказки»</h3>
+  <p>Задания одного слова в цикле подсказывают друг другу, даже если между ними стоят другие слова: после <em>luggage → багаж</em> вопрос <em>багаж → ?</em> уже не проверяет память. Поэтому:</p>
+  <ul>
+    <li><strong>На повторении</strong> задания одного слова раскладываются по циклу от трудного к лёгкому: <span class="skill">listen</span> → <span class="skill">recall</span> / <span class="skill">spell</span> → <span class="skill">context</span> → <span class="skill">recognize</span>. Ответ на вопрос не раскрывается раньше, чем его спросят.</li>
+    <li>Каждый шаблон объявляет, что раскрывает ученику (<code>reveals: [en, ru, audio]</code> в манифесте).</li>
+    <li>Если навык проверяется после того, как его ответ уже был раскрыт раньше в этом цикле, верный ответ пишется в журнал как <code>practice</code> и расписание не меняет. <strong>Ошибка засчитывается всегда</strong>: не вспомнить даже после подсказки — сильный сигнал.</li>
+    <li><strong>На первом знакомстве</strong> порядок обратный, от лёгкого к трудному (<a href="#intro">§9</a>).</li>
+  </ul>
+
+  <h3>Предложения и чужие слова</h3>
+  <p>У предложения есть <code>targets</code> (ради чего оно показано) и другие известные слова. Оценка полностью идёт навыку <code>context</code> у targets. Остальным знакомым словам пишется только <code>exposure</code> — отметка встречи без пересчёта FSRS, она нужна для статистики и выбора следующих предложений. Правила из <code>uses</code> получают оценку по <span class="skill">apply</span>, только если шаблон проверяет именно грамматику (cloze на форму глагола).</p>
+
+  <pre class="mermaid">
+stateDiagram-v2
+  direction LR
+  [*] --> New
+  New --> Intro: открыта порция темы
+  Intro --> Learning: знакомство показано
+  Learning --> Learning: Again / Hard (шаги 1m, 10m)
+  Learning --> Review: все основные навыки прошли шаги
+  Review --> Review: Hard / Good / Easy
+  Review --> Relearning: Again по навыку
+  Relearning --> Review: шаг 10m пройден
+  Review --> Mastered: S ≥ 90 дн. у всех навыков
+  Mastered --> Review: провал любого навыка
+  </pre>
+</section>
+
+<section id="intro">
+  <h2><span class="num">09</span>Поэтапный ввод новых слов</h2>
+  <span class="decision">Согласовано</span>
+
+  <h3>Порции и гейт</h3>
+  <ol>
+    <li>Тема открывается, когда закрыты её зависимости (<code>requires</code>): у их карточек нет навыков в Learning, и они хотя бы раз прошли повторение.</li>
+    <li>Из темы берётся порция из <code>batch</code> карточек (по умолчанию 4) в порядке <code>order</code>.</li>
+    <li>Следующая порция открывается только когда <strong>все</strong> карточки текущей вышли из Learning и у навыков из <code>gate.skills</code> стабильность не меньше <code>gate.min_stability</code>.</li>
+    <li>Дневной лимит новых считается в карточках. Если долг по повторениям больше <code>max_backlog_ratio</code> × средний дневной объём, новые слова не вводятся, пока долг не уменьшится.</li>
+    <li>Грамматическое правило темы вводится до первого предложения, которое его использует.</li>
+  </ol>
+
+  <h3>Первая встреча с порцией из 4 слов</h3>
+  <p>Чтобы за одну сессию пройти все формы, используется схема «расширяющегося повторения»: каждое слово возвращается всё в более трудном задании, а между возвратами идут другие слова порции.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Раунд</th><th>Задания</th><th>Навык</th><th>Зачем</th></tr></thead>
+    <tbody>
+      <tr><td>0. Знакомство</td><td>Карточка: слово, звук, картинка, перевод, 2 примера, заметка. Без оценки.</td><td>—</td><td>Ввести форму и смысл</td></tr>
+      <tr><td>1. Узнавание</td><td>en → выбор из 4 переводов (отвлекающие варианты из той же порции)</td><td><span class="skill">recognize</span></td><td>Лёгкий первый успех</td></tr>
+      <tr><td>2. Слух</td><td>Послушать → выбрать слово</td><td><span class="skill">listen</span></td><td>Связать звук с формой</td></tr>
+      <tr><td>3. Вспоминание</td><td>ru → собрать слово из букв, затем ru → напечатать</td><td><span class="skill">recall</span> <span class="skill">spell</span></td><td>Активное воспроизведение</td></tr>
+      <tr><td>4. Контекст</td><td>Собрать перевод примера из банка слов с подкидышами</td><td><span class="skill">context</span></td><td>Употребление</td></tr>
+      <tr><td>5. Закрепление</td><td>Сопоставить пары всей порции, диктант по одному слову</td><td>смешанно</td><td>Различить слова порции между собой</td></tr>
+    </tbody>
+  </table></div>
+  <p>Порядок в сессии: <code>A0 A1 B0 B1 A2 C0 B2 A3 C1 D0 …</code> Между двумя показами одного слова проходит 2–3 других задания. Ошибка возвращает задание того же раунда через 3 позиции.</p>
+</section>
+
+<section id="session">
+  <h2><span class="num">10</span>Сборка сессии</h2>
+<pre><code><span class="k">function</span> buildSession(deck, now):
+  due    = units.filter(u =&gt; u.skills.some(s =&gt; s.due &lt;= now + learnAhead))
+  topics = groupBy(due, topic).sortBy(minRetrievability)       <span class="c"># самые забытые темы — первыми</span>
+
+  <span class="k">for</span> topic <span class="k">in</span> topics:
+    window = take(topic.units, 3..5)                            <span class="c"># окно чередования</span>
+    tasks  = window.flatMap(pickExercises)                          <span class="c"># 2–5 заданий на карточку, §8</span>
+    queue.push(spreadCycle(tasks, minGap = 2))                  <span class="c"># A1 B1 C1 A2 B2 C2 …</span>
+
+  <span class="k">if</span> newAllowed(now):                                          <span class="c"># лимит, гейт, долг</span>
+    batch = nextBatch(openTopics)
+    queue.insertAtTopicBoundary(introRounds(batch))              <span class="c"># §9</span>
+
+  <span class="k">return</span> hooks.run('queue.build', queue)                      <span class="c"># плагины могут переупорядочить</span></code></pre>
+  <p><code>spreadCycle</code> раскладывает задания цикла так, чтобы между двумя заданиями одного слова было не меньше <code>minGap</code> других. Порядок заданий одного слова (от трудного к лёгкому) при этом сохраняется. За время цикла слово успевает немного «остыть», и каждое следующее задание действительно проверяет память. Ошибка возвращает задание в этот же цикл, тоже не раньше чем через <code>minGap</code> позиций.</p>
+
+  <h3>Автооценка интерактивных заданий</h3>
+  <p>Шаблон возвращает результат, приложение переводит его в оценку FSRS. Функцию перевода можно заменить хуком <code>grade.map</code>.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Результат</th><th>Оценка</th></tr></thead>
+    <tbody>
+      <tr><td>Неверно, или «Не знаю», или пропуск по незнанию</td><td style="color:var(--again)">Again</td></tr>
+      <tr><td>Верно, но с подсказкой, с опечаткой (расстояние Левенштейна ≤ 1 для слов от 5 букв), или время больше 75-го перцентиля для этого шаблона</td><td style="color:var(--hard)">Hard</td></tr>
+      <tr><td>Верно</td><td style="color:var(--good)">Good</td></tr>
+      <tr><td>Только вручную: клавиша 4 или кнопка «Легко» после ответа. Автооценка Easy не ставит.</td><td style="color:var(--easy)">Easy</td></tr>
+    </tbody>
+  </table></div>
+  <p>После автооценки показывается полоска с выставленной оценкой и кнопками «Я был прав» (опечатка не по незнанию, синоним) , «Легко» и «Поменять оценку». В заданиях-переворотах оценку всегда ставит человек кнопками 1–4.</p>
+</section>
+
+<section id="sync">
+  <h2><span class="num">11</span>Прогресс и синхронизация через GitHub</h2>
+  <p>Приложение работает офлайн, локальная копия колоды лежит в IndexedDB. Синхронизация — коммит в репозиторий пользователя через GitHub REST API.</p>
+
+  <h3>Что меняется при ответе</h3>
+  <ol>
+    <li>В журнал устройства <code>journal/&lt;год-месяц&gt;/&lt;устройство&gt;.tsv</code> дописывается строка.</li>
+    <li>В <code>card.yaml</code> обновляется <code>progress</code>: навык, счётчики, статистика задания, хвост <code>recent</code>, <code>as_of</code>.</li>
+    <li>Изменения копятся локально и уходят одним коммитом при синхронизации.</li>
+  </ol>
+
+  <h3>Доступ</h3>
+  <p>В MVP — fine-grained personal access token с правом <code>Contents: read &amp; write</code> на один репозиторий. Токен хранится только на устройстве. OAuth и GitHub App требуют небольшого прокси: эндпоинты авторизации GitHub недоступны из браузера из-за CORS. Это этап 3.</p>
+
+  <h3>Цикл синхронизации</h3>
+  <ol>
+    <li>Получить <code>HEAD</code> ветки. Если он не изменился с прошлой синхронизации — сразу шаг 4.</li>
+    <li>Сравнить деревья через Git Trees API, скачать только изменившиеся файлы.</li>
+    <li>Слить удалённые изменения с локальными по правилам ниже.</li>
+    <li>Одним атомарным коммитом через Git Data API (blobs → tree → commit → update ref) записать изменения. Сообщение: <code>review: 42 cards · 3 new · iphone</code>.</li>
+    <li>Если ref ушёл вперёд, повторить с шага 1.</li>
+  </ol>
+
+  <h3>Слияние без конфликтов</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Что</th><th>Правило</th></tr></thead>
+    <tbody>
+      <tr><td><code>journal/*/&lt;устройство&gt;.tsv</code></td><td>Каждое устройство пишет только свой файл и только дописывает, поэтому конфликтов не бывает.</td></tr>
+      <tr><td><code>card.yaml → progress</code></td><td>Если прогресс карточки изменили оба устройства, он пересчитывается: берётся общий предок, к нему применяются строки обоих журналов после его <code>as_of</code> в порядке времени. Результат детерминирован и одинаков на всех устройствах.</td></tr>
+      <tr><td><code>card.yaml → content, exercises</code></td><td>Трёхстороннее слияние по полям и по <code>id</code> заданий. Если оба устройства изменили одно поле, остаётся удалённое значение, локальное сохраняется в <code>.zoobrik/conflicts/</code> и показывается пользователю.</td></tr>
+      <tr><td><code>deck.yaml → fsrs.params</code></td><td>После смены параметров <code>progress</code> всех карточек пересчитывается из журнала в фоне.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Распространение колод</h3>
+  <ul>
+    <li><strong>Опубликовать</strong>: экспорт в отдельную ветку или репозиторий без <code>progress</code> и без <code>journal/</code>. Задания со статусом <code>draft</code> по желанию тоже вырезаются.</li>
+    <li><strong>Подписаться на колоду</strong>: <code>upstream: gh:author/english-a2</code> в <code>deck.yaml</code>. Обновления автора вливаются в <code>content</code> и <code>exercises</code>, прогресс не затрагивается. Новые задания приходят готовыми, удалённые автором становятся <code>off</code> и сохраняют статистику.</li>
+    <li><strong>Импорт из Anki</strong> (.apkg) с переносом истории в журнал — этап 4.</li>
+  </ul>
+</section>
+
+
+<section id="hooks">
+  <h2><span class="num">12</span>Хуки и плагины</h2>
+  <p>Расширение работает на двух уровнях. <strong>Мост шаблона</strong> управляет одним заданием. <strong>Хуки приложения</strong> управляют очередью, оценкой, контентом, синхронизацией.</p>
+
+  <h3>Мост шаблона: команды</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Вызов</th><th>Действие</th></tr></thead>
+    <tbody>
+      <tr><td><code>zb.flip()</code></td><td>Перевернуть: показать оборот и кнопки оценки</td></tr>
+      <tr><td><code>zb.answer(value)</code></td><td>Отправить ответ на проверку грейдером из манифеста</td></tr>
+      <tr><td><code>zb.grade('again'|'hard'|'good'|'easy')</code></td><td>Поставить оценку напрямую. «Принять карточку» — это <code>grade('good')</code></td></tr>
+      <tr><td><code>zb.override('correct'|'wrong')</code></td><td>«Я был прав» / «На самом деле не знал»</td></tr>
+      <tr><td><code>zb.skip(reason)</code></td><td>Пропустить: <code>'unknown'</code> = Again; <code>'no-audio'</code> или <code>'later'</code> = без оценки, задание уходит в конец цикла</td></tr>
+      <tr><td><code>zb.hint(level?)</code></td><td>Подсказка: первая буква, число букв, заметка. Подсказка понижает оценку до Hard</td></tr>
+      <tr><td><code>zb.play(ref?, {rate})</code></td><td>Проиграть аудио, медленно при <code>rate: 0.7</code></td></tr>
+      <tr><td><code>zb.next()</code></td><td>Перейти к следующему заданию</td></tr>
+      <tr><td><code>zb.bury()</code>, <code>zb.suspend()</code>, <code>zb.edit()</code>, <code>zb.report()</code></td><td>Отложить, приостановить, открыть редактор карточки, пожаловаться на ошибку в контенте</td></tr>
+      <tr><td><code>zb.$</code>, <code>zb.$$</code>, <code>zb.on</code>, <code>zb.store</code></td><td>Работа с DOM в iframe, подписка на события, маленькое KV-хранилище шаблона</td></tr>
+    </tbody>
+  </table></div>
+  <h4>События, на которые подписывается шаблон</h4>
+  <p><code>ready</code> · <code>flip</code> · <code>submit</code> · <code>graded {correct, grade, expected, diff}</code> · <code>hint</code> · <code>key</code> · <code>timeout</code> · <code>theme</code></p>
+
+  <h3>Хуки приложения</h3>
+  <p>Плагин — ES-модуль, выполняется в Web Worker. Он получает данные и возвращает изменённые данные, к DOM приложения доступа не имеет.</p>
+<pre><code><span class="k">export default</span> {
+  id: 'llm-sentences',
+  hooks: {
+    'card.loaded':        (card) =&gt; card,                    <span class="c">// дополнить контент: примеры, IPA</span>
+    'queue.build':        (queue, ctx) =&gt; queue,             <span class="c">// переупорядочить циклы сессии</span>
+    'card.exercises':     (list, card) =&gt; list,              <span class="c">// какие задания карточки взять в цикл</span>
+    'recipe.run':         (drafts, card, template) =&gt; drafts, <span class="c">// поправить черновики рецепта</span>
+    'render.context':     (ctx) =&gt; ctx,                      <span class="c">// добавить переменные шаблону</span>
+    'suggest.provide':    (card, kind, n) =&gt; [...],         <span class="c">// варианты подкидышей для редактора</span>
+    'tts.provide':        (text, lang) =&gt; blobUrl,
+    'answer.check':       (expected, given, unit) =&gt; ({ correct, score }),
+    'grade.map':          (result) =&gt; 'good',                <span class="c">// результат → оценка FSRS</span>
+    'review.commit':      (entry) =&gt; entry,                  <span class="c">// перед записью в лог</span>
+    'session.end':        (summary) =&gt; {},
+    'sync.before':        (changes) =&gt; changes,
+  }
+}</code></pre>
+
+  <h3>Кастомизация оформления</h3>
+  <ul>
+    <li><strong>Тема</strong> — CSS-файл, который переопределяет токены (<code>--zb-bg</code>, <code>--zb-ink</code>, <code>--zb-accent</code>, <code>--zb-radius</code>, <code>--zb-font-*</code>). Токены пробрасываются во все iframe шаблонов.</li>
+    <li><strong>Слоты оболочки</strong>: верхняя панель, полоска прогресса, панель оценок, экран итогов. Каждый переопределяется отдельным <code>.njk</code> в <code>themes/&lt;id&gt;/slots/</code>.</li>
+    <li><strong>Переопределение шаблона</strong>: положить в колоду шаблон с тем же <code>id</code> или указать <code>extends: core/ru-en-type</code> и поменять только <code>style.css</code>.</li>
+  </ul>
+</section>
+
+<section id="voice">
+  <h2><span class="num">13</span>Озвучка</h2>
+  <span class="decision">Согласовано</span>
+  <p>Аудио не синтезируется в момент задания. Его заранее готовит фоновый процесс и сохраняет файлами в папку карточки, так что каждый текст озвучивается один раз. Приложение может распространяться коммерчески, поэтому берём только модели с открытой лицензией.</p>
+  <p><strong>Модель — Kokoro-82M</strong> (Apache 2.0). Среди открытых моделей, разрешённых для коммерческого использования, у неё самый высокий рейтинг в слепых сравнениях, вровень с Magpie 357M. У Kokoro есть британские голоса и вход по транскрипции. Модели, которые звучат лучше (Fish S2 Pro, Voxtral, Breeze), запрещают коммерческое использование.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Уровень</th><th>Где работает</th><th>Когда используется</th></tr></thead>
+    <tbody>
+      <tr><td>1. Файл в карточке</td><td>—</td><td>Всегда, если файл есть</td></tr>
+      <tr><td>2. <strong>zoobrik-voice</strong></td><td>Mac, Kokoro через MLX</td><td>Основной источник аудио</td></tr>
+      <tr><td>3. Фон в браузере</td><td>PWA, Kokoro через <code>kokoro-js</code></td><td>У пользователя без утилиты или пока утилита не дошла до новых карточек</td></tr>
+      <tr><td>4. Web Speech API</td><td>системный голос</td><td>Крайний случай, в файл не сохраняется</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Замер на M1 Pro, 32 ГБ</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Текст</th><th>Длительность</th><th>Генерация</th><th>mp3 64 кбит/с</th><th>opus 32 кбит/с</th></tr></thead>
+    <tbody>
+      <tr><td>luggage</td><td>1.0 с</td><td>— (прогрев)</td><td>8.5 КБ</td><td>3.5 КБ</td></tr>
+      <tr><td>I can't find my luggage.</td><td>2.2 с</td><td>0.27 с</td><td>18 КБ</td><td>7.7 КБ</td></tr>
+      <tr><td>How many pieces of luggage do you have?</td><td>2.9 с</td><td>0.23 с</td><td>23 КБ</td><td>10 КБ</td></tr>
+    </tbody>
+  </table></div>
+  <p>Около 10× быстрее реального времени: колода из 2000 слов с 4000 примеров озвучивается примерно за 20–30 минут. Первый запуск дольше на пару минут: разово скачиваются модель (~330 МБ) и словарь произношений. Формат по умолчанию — mp3: он гарантированно играет в Safari на iPhone. Opus в 2 раза меньше, включается в <code>deck.yaml → voice.format</code>.</p>
+
+  <h3>zoobrik-voice</h3>
+  <ul>
+    <li>Консольная утилита и фоновый процесс (launchd) на Mac, работает с локальным клоном колоды.</li>
+    <li>Находит в <code>content</code> и в <code>params</code> заданий тексты без аудио или с устаревшим <code>engine</code>, озвучивает и коммитит одним коммитом: <code>voice: 37 clips · kokoro-1.0</code>.</li>
+    <li>Если у карточки есть <code>ipa</code>, слово озвучивается по транскрипции, так произношение задано точно.</li>
+    <li><code>zoobrik-voice regen --engine …</code> переозвучивает колоду, когда появится модель лучше. Движки подключаются адаптерами: <code>synthesize(text | ipa, voice) → wav</code>.</li>
+  </ul>
+</section>
+
+<section id="stats">
+  <h2><span class="num">14</span>Статистика</h2>
+  <div class="grid-2">
+    <div class="tile"><span class="tag">карточка</span><h5>Профиль навыков</h5><p>Полоски R и S по каждому навыку слова, история ответов, какие шаблоны давались труднее.</p></div>
+    <div class="tile"><span class="tag">тема</span><h5>Освоенность темы</h5><p>Сколько карточек в каждой стадии, состояние гейта, когда откроется следующая порция.</p></div>
+    <div class="tile"><span class="tag">колода</span><h5>Прогноз нагрузки</h5><p>Число карточек к повторению на 30 дней вперёд с учётом Easy Days.</p></div>
+    <div class="tile"><span class="tag">колода</span><h5>Истинное удержание</h5><p>Доля верных ответов по навыкам в сравнении с целевыми. Отклонение больше 3% — подсказка запустить оптимизатор.</p></div>
+    <div class="tile"><span class="tag">привычка</span><h5>Календарь занятий</h5><p>Тепловая карта по дням, серия, время на сессию.</p></div>
+    <div class="tile"><span class="tag">проблемы</span><h5>Пиявки и слабые навыки</h5><p>Список пиявок и сводка вида «аудирование отстаёт на 20% от узнавания».</p></div>
+  </div>
+  <p>Вся статистика считается из логов в файлах. Отдельной базы нет, поэтому статистика видна на любом устройстве после синхронизации.</p>
+</section>
+
+<section id="design">
+  <h2><span class="num">15</span>Дизайн-направление</h2>
+  <p>Визуальная метафора — <strong>учётная карточка</strong>: белый лист, тонкие голубые линейки, красная линия сверху. Это прямой предок флеш-карт, и метафора узнаётся без пояснений. Никаких градиентов и фиолетового. Цвет используется по смыслу: красная линия маркирует активное, четыре цвета оценок совпадают с цветами Anki, чтобы переход был привычным.</p>
+  <div class="grid-2">
+    <div class="tile"><span class="tag">шрифты</span><h5>Unbounded · Golos Text · JetBrains Mono</h5><p>Заголовки широкие и короткие, текст — Golos (сделан под кириллицу), транскрипции и ввод — моноширинный.</p></div>
+    <div class="tile"><span class="tag">экран задания</span><h5>Один вопрос — один экран</h5><p>Ничего, кроме задания, прогресса цикла (полоски сверху) и действия. Тема и навык — мелкой строкой.</p></div>
+    <div class="tile"><span class="tag">клавиатура</span><h5>Как в Anki</h5><p>Пробел — перевернуть или проверить, 1–4 — оценка, R — повторить аудио, H — подсказка, Esc — пропустить.</p></div>
+    <div class="tile"><span class="tag">обратная связь</span><h5>Тихо и быстро</h5><p>Верный ответ — зелёная рамка и автопереход через 600 мс. Ошибка — дифф по буквам и остановка до нажатия.</p></div>
+  </div>
+  <p>Инструменты для дальнейшей проработки экранов: <a href="https://mobbin.com">Mobbin</a> (подключён) — референсы реальных обучающих приложений; Figma — макеты по токенам этой спецификации; дизайн-система в Claude Artifacts на тех же токенах, на неё будут опираться шаблоны <code>core/</code>.</p>
+</section>
+
+<section id="roadmap">
+  <h2><span class="num">16</span>Этапы</h2>
+  <ul class="timeline">
+    <li><b>Этап 0</b><p><strong>Спецификация</strong>Этот документ, согласование открытых вопросов, JSON-схемы файлов.</p></li>
+    <li><b>Этап 1</b><p><strong>Ядро, офлайн</strong>Формат карточек и журнала, JSON-схемы, редактор карточки с черновиками по рецептам и превью, ts-fsrs, гибридный планировщик, сборка сессии, 8 базовых шаблонов (intro, en-ru-choice, ru-en-type, sentence-build ×2, listen-type, listen-choose-ru, match-pairs), фоновая озвучка Kokoro в браузере, импорт папки колоды. Параллельно — утилита <code>zoobrik-voice</code> для Mac.</p></li>
+    <li><b>Этап 2</b><p><strong>GitHub-синхронизация</strong>PAT, деревья и коммиты, слияние логов, PWA и офлайн-режим, публикация колоды без прогресса.</p></li>
+    <li><b>Этап 3</b><p><strong>Расширяемость</strong>SDK шаблонов, свои шаблоны в карточках и темах, каскад и <code>extends</code>, inline-задания, плагины в воркерах, редактор шаблонов, темы, подключение шаблонов из репозиториев, OAuth через прокси.</p></li>
+    <li><b>Этап 4</b><p><strong>Качество обучения</strong>Оптимизатор FSRS, статистика, пиявки, грамматические шаблоны, импорт из Anki.</p></li>
+  </ul>
+  <p>Предлагаемый стек: TypeScript, Svelte 5 + Vite (лёгкий рантайм, удобно для PWA), Dexie поверх IndexedDB, <code>ts-fsrs</code>, <code>nunjucks</code> (браузерная сборка), <code>yaml</code> (сохраняет комментарии и порядок ключей при перезаписи файла), Workbox.</p>
+</section>
+
+<section id="open">
+  <h2><span class="num">17</span>Решения</h2>
+  <span class="decision">Согласовано</span>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Вопрос</th><th>Решение</th></tr></thead>
+    <tbody>
+      <tr><td>Порог «освоено»</td><td>Стадия <code>mastered</code> (S ≥ 90 дней у всех навыков) — только отметка. Она видна в статистике и считается в освоенности темы. На расписание и лимиты не влияет: освоенные слова повторяются по FSRS и входят в дневной лимит и «долг» как обычные.</td></tr>
+      <tr><td>Easy</td><td>Только вручную. Автооценка ставит не выше Good, «Легко» — клавиша 4 или кнопка после ответа.</td></tr>
+      <tr><td>Порядок заданий слова</td><td>Задания перемешиваются внутри цикла, подряд не идут (§8, §10).</td></tr>
+      <tr><td>Генерация контента нейросетью</td><td>Пока не делаем. Хук <code>suggest.provide</code> и плагины оставляют возможность добавить её позже.</td></tr>
+      <tr><td>Озвучка</td><td>Kokoro-82M: лучшая открытая модель с коммерческой лицензией. Утилита <code>zoobrik-voice</code> на Mac, файлы mp3 в папке карточки (§13).</td></tr>
+      <tr><td>Название</td><td>Zoobrik.</td></tr>
+      <tr><td>Сборка заданий</td><td>Задания — явные записи в карточке. Черновики собираются по рецептам шаблонов, в ротацию попадают только одобренные автором (§4).</td></tr>
+      <tr><td>Хранение карточки</td><td>Папка на слово: <code>card.yaml</code>, медиа, свои шаблоны (§3).</td></tr>
+      <tr><td>История ответов</td><td>Итог в карточке, полная история — в журнале по месяцам и устройствам (§3, §11).</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+</div>
+</main>
+</div>
+
+<script>
+(function () {
+  var DECAY = 0.1542;
+  var FACTOR = Math.pow(0.9, -1 / DECAY) - 1;
+  var sIn = document.getElementById('s-in');
+  var rIn = document.getElementById('r-in');
+  var svg = document.getElementById('curve');
+  var W = 640, H = 220, PL = 44, PR = 16, PT = 14, PB = 34;
+
+  function retr(t, s) { return Math.pow(1 + FACTOR * t / s, -DECAY); }
+  function interval(r, s) { return s / FACTOR * (Math.pow(r, -1 / DECAY) - 1); }
+  function fmtDays(d) { return d < 1 ? Math.round(d * 24) + ' ч' : Math.round(d) + ' дн.'; }
+  function el(tag, attrs, text) {
+    var n = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  function draw() {
+    var s = +sIn.value, r = +rIn.value / 100;
+    var iv = interval(r, s);
+    document.getElementById('s-out').textContent = s;
+    document.getElementById('r-out').textContent = r.toFixed(2);
+    document.getElementById('i-out').textContent = fmtDays(iv);
+
+    var tMax = Math.max(iv * 1.6, s * 1.2);
+    var yMin = 0.5;
+    var x = function (t) { return PL + (W - PL - PR) * t / tMax; };
+    var y = function (v) { return PT + (H - PT - PB) * (1 - (v - yMin) / (1 - yMin)); };
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+    [0.5, 0.6, 0.7, 0.8, 0.9, 1].forEach(function (v) {
+      svg.appendChild(el('line', { x1: PL, x2: W - PR, y1: y(v), y2: y(v), stroke: 'var(--rule)', 'stroke-width': 1 }));
+      svg.appendChild(el('text', { x: PL - 8, y: y(v) + 4, 'text-anchor': 'end', 'font-size': 11, fill: 'var(--ink-3)', 'font-family': 'var(--font-mono)' }, Math.round(v * 100) + '%'));
+    });
+    var step = tMax > 200 ? 50 : tMax > 80 ? 20 : tMax > 30 ? 10 : 5;
+    for (var t = 0; t <= tMax; t += step) {
+      svg.appendChild(el('text', { x: x(t), y: H - PB + 18, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--ink-3)', 'font-family': 'var(--font-mono)' }, t + 'д'));
+    }
+
+    var pts = [], area = ['M', x(0), y(yMin)];
+    for (var i = 0; i <= 120; i++) {
+      var tt = tMax * i / 120, v = Math.max(retr(tt, s), yMin);
+      pts.push((i ? 'L' : 'M') + x(tt).toFixed(1) + ' ' + y(v).toFixed(1));
+      area.push('L', x(tt).toFixed(1), y(v).toFixed(1));
+    }
+    area.push('L', x(tMax), y(yMin), 'Z');
+    svg.appendChild(el('path', { d: area.join(' '), fill: 'var(--rule)', opacity: 0.55 }));
+    svg.appendChild(el('path', { d: pts.join(' '), fill: 'none', stroke: 'var(--ink)', 'stroke-width': 2 }));
+    svg.appendChild(el('line', { x1: x(iv), x2: x(iv), y1: PT, y2: H - PB, stroke: 'var(--margin)', 'stroke-width': 1.5, 'stroke-dasharray': '4 4' }));
+    svg.appendChild(el('circle', { cx: x(iv), cy: y(r), r: 5, fill: 'var(--margin)' }));
+    var lx = x(iv) > W - 150 ? x(iv) - 8 : x(iv) + 8;
+    svg.appendChild(el('text', { x: lx, y: Math.max(y(r) - 10, PT + 10), 'text-anchor': x(iv) > W - 150 ? 'end' : 'start', 'font-size': 12, fill: 'var(--ink)', 'font-family': 'var(--font-mono)' }, 'показ · ' + fmtDays(iv)));
+  }
+  sIn.addEventListener('input', draw);
+  rIn.addEventListener('input', draw);
+  draw();
+
+  var target = ["I", "can't", "find", "my", "luggage."];
+  var bankWords = ["luggage.", "my", "baggages", "I", "find", "can't", "the", "found"];
+  var bank = document.getElementById('sb-bank');
+  var answer = document.getElementById('sb-answer');
+  var fb = document.getElementById('sb-fb');
+  bankWords.forEach(function (w) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.textContent = w;
+    b.addEventListener('click', function () {
+      if (b.parentNode === bank) {
+        var clone = document.createElement('button');
+        clone.type = 'button'; clone.className = 'chip'; clone.textContent = w;
+        clone.addEventListener('click', function () { clone.remove(); b.classList.remove('used'); fb.textContent = ''; });
+        answer.appendChild(clone);
+        b.classList.add('used');
+      }
+    });
+    bank.appendChild(b);
+  });
+  document.getElementById('sb-check').addEventListener('click', function () {
+    var got = Array.prototype.map.call(answer.children, function (c) { return c.textContent; });
+    var ok = got.join(' ') === target.join(' ');
+    Array.prototype.forEach.call(answer.children, function (c, i) { c.classList.toggle('ok', c.textContent === target[i]); c.classList.toggle('bad', c.textContent !== target[i]); });
+    fb.className = 'feedback ' + (ok ? 'ok' : 'bad');
+    fb.textContent = ok ? 'Верно → Good · context: следующий показ через 6 дн.' : 'Ожидалось: ' + target.join(' ');
+  });
+
+  var spoken = 'boarding pass';
+  document.getElementById('lt-play').addEventListener('click', function () {
+    try {
+      var u = new SpeechSynthesisUtterance(spoken);
+      u.lang = 'en-GB'; u.rate = 0.9;
+      speechSynthesis.cancel(); speechSynthesis.speak(u);
+    } catch (e) {
+      document.getElementById('lt-fb').textContent = 'TTS недоступен в этом окне. Слово: ' + spoken;
+    }
+  });
+  document.getElementById('lt-input').addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter') return;
+    var v = e.target.value.trim().toLowerCase();
+    var out = document.getElementById('lt-fb');
+    if (v === spoken) { out.className = 'feedback ok'; out.textContent = 'Верно · boarding pass — посадочный талон'; }
+    else { out.className = 'feedback bad'; out.textContent = 'Было: boarding pass — посадочный талон'; }
+  });
+})();
+</script>

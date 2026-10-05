@@ -1,0 +1,7 @@
+{% import "core/_macros" as m %}
+<div class="zb">
+  <div class="zb-kicker">Послушай и выбери перевод</div>
+  <div class="zb-row">{{ m.play(media(params.audio), true) }}{{ m.playSlow(media(params.audio)) }}</div>
+  {{ m.options(params.options, seed) }}
+  <div class="zb-back" data-zb-back hidden>{% if card.content.en %}<div class="zb-answer">{{ card.content.en }}</div>{% endif %}{{ m.explanation(params) }}</div>
+</div>

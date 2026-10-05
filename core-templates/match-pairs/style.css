@@ -1,0 +1,7 @@
+.pairs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pairs .col { display: grid; gap: 8px; align-content: start; }
+.pair { justify-content: center; text-align: center; font-size: 16px; }
+.pair.sel { border-color: var(--zb-accent); box-shadow: 0 0 0 1px var(--zb-accent); }
+.pair.done { opacity: .35; border-color: var(--zb-good); }
+.pair.miss { animation: shake .3s; border-color: var(--zb-bad); }
+@keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }

@@ -1,0 +1,13 @@
+id: en-ru-flip
+name: Вспомни перевод
+trains: [recognize]
+reveals: [en, ru, audio]
+asks: [ru]
+difficulty: 2
+modes: [learn, review, practice]
+check: { type: manual }
+params:
+  front: { type: text, label: Лицевая сторона, required: true }
+  back: { type: text, label: Обратная сторона, required: true }
+  note: { type: markdown, label: Заметка }
+  audio: { type: audio, label: Озвучка }

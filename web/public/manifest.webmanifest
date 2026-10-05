@@ -1,0 +1,1 @@
+{ "name": "Zoobrik", "short_name": "Zoobrik", "start_url": "/", "display": "standalone", "background_color": "#F3F5F8", "theme_color": "#F3F5F8", "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }] }

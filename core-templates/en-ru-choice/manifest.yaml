@@ -1,0 +1,14 @@
+id: en-ru-choice
+name: Выбери перевод (en → ru)
+trains: [recognize]
+reveals: [en, ru, audio]
+asks: [ru]
+difficulty: 1
+modes: [learn, review, practice]
+check: { type: choice }
+params:
+  word: { type: text, label: Слово, required: true }
+  answer: { type: text, label: Перевод, required: true }
+  options: { type: list, of: text, label: Варианты (включая верный), min: 3, max: 5 }
+  audio: { type: audio, label: Озвучка }
+autoplay: true

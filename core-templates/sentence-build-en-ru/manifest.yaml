@@ -1,0 +1,15 @@
+id: sentence-build-en-ru
+name: Собери перевод (en → ru)
+trains: [context]
+reveals: [en, ru]
+asks: []
+difficulty: 3
+modes: [learn, review, practice]
+check: { type: tokens }
+params:
+  prompt: { type: text, label: Предложение, required: true }
+  answer: { type: text, label: Перевод, required: true }
+  accept: { type: list, of: text, label: Тоже верно }
+  extra: { type: list, of: word, label: Лишние слова, min: 2, max: 5 }
+  audio: { type: audio, label: Озвучка английского предложения }
+autoplay: true

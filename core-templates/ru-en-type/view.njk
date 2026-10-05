@@ -1,0 +1,11 @@
+{% import "core/_macros" as m %}
+<div class="zb">
+  <div class="zb-kicker">Напиши по-английски</div>
+  <h1 class="zb-prompt">{{ params.prompt }}</h1>
+  <input class="zb-input" data-zb-input autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="английское слово">
+  {% if params.hint %}<button class="zb-hint-btn" type="button" data-zb="hint">Подсказка</button><div class="zb-hint" data-zb-hint hidden>{{ params.hint }}</div>{% endif %}
+  <div class="zb-back" data-zb-back hidden>
+    <div class="zb-row">{{ m.play(media(params.audio or 'word.mp3')) }}<div class="zb-answer">{{ params.answer }}</div></div>
+    {{ m.explanation(params) }}
+  </div>
+</div>

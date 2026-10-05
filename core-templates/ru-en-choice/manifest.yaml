@@ -1,0 +1,12 @@
+id: ru-en-choice
+name: Выбери английское слово
+trains: [recall]
+reveals: [en, ru]
+asks: [en]
+difficulty: 2
+modes: [learn, review, practice]
+check: { type: choice }
+params:
+  prompt: { type: text, label: На русском, required: true }
+  answer: { type: text, label: Ответ, required: true }
+  options: { type: list, of: text, label: Варианты, min: 3, max: 5 }

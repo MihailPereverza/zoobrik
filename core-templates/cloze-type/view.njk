@@ -1,0 +1,10 @@
+{% import "core/_macros" as m %}
+<div class="zb">
+  <div class="zb-kicker">Впиши пропущенное{% if params.hint %} · {{ params.hint }}{% endif %}</div>
+  <p class="zb-cloze">{{ params.text | gap('input') | safe }}</p>
+  {% if params.translation %}<div class="zb-translation">{{ params.translation }}</div>{% endif %}
+  <div class="zb-back" data-zb-back hidden>
+    <div class="zb-row">{% if params.audio %}{{ m.play(media(params.audio)) }}{% endif %}<div class="zb-answer">{{ params.text | gap('fill', params.answer) | safe }}</div></div>
+    {{ m.explanation(params) }}
+  </div>
+</div>

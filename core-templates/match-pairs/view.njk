@@ -1,0 +1,7 @@
+<div class="zb">
+  <div class="zb-kicker">Соедини пары</div>
+  <div class="pairs">
+    <div class="col">{% for p in params.pairs | shuffle(seed) %}<button class="zb-option pair" type="button" data-side="en" data-key="{{ p[0] }}">{{ p[0] }}</button>{% endfor %}</div>
+    <div class="col">{% for p in params.pairs | shuffle(seed + 7) %}<button class="zb-option pair" type="button" data-side="ru" data-key="{{ p[0] }}">{{ p[1] }}</button>{% endfor %}</div>
+  </div>
+</div>

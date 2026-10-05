@@ -1,0 +1,7 @@
+{% macro play(src, big=false, label='Прослушать') %}<button class="zb-play{% if big %} big{% endif %}" data-zb="play" data-src="{{ src }}" aria-label="{{ label }}" type="button"><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z"/></svg></button>{% endmacro %}
+{% macro playSlow(src) %}<button class="zb-play slow" data-zb="play" data-src="{{ src }}" data-rate="0.7" aria-label="Медленно" type="button" title="Медленно"><svg viewBox="0 0 24 24"><path d="M5 5h4v14H5zM14 5l6 7-6 7z"/></svg></button>{% endmacro %}
+{% macro options(list, seed) %}<div class="zb-options">{% for o in list | shuffle(seed) %}<button class="zb-option" type="button" data-zb-choice="{{ o }}"><span class="k">{{ loop.index }}</span><span>{{ o }}</span></button>{% endfor %}</div>{% endmacro %}
+{% macro chips(answer, extra, seed) %}<div class="zb-slot" data-zb-slot></div>
+<div class="zb-bank">{% for w in (answer | tokens) | concat(extra) | shuffle(seed) %}<button class="zb-chip" type="button" data-zb-chip="{{ w }}">{{ w }}</button>{% endfor %}</div>
+<button class="zb-submit" type="button" data-zb="submit" disabled>Проверить</button>{% endmacro %}
+{% macro explanation(params) %}{% if params.explanation %}<div class="zb-note zb-md">{{ params.explanation | md | safe }}</div>{% endif %}{% endmacro %}

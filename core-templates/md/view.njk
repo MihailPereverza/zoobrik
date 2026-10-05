@@ -1,0 +1,10 @@
+{% import "core/_macros" as m %}
+<div class="zb">
+  <div class="zb-kicker">{{ 'Вспомни' if md.kind == 'flip' else 'Задание' }}</div>
+  <div class="zb-md front">{{ md.front | safe }}</div>
+  {% if md.kind == 'choice' %}{{ m.options(md.options, seed) }}{% endif %}
+  {% if md.kind == 'chips' %}{{ m.chips(md.chips.answer, md.chips.extra, seed) }}{% endif %}
+  {% if md.kind == 'gaps' %}<button class="zb-submit" type="button" data-zb="submit">Проверить</button>{% endif %}
+  {% if md.kind == 'flip' %}<button class="zb-flip" type="button" data-zb="flip">Показать ответ</button>{% endif %}
+  {% if md.back %}<div class="zb-back zb-md" data-zb-back hidden>{{ md.back | safe }}</div>{% endif %}
+</div>

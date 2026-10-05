@@ -1,0 +1,14 @@
+id: listen-type
+name: Напиши услышанное
+trains: [listen, spell]
+reveals: [en, audio]
+asks: [en]
+difficulty: 4
+modes: [learn, review, practice]
+check: { type: fuzzy }
+params:
+  audio: { type: audio, label: Аудио, required: true }
+  answer: { type: text, label: Текст, required: true }
+  accept: { type: list, of: text, label: Тоже верно }
+  translation: { type: text, label: Перевод (после ответа) }
+autoplay: true

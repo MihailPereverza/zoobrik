@@ -1,0 +1,14 @@
+import { chromium } from 'playwright';
+const browser = await chromium.launch();
+const page = await browser.newPage();
+const errors = [];
+page.on('pageerror', (e) => errors.push(e.message));
+page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+await page.goto('http://localhost:5173/#/lint');
+await page.waitForSelector('[data-lint-state="done"]', { timeout: 120000 });
+console.log(await page.textContent('h1'));
+console.log(await page.textContent('.summary').catch(() => ''));
+const items = await page.$$eval('.issues li', (els) => els.map((e) => e.innerText.replace(/\n/g, ' — ')));
+console.log(items.join('\n'));
+console.log('page errors:', errors.slice(0, 10));
+await browser.close();

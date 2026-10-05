@@ -1,0 +1,10 @@
+id: md
+name: Задание в Markdown
+trains: []
+reveals: [en, ru]
+asks: []
+difficulty: 3
+modes: [learn, review, practice]
+check: { type: md }
+params:
+  markdown: { type: markdown, label: Текст задания, required: true }

@@ -1,0 +1,15 @@
+id: cloze-choice
+name: Выбери, что вставить
+trains: [context]
+reveals: [en]
+asks: [en]
+difficulty: 2
+modes: [learn, review, practice]
+check: { type: choice }
+params:
+  text: { type: text, label: Предложение с ___, required: true }
+  answer: { type: text, label: Верный вариант, required: true }
+  options: { type: list, of: text, label: Варианты, min: 2, max: 4 }
+  instruction: { type: markdown, label: Инструкция }
+  translation: { type: text, label: Перевод }
+  audio: { type: audio, label: Озвучка полного предложения }

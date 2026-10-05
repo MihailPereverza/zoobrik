@@ -1,0 +1,15 @@
+id: word-order
+name: Расставь по порядку
+trains: [apply]
+reveals: [en]
+asks: []
+difficulty: 3
+modes: [learn, review, practice]
+check: { type: tokens }
+params:
+  instruction: { type: markdown, label: Задание, required: true }
+  tokens: { type: list, of: word, label: Слова, required: true }
+  answer: { type: text, label: Правильный порядок, required: true }
+  accept: { type: list, of: text, label: Тоже верно }
+  translation: { type: text, label: Перевод }
+  audio: { type: audio, label: Озвучка }

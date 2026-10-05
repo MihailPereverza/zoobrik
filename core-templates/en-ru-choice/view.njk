@@ -1,0 +1,7 @@
+{% import "core/_macros" as m %}
+<div class="zb">
+  <div class="zb-kicker">Выбери перевод</div>
+  <div class="zb-row">{{ m.play(media(params.audio or 'word.mp3')) }}<h1 class="zb-prompt word">{{ params.word }}</h1></div>
+  {{ m.options(params.options, seed) }}
+  <div class="zb-back" data-zb-back hidden>{{ m.explanation(params) }}</div>
+</div>
