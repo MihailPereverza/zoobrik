@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
-  import { fly, fade } from 'svelte/transition';
+  import { fly } from 'svelte/transition';
   import { renderMarkdown } from '../lib/md';
   import ExerciseFrame from './ExerciseFrame.svelte';
   import Ring from './Ring.svelte';
@@ -242,7 +242,7 @@
   });
 
   function flipIn(_node: Element, { duration = 300, delay = 0 } = {}) {
-    return { duration, delay, css: (t: number) => { const e = 1 - Math.pow(1 - t, 3); return `transform: perspective(1400px) rotateX(${(1 - e) * -70}deg); transform-origin: 50% 0; opacity: ${e}`; } };
+    return { duration, delay, css: (t: number) => { const e = 1 - Math.pow(1 - t, 3); return `transform: perspective(1400px) rotateX(${(1 - e) * -70}deg); transform-origin: 50% 0`; } };
   }
 
   let finishStats = $state<{ today: number; streak: number } | null>(null);
@@ -258,7 +258,7 @@
 
 <div class="narrow session">
   {#if phase === 'done' || phase === 'wait'}
-    <section class="finish surface" in:fly={{ y: 12, duration: 400 }}>
+    <section class="finish surface" in:fly={{ y: 12, duration: 400, opacity: 1 }}>
       {#if finishStats}<Ring value={finishStats.today} max={app.goal} size={120} label="заданий сегодня" />{/if}
       <h1 class="display">{phase === 'wait' ? 'Небольшой перерыв' : answered ? (finishStats && finishStats.today >= app.goal ? 'Цель на сегодня выполнена' : 'Отличная работа') : 'Сейчас нечего повторять'}</h1>
       {#if answered}
@@ -282,7 +282,7 @@
     </div>
 
     {#key item.key}
-      <div class="step" in:fly={{ y: 14, duration: 320, opacity: 0 }}>
+      <div class="step" in:fly={{ y: 14, duration: 320, opacity: 1 }}>
         <p class="meta">{[modeLabel, topicOf(data, item.card).title, item.skills.map((s) => SKILL_LABEL[s]).join(', ')].filter(Boolean).join(' · ')}</p>
         {#if phase === 'answer' || phase === 'reveal'}<article class="exercise surface" class:flipping>
           {#if rendered && 'error' in rendered}
@@ -316,7 +316,7 @@
       {#if backRendered && 'srcdoc' in backRendered}
         <section class="back surface" in:flipIn={{ duration: 340, delay: 60 }}>{#key item.key}<ExerciseFrame srcdoc={backRendered.srcdoc} onevent={onBackEvent} autofocus={false} />{/key}</section>
       {/if}
-      <div class="grades" in:fly={{ y: 24, duration: 300 }}>
+      <div class="grades" in:fly={{ y: 24, duration: 300, opacity: 1 }}>
         {#each GRADES as { g, label, cls } (g)}
           <button type="button" class="{cls}" class:suggested={g === (phase === 'flipped' ? 3 : suggested)} onclick={() => grade(g)}>
             <span>{label}</span>{#if intervals}<small class="num">{intervals[g]}</small>{/if}
@@ -324,9 +324,9 @@
         {/each}
       </div>
     {:else if phase === 'reveal'}
-      <button class="btn block flip-btn" type="button" onclick={flipNow} in:fade={{ duration: 150 }}>Перевернуть</button>
+      <button class="btn block flip-btn" type="button" onclick={flipNow} >Перевернуть</button>
     {:else if item.mode !== 'intro' && phase === 'answer'}
-      <div class="tools" in:fade={{ duration: 200 }}>
+      <div class="tools">
         <button class="link" type="button" onclick={giveUp}>Не знаю</button>
         <button class="link" type="button" onclick={skip}>Пропустить</button>
       </div>
@@ -347,7 +347,7 @@
   .meta { margin: 14px 4px 10px; font-size: 13px; color: var(--ink-3); }
   .exercise { padding: 26px 24px 22px; min-height: 240px; transform-origin: 50% 100%; }
   .exercise.flipping { animation: flip-out .22s cubic-bezier(.4, 0, 1, 1) forwards; }
-  @keyframes flip-out { to { transform: perspective(1400px) rotateX(75deg); opacity: 0; } }
+  @keyframes flip-out { to { transform: perspective(1400px) rotateX(88deg); } }
   @media (max-width: 520px) { .exercise { padding: 22px 18px 18px; } }
   .err { color: var(--again); }
   .flip-btn { margin-top: 14px; }
@@ -359,7 +359,7 @@
   .verdict.bad { background: var(--again-bg); color: var(--again); }
   .verdict div { display: grid; gap: 2px; }
   .verdict b { font-weight: 600; }
-  .verdict span:not(.icon) { font-size: 14px; opacity: .85; }
+  .verdict span:not(.icon) { font-size: 14px; color: var(--ink-2); }
   .icon { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: currentColor; flex: none; }
   .icon svg { width: 16px; height: 16px; fill: none; stroke: var(--card); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
   .back { margin-top: 12px; padding: 22px 24px; }
@@ -370,8 +370,8 @@
   .explain .md { color: var(--ink-2); }
   @media (max-width: 520px) { .explain { padding: 16px 18px; } }
   @media (max-width: 520px) { .back { padding: 18px; } }
-  .grades { position: sticky; bottom: 0; z-index: 5; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(to bottom, transparent, var(--paper) 22%); }
-  .grades button { display: grid; gap: 2px; padding: 12px 4px 10px; border-radius: 14px; border: 1.5px solid transparent; background: var(--card); box-shadow: var(--shadow); cursor: pointer; font-size: 15px; font-weight: 500; transition: transform .15s var(--ease), border-color .2s; }
+  .grades { position: sticky; bottom: 0; z-index: 5; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0px)); background: var(--paper); }
+  .grades button { display: grid; gap: 2px; padding: 12px 4px 10px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--card); cursor: pointer; font-size: 15px; font-weight: 500; transition: transform .15s var(--ease), border-color .2s; }
   .grades button:active { transform: scale(.96); }
   .grades button small { font-size: 12px; font-weight: 400; color: var(--ink-3); }
   .grades button.suggested { border-color: currentColor; }

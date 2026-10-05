@@ -100,7 +100,7 @@
   .stages li { display: flex; justify-content: space-between; align-items: center; }
   .bars { display: grid; grid-template-columns: repeat(14, 1fr); gap: 4px; height: 140px; align-items: end; }
   .col { display: grid; grid-template-rows: 16px 1fr 16px; height: 100%; align-items: end; text-align: center; }
-  .col i { display: block; background: var(--accent); border-radius: 3px 3px 0 0; min-height: 2px; opacity: .85; }
+  .col i { display: block; background: var(--accent); border-radius: 3px 3px 0 0; min-height: 2px; }
   .col .v, .col .d { font-size: 10px; color: var(--ink-3); }
   .acc { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
   .acc li { display: grid; grid-template-columns: 80px 1fr 44px; gap: 10px; align-items: center; font-size: 14px; }

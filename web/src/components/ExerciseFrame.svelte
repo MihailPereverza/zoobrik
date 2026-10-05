@@ -42,10 +42,10 @@
   title="Задание"
   style:height="{height}px"
   class:shown
-  onload={() => autofocus && focus()}
+  onload={() => { send({ type: 'theme', theme: app.effectiveTheme }); if (autofocus) focus(); }}
 ></iframe>
 
 <style>
-  iframe { display: block; width: 100%; border: 0; background: transparent; opacity: 0; transition: opacity .25s var(--ease), height .25s var(--ease); }
-  iframe.shown { opacity: 1; }
+  iframe { display: block; width: 100%; border: 0; background: var(--card); color-scheme: inherit; visibility: hidden; transition: height .25s var(--ease); }
+  iframe.shown { visibility: visible; }
 </style>

@@ -2,5 +2,5 @@
 .pairs .col { display: grid; gap: 8px; align-content: start; }
 .pair { justify-content: center; text-align: center; font-size: 16px; }
 .pair.sel { border-color: var(--zb-ink-3); background: var(--zb-soft-2); }
-.pair.done { background: var(--zb-good-bg); color: var(--zb-good); opacity: .55; pointer-events: none; }
+.pair.done { background: var(--zb-good-bg); border-color: var(--zb-good-bg); color: var(--zb-good); pointer-events: none; }
 .pair.miss { animation: zb-shake .35s; border-color: var(--zb-bad); }

@@ -73,7 +73,7 @@
 
 <style>
   .hello { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 26px 6px 12px; font-size: 15px; color: var(--ink-2); }
-  .streak { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--hard); background: var(--card); padding: 6px 11px 6px 9px; border-radius: 999px; box-shadow: var(--shadow); }
+  .streak { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--hard); background: var(--card); padding: 6px 11px 6px 9px; border-radius: 999px; border: 1px solid var(--line); }
   .streak svg { width: 15px; height: 15px; fill: currentColor; }
   .today { padding: 26px 24px 20px; display: grid; }
   .top { display: flex; gap: 18px; align-items: flex-start; justify-content: space-between; }

@@ -122,8 +122,8 @@
   p { font-size: 14px; margin: 0; }
   .status { font-size: 12px; color: var(--ink-3); }
   .seg { display: inline-flex; gap: 4px; padding: 4px; background: var(--soft); border-radius: 12px; }
-  .seg button { border: 0; background: transparent; padding: 8px 14px; cursor: pointer; font-size: 14px; border-radius: 9px; color: var(--ink-2); transition: background-color .2s, color .2s; }
-  .seg button.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+  .seg button { border: 0; background: var(--soft); padding: 8px 14px; cursor: pointer; font-size: 14px; border-radius: 9px; color: var(--ink-2); transition: background-color .2s, color .2s; }
+  .seg button.on { background: var(--card); color: var(--ink); }
   .row { display: flex; gap: 8px; width: 100%; }
   input { flex: 1; min-width: 0; padding: 9px 11px; border-radius: 8px; border: 1px solid var(--rule-strong); background: var(--paper); color: var(--ink); font-size: 14px; }
   .log { white-space: pre-wrap; font-size: 12px; background: var(--soft); padding: 10px; border-radius: 8px; margin: 0; width: 100%; }

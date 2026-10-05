@@ -168,7 +168,7 @@
   .layout { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 32px; align-items: start; }
   @media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
   .title { display: flex; gap: 14px; align-items: center; }
-  .play { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--card); box-shadow: var(--shadow); display: grid; place-items: center; cursor: pointer; flex: none; padding: 0; }
+  .play { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--card); border: 1px solid var(--line); display: grid; place-items: center; cursor: pointer; flex: none; padding: 0; }
   .play svg { width: 40%; fill: currentColor; margin-left: 8%; }
   .play.small { width: 34px; height: 34px; }
   .ru { font-size: 19px; font-weight: 500; margin: 10px 0; }
@@ -184,7 +184,7 @@
   .skills th { font: 500 11px/1 var(--font-mono); text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3); }
   .editor { display: grid; gap: 14px; position: sticky; top: 72px; }
   @media (max-width: 900px) { .editor { position: static; } }
-  .list { display: grid; gap: 0; max-height: 320px; overflow-y: auto; background: var(--card); border-radius: 16px; box-shadow: var(--shadow); padding: 6px; }
+  .list { display: grid; gap: 0; max-height: 320px; overflow-y: auto; background: var(--card); border-radius: 16px; border: 1px solid var(--line); padding: 6px; }
   .list .eyebrow { padding: 6px 8px 8px; }
   .row { display: grid; grid-template-columns: 52px 46px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px; border: 0; border-radius: 10px; background: none; text-align: left; cursor: pointer; }
   .row:hover { background: var(--soft); }
@@ -194,7 +194,7 @@
   .bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; font-size: 13px; }
   .actions { display: flex; gap: 6px; flex-wrap: wrap; }
   .btn.active { border-color: var(--ink); background: var(--soft); }
-  .frame { padding: 22px; border-radius: 20px; box-shadow: var(--shadow); }
+  .frame { padding: 22px; border-radius: 20px; border: 1px solid var(--line); }
   .verdict { font-size: 14px; color: var(--again); margin: 8px 0 0; }
   .verdict.ok { color: var(--good); }
   textarea { width: 100%; margin-top: 10px; font-size: 13px; padding: 10px; border-radius: 8px; border: 1px solid var(--rule-strong); background: var(--card); color: var(--ink); resize: vertical; }
