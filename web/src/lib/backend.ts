@@ -3,7 +3,7 @@ import * as api from './api';
 import { patchCardExercise, patchMdExercise, readProgress, withProgress, type ExercisePatch } from './cardyaml';
 import { CORE } from './core';
 import { buildDeck, isTextFile, type FileMap } from './deckfs';
-import { createBlob, createCommit, createTree, getBlob, getHead, getTextBlob, getTree, GitHubError, pool, updateRef, type RepoConfig } from './github';
+import { createBlob, createCommit, createTree, getBlob, getHead, getTextBlob, getTextBlobs, getTree, GitHubError, pool, updateRef, type RepoConfig } from './github';
 import { mergeProgress } from './progress';
 import type { DeckData, Progress } from './types';
 
@@ -58,9 +58,10 @@ export class GitHubBackend implements Backend {
     if (current?.commit === head.commit) return current;
     const entries = await getTree(this.cfg, head.tree);
     const texts = entries.filter((e) => isTextFile(e.path) || e.path.endsWith('.tsv'));
-    await pool(texts, 8, async (e) => {
-      if (!(await this.cachedText(e.sha))) await set(`text:${e.sha}`, await getTextBlob(this.cfg, e.sha), store);
-    });
+    const missing: string[] = [];
+    for (const e of texts) if ((await this.cachedText(e.sha)) === undefined) missing.push(e.sha);
+    const fetched = missing.length ? await getTextBlobs(this.cfg, [...new Set(missing)]).catch(() => new Map<string, string>()) : new Map<string, string>();
+    await pool(missing, 8, async (sha) => set(`text:${sha}`, fetched.get(sha) ?? await getTextBlob(this.cfg, sha), store));
     const snap: Snapshot = { commit: head.commit, tree: head.tree, shas: Object.fromEntries(entries.map((e) => [e.path, e.sha])) };
     await set(this.key('snapshot'), snap, store);
     return snap;

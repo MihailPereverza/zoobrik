@@ -83,3 +83,25 @@ export async function pool<T, R>(items: T[], limit: number, task: (item: T) => P
   await Promise.all(workers);
   return results;
 }
+
+// One GraphQL request returns up to 100 blob texts; the REST API needs a request per blob.
+export async function getTextBlobs(cfg: RepoConfig, shas: string[]): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  for (let i = 0; i < shas.length; i += 100) {
+    const chunk = shas.slice(i, i + 100);
+    const fields = chunk.map((sha, j) => `b${j}: object(oid: "${sha}") { ... on Blob { text isTruncated } }`).join('\n');
+    const res = await fetch('https://api.github.com/graphql', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${cfg.token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: `query($o: String!, $r: String!) { repository(owner: $o, name: $r) { ${fields} } }`, variables: { o: cfg.owner, r: cfg.repo } }),
+    });
+    const data = await res.json().catch(() => ({}));
+    const repo = data?.data?.repository;
+    if (!res.ok || !repo) throw new GitHubError(res.status, `GitHub GraphQL: ${data?.errors?.[0]?.message ?? res.statusText}`);
+    chunk.forEach((sha, j) => {
+      const blob = repo[`b${j}`];
+      if (blob && !blob.isTruncated && typeof blob.text === 'string') out.set(sha, blob.text);
+    });
+  }
+  return out;
+}
