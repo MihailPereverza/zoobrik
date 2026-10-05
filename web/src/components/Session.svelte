@@ -5,6 +5,7 @@
   import { log, mediaName } from '../lib/log';
   import ExerciseFrame from './ExerciseFrame.svelte';
   import Ring from './Ring.svelte';
+  import InlineView from './InlineView.svelte';
   import { dayStats, plural } from '../lib/activity';
   import { app, backend, refreshPending, scheduleSync, sync, touch } from '../lib/state.svelte';
   import { check } from '../lib/check';
@@ -187,6 +188,16 @@
     advance();
   }
 
+  // Called straight from a tap: start audio synchronously when the file is already on the device.
+  function playNow(src: string, rate = 1) {
+    const local = backend().mediaNow(src);
+    if (!local) { log('audio', 'not cached yet, loading', mediaName(src)); play(src, rate); return; }
+    audio.pause();
+    audio.src = local;
+    audio.playbackRate = rate;
+    audio.play().then(() => log('audio', 'playing in app', mediaName(src)), (e) => { log('audio', 'app play failed', { src: mediaName(src), error: e?.name, message: e?.message }); saveError = 'Браузер не дал воспроизвести звук — нажмите кнопку ещё раз.'; });
+  }
+
   async function play(src: string, rate = 1, auto = false) {
     if (!src) return;
     log('audio', auto ? 'autoplay in app' : 'play in app', mediaName(src));
@@ -242,7 +253,6 @@
   const BACK = { id: 'back', template: 'back', status: 'ready', params: {} } as const;
   const showBack = $derived((phase === 'graded' || phase === 'flipped') && !!item && !item.topicCards && item.mode !== 'intro');
   const backRendered = $derived(showBack && item ? render(data, item.card, { ...BACK }, 'review', app.effectiveTheme, `b${index}`) : null);
-  const onBackEvent = (type: string, d: any) => { if (type === 'play') play(d.src, d.rate); else if (type === 'stop-audio') audio.pause(); else if (type === 'key') handleKey(d.key); };
 
   const extra = $derived.by(() => {
     if (!item || (phase !== 'graded' && phase !== 'flipped')) return null;
@@ -326,7 +336,7 @@
         </div>
       {/if}
       {#if backRendered && 'srcdoc' in backRendered}
-        <section class="back surface" in:flipIn={{ duration: 340, delay: 60 }}>{#key item.key}<ExerciseFrame srcdoc={backRendered.srcdoc} onevent={onBackEvent} autofocus={false} name="back" />{/key}</section>
+        <section class="back surface" in:flipIn={{ duration: 340, delay: 60 }}>{#key item.key}<InlineView html={backRendered.html} css={backRendered.css} onplay={playNow} />{/key}</section>
       {/if}
       <div class="grades" in:fly={{ y: 24, duration: 300, opacity: 1 }}>
         {#each GRADES as { g, label, cls } (g)}

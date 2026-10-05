@@ -5,6 +5,8 @@ import type { Card, DeckData, Exercise, Mode, TemplateSource, Topic } from './ty
 
 export interface Rendered {
   srcdoc: string;
+  html: string;
+  css: string;
   template: TemplateSource;
   md?: MdExercise;
 }
@@ -125,7 +127,8 @@ export function render(data: DeckData, card: Card, exercise: Exercise, mode: Mod
     const attrs: Record<string, string> = { template: template.id, card: card.id, topic: topic.id, mode };
     if (template.manifest.autoplay && mode !== 'intro') attrs.autoplay = '1';
     if (template.manifest.autoplay && mode === 'intro' && template.id === 'intro') attrs.autoplay = '1';
-    return { srcdoc: frame(data, template, exercise, html, attrs, theme), template, md };
+    const css = `${data.baseCss}\n${template.scope === 'core' ? '' : coreStyle(data, template.id)}\n${template.style}\n${exercise.style ?? ''}`;
+    return { srcdoc: frame(data, template, exercise, html, attrs, theme), html, css, template, md };
   } catch (error) {
     return { error: `Ошибка в шаблоне «${template.id}»: ${(error as Error).message}` };
   }

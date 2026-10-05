@@ -18,6 +18,7 @@ export interface Backend {
   sync(device: string): Promise<SyncResult>;
   activity(): Promise<Record<string, number>>;
   media(url: string): Promise<string>;
+  mediaNow(url: string): string | null;
   mediaExists(url: string): Promise<boolean>;
   pendingCount(): Promise<number>;
 }
@@ -30,6 +31,7 @@ export const serverBackend: Backend = {
   sync: api.syncDeck,
   activity: api.loadActivity,
   media: async (url) => url,
+  mediaNow: (url) => url,
   mediaExists: async (url) => (await fetch(url, { method: 'HEAD' })).ok,
   pendingCount: async () => 0,
 };
@@ -205,6 +207,12 @@ export class GitHubBackend implements Backend {
     this.mediaUrls.set(path, objectUrl);
     log('media', fromCache ? 'from device cache' : 'downloaded', { path: path.replace(/^topics\//, ''), bytes: blob.size, ms: Math.round(performance.now() - started) });
     return objectUrl;
+  }
+
+  mediaNow(url: string): string | null {
+    const at = url.indexOf(MEDIA_PREFIX);
+    if (at < 0) return url;
+    return this.mediaUrls.get(decodeURIComponent(url.slice(at + MEDIA_PREFIX.length))) ?? null;
   }
 
   async mediaExists(url: string): Promise<boolean> {
