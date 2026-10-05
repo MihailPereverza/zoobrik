@@ -6,7 +6,7 @@ import { CORE } from './core';
 import { buildDeck, deckRoots } from './deckfs';
 import { deckLangs, normalizeContent } from './lang';
 import { isPackagePath, packDeck, parseLink, planUpdate, previewDeck, slug, unpackDeck, withSource, type PackageFile } from './package';
-import { resolveTemplate } from './render';
+import { audioVariants, pickVoice, resolveTemplate } from './render';
 
 const deckYaml = 'id: english-a2\nname: Английский A2\nlang: { target: en-GB, native: ru }\nlimits: { new_cards_per_day: 8, reviews_per_day: 250 }\nfsrs:\n  retention: { recall: 0.9 }\n  params: [0.2, 1.2]\ntopics: [travel]\n';
 const card = 'id: luggage\nkind: word\ncontent:\n  en: luggage\n  ru: багаж\n  alt_ru: [вещи]\n  examples:\n    - { id: ex1, en: My luggage is heavy., ru: Мой багаж тяжёлый. }\nexercises:\n  - { id: e1, template: ru-en-type, status: ready, params: { prompt: багаж, answer: luggage } }\n';
@@ -175,5 +175,30 @@ describe('library layout and languages', () => {
     const c = data.topics[0].cards[0];
     expect(resolveTemplate(data, c, c.exercises[0])?.id).toBe('term-type');
     expect(resolveTemplate(data, c, { ...c.exercises[0], template: 'sentence-build-ru-en' })?.id).toBe('build-term');
+  });
+});
+
+describe('several voices per recording', () => {
+  const files = new Map<string, string>([['deck.yaml', deckYaml], ['topics/travel/topic.yaml', 'id: travel\n'], ['topics/travel/luggage/card.yaml', card]]);
+  const media = ['word.mp3', 'word.turbo.mp3', 'word.piper.mp3', 'ex1.mp3', 'ex1.melo.mp3'].map((f) => `topics/travel/luggage/${f}`);
+  const data = buildDeck(files, CORE, '', media);
+  const c = data.topics[0].cards[0];
+
+  it('lists the recording first, then the voices zoobrik-voice added next to it', () => {
+    expect(audioVariants(data, c, 'word.mp3')).toEqual(['word.mp3', 'word.piper.mp3', 'word.turbo.mp3']);
+    expect(audioVariants(data, c, 'ex1.mp3')).toEqual(['ex1.mp3', 'ex1.melo.mp3']);
+    expect(audioVariants(data, c, 'ex2.mp3')).toEqual(['ex2.mp3']);
+  });
+
+  it('spreads exercises over all voices and keeps one voice within an exercise', () => {
+    const picked = new Set(Array.from({ length: 30 }, (_, i) => pickVoice(data, c, 'word.mp3', i)));
+    expect(picked).toEqual(new Set(['word.mp3', 'word.piper.mp3', 'word.turbo.mp3']));
+    expect(pickVoice(data, c, 'word.mp3', 7)).toBe(pickVoice(data, c, 'word.mp3', 7));
+    expect(pickVoice(data, c, 'ex2.mp3', 7)).toBe('ex2.mp3');
+  });
+
+  it('works for decks without extra voices', () => {
+    const plain = buildDeck(files, CORE);
+    expect(audioVariants(plain, plain.topics[0].cards[0], 'word.mp3')).toEqual(['word.mp3']);
   });
 });

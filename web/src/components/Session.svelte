@@ -15,7 +15,7 @@
   import { check } from '../lib/check';
   import { formatInterval, preview } from '../lib/fsrs';
   import { applyAnswer, applyIntro, bury, suspend } from '../lib/progress';
-  import { mediaUrl, render, type Rendered } from '../lib/render';
+  import { audioVariants, mediaUrl, render, type Rendered } from '../lib/render';
   import { filterCards, queryToFilter } from '../lib/words';
   import { balanceDue, buildSession, isPrimed, LEARN_AHEAD, manifestOf, practiceSession, replacementItem } from '../lib/scheduler';
   import type { CheckResult, Grade, QueueItem, Skill } from '../lib/types';
@@ -252,8 +252,10 @@
     if (backend().kind !== 'github') return;
     const urls = new Set<string>();
     for (const { card } of items) {
-      if (card.content.audio) urls.add(mediaUrl(card, card.content.audio));
-      card.content.examples?.forEach((e) => e.audio && urls.add(mediaUrl(card, e.audio)));
+      // Any voice may be picked for the exercise, so every voice of the card is fetched ahead.
+      for (const file of [card.content.audio, ...(card.content.examples ?? []).map((e) => e.audio)]) {
+        if (file) audioVariants(data, card, file).forEach((v) => urls.add(mediaUrl(card, v)));
+      }
     }
     (async () => { for (const u of urls) await backend().media(u).catch(() => ''); })();
   }

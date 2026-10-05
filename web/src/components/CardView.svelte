@@ -5,7 +5,7 @@
   import { check } from '../lib/check';
   import { formatInterval, retrievability } from '../lib/fsrs';
   import { renderMarkdown } from '../lib/md';
-  import { mediaUrl, render, type Rendered } from '../lib/render';
+  import { mediaUrl, pickVoice, render, type Rendered } from '../lib/render';
   import { cardSkills, exerciseSkills, manifestOf } from '../lib/scheduler';
   import { STAGE_LABEL, stageOf } from '../lib/summary';
   import { isBuried, suspend, unsuspend } from '../lib/progress';
@@ -99,7 +99,7 @@
         </div>
         {#if card.progress?.leech}<p class="leech-note">Это слово часто забывается. Помогает своя заметка-ассоциация, ещё один пример или картинка — отредактируйте карточку.</p>{/if}
         <div class="title">
-          {#if card.content.audio}<button class="play" type="button" aria-label="Прослушать" onclick={() => playUrl(mediaUrl(card, card.content.audio!))}><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z" /></svg></button>{/if}
+          {#if card.content.audio}<button class="play" type="button" aria-label="Прослушать" onclick={() => playUrl(mediaUrl(card, pickVoice(data, card, card.content.audio!, Math.floor(Math.random() * 1e9))))}><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z" /></svg></button>{/if}
           <h1 class="display">{card.content.term ?? card.content.title}</h1>
         </div>
         {#if card.content.ipa}<div class="mono muted">/{card.content.ipa}/ {card.content.pos ? `· ${card.content.pos}` : ''}</div>{/if}
@@ -112,7 +112,7 @@
         <ul class="examples">
           {#each card.content.examples ?? [] as ex (ex.id)}
             <li>
-              <button class="play small" type="button" aria-label="Прослушать" onclick={() => playUrl(mediaUrl(card, ex.audio ?? ''))}><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z" /></svg></button>
+              <button class="play small" type="button" aria-label="Прослушать" onclick={() => playUrl(mediaUrl(card, pickVoice(data, card, ex.audio ?? '', Math.floor(Math.random() * 1e9))))}><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z" /></svg></button>
               <div><div>{ex.term}</div><div class="muted small">{ex.meaning}</div></div>
             </li>
           {/each}

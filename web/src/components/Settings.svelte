@@ -2,7 +2,7 @@
   import Connect from './Connect.svelte';
   import { activeDeck, app, backend, setDevice, setGoal, setMascot, setMascotMotion, setRepo, setTheme, STANDALONE, sync, reload, THEMES, type MascotMode } from '../lib/state.svelte';
   import Zubrik from './Zubrik.svelte';
-  import { mediaUrl } from '../lib/render';
+  import { audioVariants, mediaUrl } from '../lib/render';
   import { onMount } from 'svelte';
   import { clearLog, logEntries, logText, onLog } from '../lib/log';
 
@@ -18,7 +18,9 @@
   async function runSync() { log = await sync(); }
 
   async function downloadAudio() {
-    const urls = app.data!.topics.flatMap((t) => t.cards).flatMap((c) => [c.content.audio, ...(c.content.examples ?? []).map((e) => e.audio)].filter(Boolean).map((f) => mediaUrl(c, f!)));
+    const data = app.data!;
+    const urls = data.topics.flatMap((t) => t.cards).flatMap((c) => [c.content.audio, ...(c.content.examples ?? []).map((e) => e.audio)]
+      .filter(Boolean).flatMap((f) => audioVariants(data, c, f!).map((v) => mediaUrl(c, v))));
     let done = 0;
     for (const u of urls) {
       await backend().media(u).catch(() => '');

@@ -4,6 +4,7 @@ dist/
 # Python tools
 .venv/
 .venv-*/
+.cache/
 __pycache__/
 # Android / Gradle
 .gradle/

@@ -60,6 +60,14 @@ batch: 4                         # new cards per portion
 order: [hair, curly, wavy, ...]  # introduction order, every card of the topic exactly once
 ```
 
+## Several voices
+
+`tools/voice.py` voices every recording with several engines (default: `qwen`, `turbo`, `melo`, `piper`) and keeps only
+takes that pass a listening check (Whisper hears the words, a phoneme recogniser hears the sounds). The first passing
+voice is written to the file named in the card (`word.mp3`), every other one next to it as `word.<voice>.mp3`.
+The app picks one voice per exercise, so a learner gets used to different speakers; decks with a single file per
+recording work as before. Loudness is levelled across voices.
+
 ## card.yaml
 
 Content fields may be named by language code of `lang` (`en`, `ru`, `alt_ru`; `es`, `ru` …) or neutrally

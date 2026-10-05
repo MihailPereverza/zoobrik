@@ -140,6 +140,8 @@ export interface DeckData {
   /** Folder of the deck inside its library: '' for a deck at the repository root, 'decks/<id>/' otherwise. */
   root: string;
   deck: DeckConfig;
+  /** Media files of the library (full paths); used to find the other voices of a recording. */
+  media?: string[];
   topics: Topic[];
   templates: TemplateSource[];
   partials: Record<string, string>;

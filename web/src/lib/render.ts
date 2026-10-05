@@ -102,6 +102,52 @@ export function resolveTemplate(data: DeckData, card: Card, exercise: Exercise):
   return null;
 }
 
+const variantIndex = new WeakMap<object, Map<string, string[]>>();
+
+/** zoobrik-voice writes word.mp3 plus word.<voice>.mp3 for every extra voice; this maps each recording to all its voices. */
+function variantsOf(data: DeckData): Map<string, string[]> {
+  const cached = variantIndex.get(data);
+  if (cached) return cached;
+  const index = new Map<string, string[]>();
+  const add = (key: string, path: string) => index.set(key, [...(index.get(key) ?? []), path]);
+  for (const path of data.media ?? []) {
+    const voice = /^(.*)\.[a-z0-9-]+(\.(?:mp3|ogg|opus|m4a|wav))$/i.exec(path);
+    add(path, path);
+    if (voice) add(`${voice[1]}${voice[2]}`, path);
+  }
+  for (const list of index.values()) list.sort();
+  variantIndex.set(data, index);
+  return index;
+}
+
+/** File names (relative to the card) of every voice of a recording; the recording itself comes first. */
+export function audioVariants(data: DeckData, card: Card, file: string): string[] {
+  if (!file || /^(https?:|data:|blob:)/.test(file)) return [file];
+  const full = `${card.path}/${file}`;
+  const found = (variantsOf(data).get(full) ?? []).filter((p) => p !== full).map((p) => p.slice(card.path.length + 1));
+  return [file, ...found];
+}
+
+const voiceOf = (file: string) => /\.([a-z0-9-]+)\.[a-z0-9]+$/i.exec(file)?.[1] ?? '';
+
+/** Voices present in the deck: '' is the main recording, the rest come from file names like word.turbo.mp3. */
+function deckVoices(data: DeckData): string[] {
+  const voices = new Set(['']);
+  for (const list of variantsOf(data).values()) for (const path of list.slice(1)) voices.add(voiceOf(path));
+  return [...voices].sort();
+}
+
+/**
+ * One voice per exercise: the seed picks a voice for the whole exercise, so the word and its examples sound alike and
+ * replays keep the voice; a recording missing in that voice falls back to another one.
+ */
+export function pickVoice(data: DeckData, card: Card, file: string, seed: number): string {
+  const all = audioVariants(data, card, file);
+  const voices = deckVoices(data);
+  const wanted = voices[seed % voices.length];
+  return all.find((f) => (f === file ? '' : voiceOf(f)) === wanted) ?? all[seed % all.length];
+}
+
 export function mediaUrl(card: Card, file: string): string {
   if (!file) return '';
   if (/^(https?:|data:|blob:)/.test(file)) return file;
@@ -126,9 +172,10 @@ export function render(data: DeckData, card: Card, exercise: Exercise, mode: Mod
   const template = resolveTemplate(data, card, exercise);
   if (!template) return { error: `Шаблон «${exercise.template}» не найден` };
   const topic = topicOf(data, card);
-  const media = (file: string) => mediaUrl(card, file);
-  const md = exercise.template === 'md' ? parseMdExercise(exercise.params?.markdown ?? '', media) : undefined;
   const seed = hashSeed(`${card.id}:${exercise.id}:${new Date().toISOString().slice(0, 10)}${salt}`);
+  const voiceSeed = hashSeed(`${seed}:voice`);
+  const media = (file: string) => mediaUrl(card, pickVoice(data, card, file, voiceSeed));
+  const md = exercise.template === 'md' ? parseMdExercise(exercise.params?.markdown ?? '', media) : undefined;
   const context = {
     params: exercise.params ?? {}, card, exercise, topic: { id: topic.id, title: topic.title }, mode, seed, md,
     theory: card.theory, media, skills: card.progress?.skills ?? {}, lang: deckLangs(data.deck),

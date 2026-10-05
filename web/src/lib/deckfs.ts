@@ -73,7 +73,7 @@ function buildTopic(files: FileMap, root: string, langs: DeckLangs, topicId: str
   };
 }
 
-export function buildDeck(files: FileMap, core: CoreBundle, root = ''): DeckData {
+export function buildDeck(files: FileMap, core: CoreBundle, root = '', media: Iterable<string> = []): DeckData {
   const deck = parse(files.get(`${root}deck.yaml`));
   if (!deck) throw new Error(`Нет ${root}deck.yaml`);
   const langs = deckLangs(deck);
@@ -84,6 +84,7 @@ export function buildDeck(files: FileMap, core: CoreBundle, root = ''): DeckData
   const ids = [...order.filter((t) => found.includes(t)), ...found.filter((t) => !order.includes(t))];
   return {
     root,
+    media: [...media].filter((p) => p.startsWith(root)),
     deck,
     topics: ids.map((id) => buildTopic(files, root, langs, id)),
     templates: [...core.templates, ...templatesUnder(files, `${root}templates/`, 'deck')],

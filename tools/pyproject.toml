@@ -3,3 +3,9 @@ name = 'zoobrik-tools'
 version = '0.1.0'
 requires-python = '>=3.12'
 dependencies = ['pyyaml>=6.0']
+
+[project.optional-dependencies]
+# zoobrik-voice (Apple Silicon): engines run on mlx-audio, the listening check uses Whisper and wav2vec2.
+voice = ['mlx-audio>=0.5.7', 'mlx-whisper', 'torch', 'transformers', 'phonemizer', 'g2p_en', 'soundfile', 'numpy']
+# Piper lives in its own virtualenv (tools/.venv-piper) because its dependencies clash with mlx-audio.
+piper = ['piper-tts>=1.3']

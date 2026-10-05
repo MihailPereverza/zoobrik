@@ -83,7 +83,7 @@ export class ServerBackend implements Backend {
   async load() {
     const listing = await serverFiles(true);
     this.known = new Set(listing.binaries);
-    this.data = buildDeck(new Map(Object.entries(listing.texts)), CORE, this.root);
+    this.data = buildDeck(new Map(Object.entries(listing.texts)), CORE, this.root, listing.binaries);
     return this.data;
   }
   async saveAnswer(device: string, updates: { cardPath: string; progress: Progress }[], lines: string[]) { await api.saveAnswer(this.root, device, updates, lines); }
@@ -144,7 +144,7 @@ export class LocalBackend implements Backend {
 
   async load() {
     const d = await this.deck();
-    this.data = buildDeck(new Map(Object.entries(d.texts)), CORE, this.root);
+    this.data = buildDeck(new Map(Object.entries(d.texts)), CORE, this.root, d.media);
     return this.data;
   }
 
@@ -312,7 +312,9 @@ export class GitHubBackend implements Backend {
   async allTexts(): Promise<FileMap> { return this.textFiles(await this.current(), await this.pending()); }
 
   async load(): Promise<DeckData> {
-    this.data = buildDeck(await this.allTexts(), CORE, this.root);
+    const snap = await this.current();
+    const media = Object.keys(snap.shas).filter((p) => !isTextFile(p) && !p.endsWith('.tsv'));
+    this.data = buildDeck(await this.textFiles(snap, await this.pending()), CORE, this.root, media);
     return this.data;
   }
 
