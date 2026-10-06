@@ -59,6 +59,8 @@ export interface Exercise {
   view?: string;
   style?: string;
   check?: { type: string; expected?: string };
+  /** 1 (easy) … 5 (traps); overrides the template's difficulty, so learning goes from easy to hard. */
+  difficulty?: number;
 }
 
 export interface TemplateSource {
@@ -140,6 +142,8 @@ export interface DeckData {
   /** Folder of the deck inside its library: '' for a deck at the repository root, 'decks/<id>/' otherwise. */
   root: string;
   deck: DeckConfig;
+  /** Translations of words and set phrases used in exercises (glossary.yaml next to deck.yaml). */
+  glossary?: Record<string, string>;
   /** Media files of the library (full paths); used to find the other voices of a recording. */
   media?: string[];
   topics: Topic[];

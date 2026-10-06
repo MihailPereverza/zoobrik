@@ -111,6 +111,7 @@ export const RUNTIME = String.raw`(function () {
     var m = e.data || {};
     if (!m.zb) return;
     if (m.type === 'theme') document.documentElement.dataset.theme = m.theme;
+    if (m.type === 'gloss-result') showTip(m);
     if (m.type === 'media') (m.files || []).forEach(function (f) {
       media[f.url] = URL.createObjectURL(new Blob([f.buffer], { type: f.type || 'audio/mpeg' }));
       zb.log('media received', { src: tail(f.url), bytes: f.buffer && f.buffer.byteLength, type: f.type });
@@ -129,6 +130,66 @@ export const RUNTIME = String.raw`(function () {
       zb.emit('graded', m);
     }
   });
+  // Every English word is tappable and shows its translation; on answer buttons it takes a long press, so a tap still answers.
+  var INTERACTIVE = 'button,a,label,input,[data-zb-chip],[data-zb-choice]';
+  function wrapWords(root) {
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: function (n) {
+      var p = n.parentElement;
+      if (!p || p.closest('script,style,svg,textarea,.zb-gloss,[data-w]')) return NodeFilter.FILTER_REJECT;
+      return /[A-Za-z]/.test(n.textContent) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+    } });
+    var nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(function (n) {
+      var holder = document.createElement('span');
+      holder.innerHTML = n.textContent.replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; })
+        .replace(/[A-Za-z][A-Za-z'’]*(?:-[A-Za-z]+)*/g, '<span data-w>$&</span>');
+      n.replaceWith.apply(n, Array.prototype.slice.call(holder.childNodes));
+    });
+  }
+  var tip = null, press = null, pressAt = null, suppress = false;
+  function hideTip() { if (tip) { tip.remove(); tip = null; } $$('.zb-glossed').forEach(function (w) { w.classList.remove('zb-glossed'); }); }
+  function blockOf(el) { return el.closest('p,li,button,td,th,h1,h2,h3,.zb-prompt,.zb-translation,.zb-hint,div') || document.body; }
+  function askGloss(el) {
+    var list = Array.prototype.slice.call(blockOf(el).querySelectorAll('[data-w]'));
+    var r = el.getBoundingClientRect();
+    glossWords = list;
+    post('gloss', { words: list.map(function (w) { return w.textContent; }), index: list.indexOf(el), rect: { left: r.left, top: r.top, bottom: r.bottom, width: r.width } });
+  }
+  var glossWords = [];
+  function showTip(m) {
+    hideTip();
+    tip = document.createElement('div');
+    tip.className = 'zb-gloss' + (m.ru ? '' : ' none');
+    tip.innerHTML = '<b></b><span></span>';
+    tip.firstChild.textContent = m.phrase || m.word;
+    tip.lastChild.textContent = m.ru || 'нет в словаре колоды';
+    document.body.appendChild(tip);
+    if (m.ru) glossWords.slice(m.start, m.start + m.length).forEach(function (w) { w.classList.add('zb-glossed'); });
+    var r = m.rect, w = tip.offsetWidth, h = tip.offsetHeight;
+    var left = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), document.documentElement.clientWidth - w - 8);
+    var top = r.top - h - 8 < 4 ? r.bottom + 8 : r.top - h - 8;
+    tip.style.left = left + 'px'; tip.style.top = (top + window.scrollY) + 'px';
+  }
+  wrapWords(document.body);
+  document.addEventListener('pointerdown', function (e) {
+    var w = e.target.closest && e.target.closest('[data-w]');
+    if (!w || !w.closest(INTERACTIVE)) return;
+    pressAt = { x: e.clientX, y: e.clientY };
+    press = setTimeout(function () { press = null; suppress = true; askGloss(w); }, 450);
+  }, true);
+  var cancelPress = function () { if (press) { clearTimeout(press); press = null; } };
+  document.addEventListener('pointerup', cancelPress, true);
+  document.addEventListener('pointercancel', cancelPress, true);
+  document.addEventListener('pointermove', function (e) { if (press && pressAt && Math.abs(e.clientX - pressAt.x) + Math.abs(e.clientY - pressAt.y) > 10) cancelPress(); }, true);
+  document.addEventListener('contextmenu', function (e) { if (e.target.closest && e.target.closest('[data-w]')) e.preventDefault(); }, true);
+  document.addEventListener('click', function (e) {
+    if (suppress) { suppress = false; e.preventDefault(); e.stopPropagation(); return; }
+    var w = e.target.closest && e.target.closest('[data-w]');
+    if (w && !w.closest(INTERACTIVE)) { e.stopPropagation(); askGloss(w); return; }
+    hideTip();
+  }, true);
+  window.addEventListener('scroll', hideTip);
+
   function report() { post('resize', { height: Math.ceil(document.documentElement.scrollHeight) }); }
   new ResizeObserver(report).observe(document.body);
   window.addEventListener('load', report);

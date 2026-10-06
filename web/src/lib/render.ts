@@ -35,8 +35,10 @@ export function hashSeed(text: string): number {
 function gapFilter(text: string, mode: string, answer?: string): string {
   const safe = escapeHtml(text);
   if (mode === 'input') return safe.replace('___', '<input class="zb-gap" data-zb-input autocomplete="off" autocapitalize="off" spellcheck="false">');
-  if (mode === 'fill') return safe.replace('___', `<span class="blank">${escapeHtml(answer ?? '')}</span>`);
-  return safe.replace('___', '<span class="blank">&nbsp;</span>');
+  // Two-part answers ("are … doing") fill the gaps one by one.
+  const parts = String(answer ?? '').split(/\s*…\s*/);
+  let i = 0;
+  return safe.replace(/___/g, () => (mode === 'fill' ? `<span class="blank">${escapeHtml(parts[Math.min(i++, parts.length - 1)] ?? '')}</span>` : '<span class="blank">&nbsp;</span>'));
 }
 
 let env: any = null;

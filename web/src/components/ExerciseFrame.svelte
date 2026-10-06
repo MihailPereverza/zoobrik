@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { app, backend } from '../lib/state.svelte';
   import { log, mediaName } from '../lib/log';
+  import { glossary, lookupGloss } from '../lib/gloss';
 
   interface Props {
     srcdoc: string;
@@ -35,6 +36,12 @@
     }
   }
 
+  function answerGloss(data: { words: string[]; index: number; rect: unknown }) {
+    const found = app.data ? lookupGloss(glossary(app.data), data.words ?? [], data.index) : null;
+    log(name, 'gloss', { word: data.words?.[data.index], found: found?.phrase ?? null });
+    send({ type: 'gloss-result', rect: data.rect, word: data.words?.[data.index], ...(found ?? {}) });
+  }
+
   export function focus() {
     iframe?.focus();
     send({ type: 'focus' });
@@ -49,6 +56,7 @@
       if (type === 'resize') { height = Math.max(120, data.height); shown = true; return; }
       if (type === 'need-media') { deliverMedia(data.urls ?? []); return; }
       if (type === 'log') { log(`${name}:inside`, data.msg, data.data); return; }
+      if (type === 'gloss') { answerGloss(data); return; }
       onevent(type, data);
     };
     window.addEventListener('message', onMessage);

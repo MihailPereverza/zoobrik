@@ -36,7 +36,7 @@ function mdExercises(files: FileMap, cardDir: string): Exercise[] {
     .map((p) => {
       const { meta, body } = splitFrontmatter(files.get(p)!);
       const file = p.slice(cardDir.length + 1);
-      return { id: meta.id ?? file.replace(/^exercises\/|\.md$/g, ''), template: 'md', skill: meta.skill, status: meta.status ?? 'draft', file, params: { markdown: body } };
+      return { id: meta.id ?? file.replace(/^exercises\/|\.md$/g, ''), template: 'md', skill: meta.skill, status: meta.status ?? 'draft', difficulty: meta.difficulty, file, params: { markdown: body } };
     });
 }
 
@@ -85,6 +85,7 @@ export function buildDeck(files: FileMap, core: CoreBundle, root = '', media: It
   return {
     root,
     media: [...media].filter((p) => p.startsWith(root)),
+    glossary: parse(files.get(`${root}glossary.yaml`)) ?? {},
     deck,
     topics: ids.map((id) => buildTopic(files, root, langs, id)),
     templates: [...core.templates, ...templatesUnder(files, `${root}templates/`, 'deck')],

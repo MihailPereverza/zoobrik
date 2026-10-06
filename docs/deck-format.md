@@ -60,6 +60,18 @@ batch: 4                         # new cards per portion
 order: [hair, curly, wavy, ...]  # introduction order, every card of the topic exactly once
 ```
 
+## glossary.yaml (tap to translate)
+
+Every English word in an exercise can be tapped (long-pressed on answer buttons) to see its translation. The app looks up
+the longest set phrase around the word (`kind of`, `in front of`, `look for`), then the word, then its base form
+(`wears` → `wear`, `carrying` → `carry`, `stopped` → `stop`). Card terms are included automatically; `glossary.yaml` next
+to `deck.yaml` covers every other word and phrase: `word: перевод`. Quote keys and values YAML would misread (`"yes"`, `": "`).
+
+## Exercise difficulty
+
+`difficulty: 1…5` on an exercise (or in a markdown exercise's frontmatter) overrides the template's difficulty. While a card
+is being learned, its exercises go from easy to hard; reviews mix them. Use 4–5 for trap exercises.
+
 ## Several voices
 
 `tools/voice.py` voices every recording with several engines (default: `qwen`, `turbo`, `melo`, `piper`) and keeps only

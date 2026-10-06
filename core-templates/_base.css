@@ -152,3 +152,13 @@ button { font: inherit; -webkit-user-select: none; user-select: none; }
 .zb-card .ci-theory { font-size: 15px; }
 .zb-card .ci-more summary { cursor: pointer; color: var(--zb-ink-2); font-size: 15px; font-weight: 500; }
 .zb-card .ci-more .zb-md { margin-top: 10px; font-size: 15px; }
+
+/* Tap-to-translate: words are wrapped by the runtime; a tip shows the word or set phrase and its translation. */
+[data-w] { cursor: pointer; border-radius: 4px; transition: background-color 120ms var(--zb-ease); }
+button [data-w], [data-zb-chip] [data-w] { cursor: inherit; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.zb-glossed { background: var(--zb-amber-soft); box-shadow: 0 0 0 2px var(--zb-amber-soft); }
+.zb-gloss { position: absolute; z-index: 50; max-width: min(320px, calc(100vw - 16px)); padding: 9px 12px; border-radius: 12px; background: var(--zb-brand); color: var(--zb-on-brand);
+  font: 400 15px/1.35 var(--zb-font); display: grid; gap: 2px; pointer-events: none; animation: zb-gloss-in 160ms var(--zb-ease-out) both; }
+.zb-gloss b { font-weight: 600; }
+.zb-gloss.none span { opacity: 1; color: var(--zb-on-brand); font-size: 13px; }
+@keyframes zb-gloss-in { from { transform: translateY(4px) scale(.98); } to { transform: none; } }

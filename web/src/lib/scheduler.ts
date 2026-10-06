@@ -17,7 +17,7 @@ export function exerciseSkills(data: DeckData, card: Card, exercise: Exercise): 
 }
 
 function difficulty(data: DeckData, card: Card, exercise: Exercise): number {
-  return manifestOf(data, card, exercise)?.difficulty ?? 3;
+  return exercise.difficulty ?? manifestOf(data, card, exercise)?.difficulty ?? 3;
 }
 
 function usable(data: DeckData, card: Card, exercise: Exercise, mode: Mode): boolean {
