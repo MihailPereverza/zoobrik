@@ -128,6 +128,8 @@ async function git(deckDir: string, args: string[]) {
 }
 
 async function sync(deckDir: string, device: string) {
+  // e2e runs answer cards on the real deck; without this they commit and push test answers.
+  if (process.env.ZB_NO_SYNC) return { ok: true, log: 'Синхронизация отключена (ZB_NO_SYNC).' };
   if (!existsSync(path.join(deckDir, '.git'))) return { ok: false, log: 'Колода не является git-репозиторием.' };
   const log: string[] = [];
   await git(deckDir, ['add', '-A']);

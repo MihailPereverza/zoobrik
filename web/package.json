@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
+    "dev:test": "ZB_NO_SYNC=1 vite --host",
     "build": "vite build",
     "serve": "vite preview --host --port 5180",
     "check": "svelte-check --tsconfig ./tsconfig.json",
