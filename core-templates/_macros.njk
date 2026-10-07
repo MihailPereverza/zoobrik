@@ -8,8 +8,8 @@
   {% if src %}<div class="zb-row" style="margin-top:6px">{{ play(src) }}{% if slow %}{{ playSlow(src) }}{% endif %}</div>{% endif %}
 </div>{% endmacro %}
 {% macro options(list, seed) %}<div class="zb-options">{% for o in list | shuffle(seed) %}<button class="zb-option" type="button" data-zb-choice="{{ o }}"><span class="k">{{ loop.index }}</span><span>{{ o }}</span></button>{% endfor %}</div>{% endmacro %}
-{% macro chips(answer, extra, seed, items=null) %}<div class="zb-slot{% if items %} phrases{% endif %}" data-zb-slot></div>
-<div class="zb-bank{% if items %} phrases{% endif %}">{% for w in (items or (answer | tokens)) | concat(extra) | shuffle(seed) %}<button class="zb-chip" type="button" data-zb-chip="{{ w }}">{{ w }}</button>{% endfor %}</div>
+{% macro chips(answer, extra, seed) %}<div class="zb-slot" data-zb-slot></div>
+<div class="zb-bank">{% for w in (answer | tokens) | concat(extra) | shuffle(seed) %}<button class="zb-chip" type="button" data-zb-chip="{{ w }}">{{ w }}</button>{% endfor %}</div>
 <button class="zb-submit" type="button" data-zb="submit" disabled>Проверить</button>{% endmacro %}
 {% macro explanation(params) %}{% if params.explanation %}<div class="zb-note zb-md">{{ params.explanation | md | safe }}</div>{% endif %}{% endmacro %}
 {% macro cardInfo(card, theory, media, big=false) %}

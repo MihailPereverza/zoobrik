@@ -121,25 +121,12 @@ def voice_dialogue(*, lines: list[DialogueLine], target: Path) -> list[Segment]:
     return segments
 
 
-def merge_fragments(words: list[Word]) -> list[Word]:
-    # Whisper splits "forty-five", "T-shirt", "o'clock" into pieces that start with - or '; glue them back.
-    merged: list[Word] = []
-    for word in words:
-        if merged and word.word[:1] in "-'’":
-            last = merged[-1]
-            merged[-1] = Word(word=last.word + word.word, start=last.start, end=word.end)
-            continue
-        merged.append(word)
-    return merged
-
-
 def line_segment(*, line: DialogueLine, audio: np.ndarray, offset: float) -> Segment:
     with tempfile.NamedTemporaryFile(suffix='.wav') as wav:
         soundfile.write(wav.name, audio, SAMPLE_RATE)
         timed = transcribe(media=Path(wav.name), prompt=line.text)
     words = [Word(word=w.word, start=seconds(w.start + offset), end=seconds(w.end + offset))
              for segment in timed for w in segment.words]
-    words = merge_fragments(words)
     written = line.text.split()
     if len(written) == len(words):
         words = [Word(word=text, start=w.start, end=w.end) for text, w in zip(written, words)]

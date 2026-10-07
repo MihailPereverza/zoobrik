@@ -9,7 +9,7 @@ export interface MdExercise {
   options: string[];
   answer: string;
   gaps: string[][];
-  chips: { answer: string; extra: string[]; items?: string[]; phrases?: boolean };
+  chips: { answer: string; extra: string[] };
 }
 
 const OPTION = /^\s*[-*] \[( |x|X)\] (.+)$/;
@@ -63,13 +63,10 @@ export function parseMdExercise(body: string, media: (file: string) => string, c
   const { rest, options, answer } = extractOptions(keepAudio(frontRaw).split('\n'));
   let front = rest.join('\n');
   const chipsMatch = CHIPS.exec(front);
-  let chips: MdExercise['chips'] = { answer: '', extra: [] };
+  let chips = { answer: '', extra: [] as string[] };
   if (chipsMatch) {
     const [answerPart, extraPart = ''] = chipsMatch[1].split('|');
-    const items = splitWords(answerPart);
-    // Chips that are whole phrases ("She tries it on.") are moved as units, e.g. to put events in order.
-    const phrases = items.some((item) => /\s/.test(item));
-    chips = { answer: items.join(' '), extra: splitWords(extraPart), items, phrases };
+    chips = { answer: splitWords(answerPart).join(' '), extra: splitWords(extraPart) };
     front = front.replace(CHIPS, '');
   }
   const open = /\[\[open\]\]/.test(front);
