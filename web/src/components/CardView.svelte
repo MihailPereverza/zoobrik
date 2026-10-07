@@ -129,7 +129,7 @@
               <tr>
                 <td>{s}</td>
                 <td class="mono">{st ? `${Math.round(retrievability(data.deck, s, st, now) * 100)}%` : '—'}</td>
-                <td class="mono">{st ? `${st.s} дн` : '—'}</td>
+                <td class="mono">{st ? `${Math.round(st.s * 10) / 10} дн` : '—'}</td>
                 <td class="mono">{st ? (new Date(st.due) <= now ? 'сейчас' : `через ${formatInterval(now, new Date(st.due))}`) : 'новый'}</td>
               </tr>
             {/each}
@@ -200,7 +200,7 @@
   .examples li { display: grid; grid-template-columns: 32px 1fr; gap: 12px; align-items: center; }
   .small { font-size: 14px; }
   .skills { width: 100%; border-collapse: collapse; font-size: 14px; }
-  .skills th, .skills td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--rule); }
+  .skills th, .skills td { text-align: left; padding: 6px 6px 6px 0; border-bottom: 1px solid var(--rule); }
   .skills th { font: 500 11px/1 var(--font-mono); text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3); }
   .editor { display: grid; gap: 14px; position: sticky; top: 72px; }
   @media (max-width: 900px) { .editor { position: static; } }

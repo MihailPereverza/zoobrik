@@ -1,6 +1,6 @@
 {% import "core/_macros" as m %}
 <div class="zb">
-  <div class="zb-card-q"><span class="zb-prompt word" style="font-size:40px">{{ params.prompt }}</span></div>
+  <div class="zb-card-q"><span class="zb-prompt word">{{ params.prompt }}</span></div>
   {{ m.options(params.options, seed) }}
   <div class="zb-back" data-zb-back hidden>{{ m.explanation(params) }}</div>
 </div>
