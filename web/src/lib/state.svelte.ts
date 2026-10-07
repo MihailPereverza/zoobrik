@@ -1,7 +1,10 @@
 import YAML from 'yaml';
 import { countActivity, GitHubBackend, LocalBackend, localRoots, ServerBackend, serverFiles, type Backend, type StoreKind } from './backend';
 import { deckRoots } from './deckfs';
+import { setKnownWords } from './check';
+import { glossary } from './gloss';
 import type { RepoConfig } from './github';
+import type { AiConfig } from './ai';
 import { deckLangs } from './lang';
 import { dayKey } from './progress';
 import type { DeckData } from './types';
@@ -26,6 +29,15 @@ function store(key: string, value: string | null) {
   try { if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value); } catch { /* storage unavailable: setting lives for this tab only */ }
 }
 
+function storedAi(): AiConfig | null {
+  try { return JSON.parse(stored('zb.ai', 'null')); } catch { return null; }
+}
+
+export function setAi(cfg: AiConfig | null) {
+  app.ai = cfg;
+  store('zb.ai', cfg ? JSON.stringify(cfg) : null);
+}
+
 function storedRepo(): RepoConfig | null {
   try { return JSON.parse(stored('zb.github', 'null')); } catch { return null; }
 }
@@ -48,6 +60,7 @@ export const app = $state({
   goal: Number(stored('zb.goal', '30')) || 30,
   activity: {} as Record<string, number>,
   decks: [] as DeckRef[],
+  ai: storedAi(),
   deckKey: stored('zb.deck', ''),
   scanned: false,
 });
@@ -182,6 +195,7 @@ export async function reload() {
     if (!app.decks.some((d) => d.key === app.deckKey)) setActiveDeck(app.decks[0].key);
     current = null;
     app.data = await backend().load();
+    setKnownWords([...glossary(app.data).keys()].filter((k) => !k.includes(' ')));
     app.error = '';
     app.version += 1;
     await refreshPending();

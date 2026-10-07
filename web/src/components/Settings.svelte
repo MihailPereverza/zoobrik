@@ -1,6 +1,7 @@
 <script lang="ts">
   import Connect from './Connect.svelte';
-  import { activeDeck, app, backend, setDevice, setGoal, setMascot, setMascotMotion, setRepo, setTheme, STANDALONE, sync, reload, THEMES, type MascotMode } from '../lib/state.svelte';
+  import { aiGrade, DEFAULT_AI_MODEL } from '../lib/ai';
+  import { activeDeck, app, backend, setAi, setDevice, setGoal, setMascot, setMascotMotion, setRepo, setTheme, STANDALONE, sync, reload, THEMES, type MascotMode } from '../lib/state.svelte';
   import Zubrik from './Zubrik.svelte';
   import { audioVariants, mediaUrl } from '../lib/render';
   import { onMount } from 'svelte';
@@ -12,6 +13,24 @@
     off: { label: 'Выкл', title: 'Выключен', note: 'Вместо Зубрика — иконка результата. Он остаётся только в иконке приложения.', mood: 'sleep' },
   };
   let device = $state(app.device);
+  let aiUrl = $state(app.ai?.url ?? 'http://localhost:4196');
+  let aiPassword = $state(app.ai?.password ?? '');
+  let aiModel = $state(app.ai?.model ?? DEFAULT_AI_MODEL);
+  let aiBusy = $state(false);
+  let aiStatus = $state(app.ai ? 'Включено' : '');
+
+  async function saveAi() {
+    const cfg = { url: aiUrl.trim(), password: aiPassword, model: aiModel.trim() || DEFAULT_AI_MODEL };
+    aiBusy = true; aiStatus = '';
+    try {
+      const v = await aiGrade(cfg, { exercise: 'Translate: «Где мои очки?»', reference: 'Where are my glasses?', answer: 'Where is my glasses?' });
+      setAi(cfg);
+      aiStatus = `Работает: ${v.verdict} — ${v.feedback}`;
+    } catch (e) {
+      aiStatus = `Не отвечает: ${(e as Error).message}. Запущен ли opencode serve с --cors?`;
+    }
+    aiBusy = false;
+  }
   let log = $state('');
   let downloading = $state('');
 
@@ -107,6 +126,19 @@
   </a>
 
   <section class="panel box">
+    <h2>Проверка ИИ</h2>
+    <p class="muted">Свободные ответы и открытые вопросы можно проверять через твой OpenCode на Mac (<span class="mono">opencode serve</span>): он засчитывает перефразированные ответы и объясняет ошибки по-русски. Без него — проверка по эталонам и самооценка.</p>
+    <label class="field">Адрес сервера<input bind:value={aiUrl} placeholder="http://localhost:4196" autocomplete="off" autocapitalize="off" spellcheck="false" /></label>
+    <label class="field">Пароль (OPENCODE_SERVER_PASSWORD)<input type="password" bind:value={aiPassword} autocomplete="off" /></label>
+    <label class="field">Модель<input bind:value={aiModel} placeholder={DEFAULT_AI_MODEL} autocomplete="off" autocapitalize="off" spellcheck="false" class="mono" /></label>
+    <div class="row-btns">
+      <button class="btn small" type="button" onclick={saveAi} disabled={aiBusy}>{aiBusy ? 'Проверяю…' : 'Сохранить и проверить'}</button>
+      {#if app.ai}<button class="btn small ghost" type="button" onclick={() => { setAi(null); aiStatus = 'Выключено'; }}>Выключить</button>{/if}
+      {#if aiStatus}<span class="muted status">{aiStatus}</span>{/if}
+    </div>
+  </section>
+
+  <section class="panel box">
     <h2>Цель на день</h2>
     <p class="muted">Сколько заданий в день считать выполненной нормой. Кольцо на главной заполняется по мере занятий.</p>
     <div class="seg" role="radiogroup" aria-label="Цель на день">
@@ -186,6 +218,7 @@
 </div>
 
 <style>
+  .field { display: grid; gap: 4px; width: 100%; font-size: 13px; color: var(--ink-2); }
   .decks-link { display: flex !important; align-items: center; justify-content: space-between; text-decoration: none; color: var(--ink); }
   .decks-link > span { display: grid; gap: 4px; }
   .decks-link .muted { font-size: 14px; }

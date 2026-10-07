@@ -16,11 +16,12 @@
   import { formatInterval, preview } from '../lib/fsrs';
   import { applyAnswer, applyIntro, bury, suspend } from '../lib/progress';
   import { audioVariants, mediaUrl, render, type Rendered } from '../lib/render';
+  import { aiGrade } from '../lib/ai';
   import { filterCards, queryToFilter } from '../lib/words';
   import { balanceDue, buildSession, isPrimed, LEARN_AHEAD, manifestOf, practiceSession, replacementItem } from '../lib/scheduler';
   import type { CheckResult, Grade, QueueItem, Skill } from '../lib/types';
 
-  type Phase = 'answer' | 'reveal' | 'graded' | 'flipped' | 'wait' | 'done';
+  type Phase = 'answer' | 'checking' | 'reveal' | 'graded' | 'flipped' | 'wait' | 'done';
   const FLIP_MS = 220;
   let { practice: practiceMode = false, practiceQuery = '' }: { practice?: boolean; practiceQuery?: string } = $props();
   const data = app.data!;
@@ -115,12 +116,61 @@
     return isPrimed(manifestOf(data, current.card, current.exercise)?.asks ?? [], revealed.get(current.card.id), index, current.mode);
   }
 
+  const answerText = (value: any) => (typeof value?.text === 'string' ? value.text : Array.isArray(value?.texts) ? value.texts.join(' / ') : '');
+
+  /** What the learner saw, as plain text, for the AI grader: the question without hidden answers and controls. */
+  function exerciseText(r: Rendered): string {
+    const box = document.createElement('div');
+    box.innerHTML = r.md ? r.md.front : r.html;
+    box.querySelectorAll('[data-zb-back],.zb-back,.zb-tx,.zb-pctl,.zb-pbar,button,script,style').forEach((e) => e.remove());
+    return (box.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 800);
+  }
+
   function onAnswer(value: any, ms: number, hintCount: number) {
     const current = item;
     const r = rendered && 'template' in rendered ? rendered : null;
     if (!current || !r) return;
     answerMs = ms; hints = hintCount;
     const res = check(current.exercise, r.template.manifest, value, r.md);
+    const text = answerText(value).trim();
+    const typed = ['fuzzy', 'exact', 'md'].includes(current.exercise.check?.type ?? r.template.manifest.check?.type ?? '') && !!text;
+    if (typed && (!res.correct || res.open) && app.ai?.url) { askAi(current, r, res, value, ms, text); return; }
+    if (res.open) { selfGrade(res, text); return; }
+    finishAnswer(current, res, value, ms);
+  }
+
+  let aiError = $state('');
+  function askAi(current: QueueItem, r: Rendered, res: CheckResult, value: any, ms: number, text: string) {
+    phase = 'checking';
+    aiError = '';
+    const started = performance.now();
+    aiGrade(app.ai!, { exercise: exerciseText(r), reference: res.expected, answer: text })
+      .then((v) => {
+        log('ai', 'verdict', { verdict: v.verdict, ms: Math.round(performance.now() - started) });
+        const ok = v.verdict === 'correct' || v.verdict === 'typo';
+        const merged: CheckResult = { ...res, ai: true, correct: ok, typo: v.verdict === 'typo', expected: v.fixed || res.expected,
+          suggested: ok ? (v.verdict === 'typo' ? 2 : 3) : v.verdict === 'partial' ? 2 : 1, note: v.feedback, open: false };
+        if (item !== current) return;
+        finishAnswer(current, merged, value, ms);
+      })
+      .catch((e) => {
+        log('ai', 'failed', String(e?.message ?? e));
+        aiError = 'ИИ недоступен — проверка без него.';
+        if (item !== current) return;
+        if (res.open) selfGrade(res, text); else finishAnswer(current, res, value, ms);
+      });
+  }
+
+  /** Open question without AI: show the model answer and let the learner grade themselves. */
+  function selfGrade(res: CheckResult, text: string) {
+    given = text;
+    result = null; suggested = 3; selected = null;
+    phase = 'reveal'; target = 'flipped';
+    frame?.send({ type: 'graded', correct: true, typo: false, expected: res.expected });
+    flipNow();
+  }
+
+  function finishAnswer(current: QueueItem, res: CheckResult, value: any, ms: number) {
     let grade = res.suggested;
     if (res.correct && hints > 0) grade = 2;
     const avg = current.card.progress?.exercises?.[current.exercise.id]?.avg_ms ?? 0;
@@ -446,7 +496,7 @@
 
     {#key item.key}
       <div class="step" in:fly={{ y: 14, duration: 320, opacity: 1 }}>
-        {#if phase === 'answer' || phase === 'reveal'}<article class="exercise" class:flipping>
+        {#if phase === 'answer' || phase === 'checking' || phase === 'reveal'}<article class="exercise" class:flipping>
           {#if rendered && 'error' in rendered}
             <p class="err">{rendered.error}</p>
             <button class="btn small ghost" type="button" onclick={advance}>Пропустить</button>
@@ -468,6 +518,14 @@
       <section class="back surface" in:flipIn={{ duration: 340, delay: 60 }}>{#key item.key}<InlineView html={backRendered.html} css={backRendered.css} onplay={playNow} />{/key}</section>
     {/if}
 
+    {#if phase === 'checking'}
+      <div class="sheet neutral" in:fly={{ y: 200, duration: 280, opacity: 1 }}>
+        <div class="verdict">
+          <span class="avatar">{#if app.mascotMode !== 'off'}<Zubrik mood="think" size={54} crop="head" />{/if}</span>
+          <div class="vtext"><b>Сверяюсь с ИИ…</b><span>Обычно 5–30 секунд</span></div>
+        </div>
+      </div>
+    {/if}
     {#if phase === 'reveal' || phase === 'graded' || phase === 'flipped'}
       <div class="sheet {tone}" in:fly={{ y: 200, duration: 280, opacity: 1, easing: (t) => 1 - Math.pow(1 - t, 3) }}>
         <div class="verdict">
@@ -481,6 +539,8 @@
           <div class="vtext">
             {#if verdictTitle}<b>{verdictTitle}</b>{/if}
             <span>{verdictLine}</span>
+            {#if result?.note && (result.ai || !result.correct)}<span class="note">{result.ai ? 'ИИ' : 'Подсказка'}: {result.note}</span>{/if}
+            {#if aiError}<span class="small">{aiError}</span>{/if}
             {#if practice}<span class="small">Ответ уже встречался в этом цикле — засчитано как практика</span>{/if}
           </div>
         </div>

@@ -1,5 +1,6 @@
 """Speech engines for zoobrik-voice: every engine returns mono float32 audio at 24 kHz."""
 
+import gc
 import subprocess
 import tempfile
 import urllib.request
@@ -9,6 +10,7 @@ from typing import Any
 
 import numpy as np
 import soundfile
+import mlx.core as mx
 from mlx_audio.tts.utils import load_model
 
 SAMPLE_RATE = 24000
@@ -71,6 +73,11 @@ class MlxEngine:
         results = self.model.generate(text=text, **self.options)
         return joined(results=results, rate=self.model.sample_rate)
 
+    def release(self) -> None:
+        self.model = None
+        gc.collect()
+        mx.clear_cache()
+
 
 class PiperEngine:
     """Piper runs in its own virtualenv, so it is called as a subprocess."""
@@ -85,6 +92,9 @@ class PiperEngine:
             for name in (f'{self.voice}.onnx', f'{self.voice}.onnx.json'):
                 urllib.request.urlretrieve(PIPER_VOICE_URL.format(name=name), path.parent / name)
         return path
+
+    def release(self) -> None:
+        return None
 
     def speak(self, text: str) -> np.ndarray:
         with tempfile.NamedTemporaryFile(suffix='.wav') as wav:

@@ -1,6 +1,7 @@
 """zoobrik-voice: voice every word and example of a deck with several voices that pass a listening check."""
 
 import argparse
+import hashlib
 import json
 import re
 import subprocess
@@ -14,7 +15,7 @@ import soundfile
 import yaml
 
 from voice_engines import CACHE_DIR, ENGINES, SAMPLE_RATE, MlxEngine, PiperEngine, build_engine
-from voice_judge import Judge, Verdict
+from voice_judge import MAX_PHONEME_DISTANCE, Judge, Verdict
 
 DEFAULT_ENGINES = ['qwen', 'turbo', 'melo', 'piper']
 ATTEMPTS = 3
@@ -123,17 +124,49 @@ def best_take(*, engine: str, speaker: MlxEngine | PiperEngine, judge: Judge, te
             best = Take(engine=engine, audio=audio, verdict=verdict)
         if verdict.passed:
             break
-    return best if best and best.verdict.words_match else None
+    # Homophones (wear/where) can never match Whisper's spelling; matching sounds are enough then.
+    usable = best and (best.verdict.words_match or best.verdict.distance <= MAX_PHONEME_DISTANCE)
+    return best if usable else None
 
 
-def voice_clip(*, clip: Clip, speakers: dict[str, MlxEngine | PiperEngine], judge: Judge) -> ClipResult:
+def take_path(*, clip: Clip, engine: str) -> Path:
+    key = hashlib.sha1(f'{clip.target}|{clip.text}'.encode()).hexdigest()[:16]
+    return CACHE_DIR / 'takes' / f'{key}.{engine}.npz'
+
+
+def save_take(*, clip: Clip, engine: str, take: Take | None) -> None:
+    path = take_path(clip=clip, engine=engine)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if take is None:
+        np.savez(path, audio=np.zeros(0, dtype=np.float32), verdict='null')
+        return
+    np.savez(path, audio=take.audio, verdict=json.dumps(take.verdict.__dict__))
+
+
+def load_take(*, clip: Clip, engine: str) -> Take | None:
+    with np.load(take_path(clip=clip, engine=engine)) as data:
+        verdict = json.loads(str(data['verdict']))
+        return Take(engine=engine, audio=data['audio'], verdict=Verdict(**verdict)) if verdict else None
+
+
+def voice_engine(*, engine: str, clips: list[Clip], judge: Judge) -> None:
+    # One model in memory at a time: four TTS models plus the judge do not fit on a 32 GB Mac next to other apps.
+    todo = [clip for clip in clips if not take_path(clip=clip, engine=engine).exists()]
+    speaker, started = build_engine(engine), time.time()
+    for index, clip in enumerate(todo, start=1):
+        take = best_take(engine=engine, speaker=speaker, judge=judge, text=speakable(clip.text))
+        save_take(clip=clip, engine=engine, take=take)
+        where = f'{clip.target.parent.name}/{clip.target.name}'
+        print(f'[{engine} {index}/{len(todo)}] {time.time() - started:.0f}s {where}', flush=True)
+    speaker.release()
+
+
+def assemble_clip(*, clip: Clip, engines: list[str]) -> ClipResult:
     result = ClipResult(clip=clip)
-    text = speakable(clip.text)
-    # Files of a voice that fails this time must not linger from an earlier run.
     for engine in ENGINES:
         variant_path(clip=clip, engine=engine).unlink(missing_ok=True)
-    for engine, speaker in speakers.items():
-        take = best_take(engine=engine, speaker=speaker, judge=judge, text=text)
+    for engine in engines:
+        take = load_take(clip=clip, engine=engine)
         if take is None:
             result.failed.append(engine)
             continue
@@ -183,17 +216,26 @@ def run(*, deck_dir: Path, engines: list[str], force: bool, only: str, redo_fail
         done -= {str(clip.target) for clip in clips if f'{clip.target.parent.name}/{clip.target.name}' in failed}
     todo = [clip for clip in clips if str(clip.target) not in done]
     print(f'{len(todo)} of {len(clips)} clips to voice with {", ".join(engines)}', flush=True)
-    speakers, judge, started = {name: build_engine(name) for name in engines}, Judge(), time.time()
+    if force or redo_failed:
+        for clip in todo:
+            for engine in engines:
+                take_path(clip=clip, engine=engine).unlink(missing_ok=True)
+    judge = Judge()
+    for engine in engines:
+        voice_engine(engine=engine, clips=todo, judge=judge)
+    write_results(deck_dir=deck_dir, clips=todo, engines=engines, done=done)
+
+
+def write_results(*, deck_dir: Path, clips: list[Clip], engines: list[str], done: set[str]) -> None:
     report = CACHE_DIR / f'voice-report-{deck_dir.resolve().name}.tsv'
     report.parent.mkdir(parents=True, exist_ok=True)
     with report.open('a', encoding='utf-8') as out:
-        for index, clip in enumerate(todo, start=1):
-            result = voice_clip(clip=clip, speakers=speakers, judge=judge)
+        for index, clip in enumerate(clips, start=1):
+            result = assemble_clip(clip=clip, engines=engines)
             out.write(report_line(result) + '\n')
-            out.flush()
             done.add(str(clip.target))
-            save_done(deck_dir=deck_dir, done=done)
-            print(f'[{index}/{len(todo)}] {time.time() - started:.0f}s {report_line(result)}', flush=True)
+            print(f'[write {index}/{len(clips)}] {report_line(result)}', flush=True)
+    save_done(deck_dir=deck_dir, done=done)
 
 
 def main() -> None:

@@ -45,7 +45,18 @@ export interface CardContent {
   formula?: string;
   theory?: string;
   examples?: Example[];
+  /** Listening cards: the audio or video file and its timed transcript (transcript.yaml). */
+  media?: string;
+  transcript?: string;
+  source?: string;
+  license?: string;
+  attribution?: string;
+  summary?: string;
 }
+
+export interface TranscriptWord { word: string; start: number; end: number }
+export interface TranscriptSegment { start: number; end: number; text: string; speaker?: string; ru?: string; words?: TranscriptWord[] }
+export interface Transcript { language?: string; segments: TranscriptSegment[] }
 
 export interface Exercise {
   id: string;
@@ -88,11 +99,12 @@ export interface TemplateManifest {
 export interface Card {
   id: string;
   tags?: string[];
-  kind: 'word' | 'phrase' | 'idiom' | 'grammar';
+  kind: 'word' | 'phrase' | 'idiom' | 'grammar' | 'listening';
   topic: string;
   path: string;
   content: CardContent;
   theory: string | null;
+  transcript?: Transcript | null;
   exercises: Exercise[];
   templates: TemplateSource[];
   progress?: Progress;
@@ -167,6 +179,12 @@ export interface CheckResult {
   expected: string;
   suggested: Grade;
   marks?: { gaps?: boolean[] };
+  /** A hint for an almost-right answer, e.g. «пропущено слово the». */
+  note?: string;
+  /** An open question: graded by AI if it is set up, otherwise by the learner against the model answer. */
+  open?: boolean;
+  /** The AI grader accepted or explained the answer. */
+  ai?: boolean;
 }
 
 export interface QueueItem {

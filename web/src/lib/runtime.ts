@@ -130,6 +130,64 @@ export const RUNTIME = String.raw`(function () {
       zb.emit('graded', m);
     }
   });
+  // Clip players: the card's audio or video limited to a range; the transcript highlights the word being spoken.
+  function setupPlayer(box) {
+    var start = parseFloat(box.dataset.start || '0'), end = box.dataset.end ? parseFloat(box.dataset.end) : null;
+    var el = null, rate = 1, raf = 0;
+    var bar = box.querySelector('.zb-pbar span');
+    var words = Array.prototype.slice.call(box.querySelectorAll('.zb-tx [data-t]'));
+    function element() {
+      if (el) return el;
+      var src = media[box.dataset.zbMedia];
+      if (!src) return null;
+      el = document.createElement(box.dataset.kind === 'video' ? 'video' : 'audio');
+      el.src = src; el.preload = 'auto'; el.setAttribute('playsinline', ''); el.playsInline = true;
+      if (box.dataset.kind === 'video') box.querySelector('.zb-screen').appendChild(el);
+      el.addEventListener('ended', stop);
+      return el;
+    }
+    function stop() { cancelAnimationFrame(raf); box.classList.remove('playing'); }
+    function tick() {
+      var t = el.currentTime;
+      if (end !== null && t >= end) { el.pause(); stop(); return; }
+      var span = (end === null ? (el.duration || t + 1) : end) - start;
+      bar.style.width = Math.max(0, Math.min(100, (t - start) / span * 100)) + '%';
+      words.forEach(function (w) {
+        var on = t >= +w.dataset.t && t < +w.dataset.e + 0.08;
+        if (on !== w.classList.contains('zb-now')) w.classList.toggle('zb-now', on);
+      });
+      raf = requestAnimationFrame(tick);
+    }
+    function play(from) {
+      var m = element();
+      if (!m) { zb.log('clip not loaded yet', tail(box.dataset.zbMedia)); return; }
+      audio.pause();
+      if (from !== undefined) m.currentTime = from;
+      else if (m.currentTime < start || (end !== null && m.currentTime >= end - 0.05) || m.ended) m.currentTime = start;
+      m.playbackRate = rate;
+      m.play().then(function () { box.classList.add('playing'); cancelAnimationFrame(raf); tick(); },
+        function (e) { zb.log('clip play failed', { error: e && e.name, message: e && e.message }); });
+    }
+    box.addEventListener('click', function (e) {
+      var seek = e.target.closest('[data-seek]');
+      if (seek) { play(Math.max(start, parseFloat(seek.dataset.seek))); return; }
+      var b = e.target.closest('[data-act]');
+      if (!b) return;
+      var act = b.dataset.act;
+      if (act === 'play') { if (el && !el.paused) { el.pause(); stop(); } else play(); }
+      if (act === 'back' && el) play(Math.max(start, el.currentTime - 3));
+      if (act === 'rate') { rate = rate === 1 ? 0.75 : 1; b.textContent = rate + '×'; if (el) el.playbackRate = rate; }
+      if (act === 'text') {
+        var tx = box.querySelector('.zb-tx'), open = tx.hidden;
+        tx.hidden = !open; b.setAttribute('aria-expanded', String(open)); b.classList.toggle('on', open);
+        // Reading the transcript before answering is a hint: the grade drops to Hard, like peeking in a listening test.
+        if (open && !answered && !box.dataset.peeked) { box.dataset.peeked = '1'; hints++; post('hint'); }
+        report();
+      }
+    });
+  }
+  $$('.zb-player').forEach(setupPlayer);
+
   // Every English word is tappable and shows its translation; on answer buttons it takes a long press, so a tap still answers.
   var INTERACTIVE = 'button,a,label,input,[data-zb-chip],[data-zb-choice]';
   function wrapWords(root) {
@@ -194,7 +252,7 @@ export const RUNTIME = String.raw`(function () {
   new ResizeObserver(report).observe(document.body);
   window.addEventListener('load', report);
   document.body.tabIndex = -1;
-  var sources = $$('[data-zb="play"]').map(function (b) { return b.dataset.src; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; });
+  var sources = $$('[data-zb="play"]').map(function (b) { return b.dataset.src; }).concat($$('[data-zb-media]').map(function (p) { return p.dataset.zbMedia; })).filter(function (v, i, a) { return v && a.indexOf(v) === i; });
   if (sources.length) { post('need-media', { urls: sources }); zb.log('requested media', sources.map(tail)); }
   if (document.body.dataset.autoplay) { var p = $('[data-zb="play"]'); if (p) post('play', { src: p.dataset.src, rate: 1, auto: true }); }
   setTimeout(function () { if (inputs[0]) inputs[0].focus(); else document.body.focus(); report(); }, 30);
