@@ -13,7 +13,7 @@ for (let i = 0; i < rows; i++) {
   await page.waitForTimeout(700);
   for (const frame of page.frames().slice(1)) {
     const m = await frame.evaluate(() => ({
-      over: Math.max(0, ...[...document.body.querySelectorAll("*")].map((e) => e.getBoundingClientRect().right - document.documentElement.clientWidth)),
+      over: Math.max(0, ...[...document.body.querySelectorAll("*")].filter((e) => !e.closest('.zb-md table')).map((e) => e.getBoundingClientRect().right - document.documentElement.clientWidth)),
       wide: [...document.querySelectorAll('.zb-prompt,.ci-word,.ci-ru,.zb-answer')].filter((e) => e.scrollWidth > e.clientWidth + 1 || e.getBoundingClientRect().right > document.documentElement.clientWidth + 1).map((e) => e.textContent.trim().slice(0, 30)),
       sizes: [...document.querySelectorAll('.zb-prompt.word,.ci-word')].map((e) => `${e.textContent.trim().slice(0, 24)}=${getComputedStyle(e).fontSize}`),
     })).catch(() => null);

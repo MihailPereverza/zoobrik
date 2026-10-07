@@ -194,13 +194,13 @@ export const RUNTIME = String.raw`(function () {
   window.addEventListener('scroll', hideTip);
 
   // A long word (распространённый) in display size is wider than a phone; shrink until the longest word fits, then let it break.
-  var FIT = '.zb-prompt.word,.ci-word,.ci-ru,.zb-answer';
+  var FIT = '.zb-prompt.word,.ci-word,.ci-ru,.zb-answer,.zb-md h1,.zb-md h2,.zb-md h3';
   function fit() {
     $$(FIT).forEach(function (el) {
       el.style.fontSize = '';
       el.classList.add('zb-fitting');
       el.classList.remove('zb-tight');
-      var size = parseFloat(getComputedStyle(el).fontSize), min = el.matches('.zb-prompt.word,.ci-word') ? 18 : 15;
+      var size = parseFloat(getComputedStyle(el).fontSize), min = el.matches('.zb-prompt.word,.ci-word,.zb-md h1') ? 18 : 15;
       while (el.scrollWidth > el.clientWidth + 1 && size > min) { size -= 1; el.style.fontSize = size + 'px'; }
       if (el.scrollWidth > el.clientWidth + 1) { el.lang = /[а-яё]/i.test(el.textContent) ? 'ru' : 'en'; el.classList.add('zb-tight'); }
       el.classList.remove('zb-fitting');

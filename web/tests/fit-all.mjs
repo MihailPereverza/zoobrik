@@ -25,7 +25,7 @@ const result = await page.evaluate(async (width) => {
     await new Promise((ok) => setTimeout(ok, 30));
     const doc = frame.contentDocument;
     const limit = doc.documentElement.clientWidth + 1;
-    const wide = [...doc.body.querySelectorAll('*')].filter((e) => e.getBoundingClientRect().right > limit && !e.closest('[hidden]') && !e.classList.contains('zb-gloss') && !e.closest('.zb-md table'));
+    const wide = [...doc.body.querySelectorAll('*')].filter((e) => (e.getBoundingClientRect().right > limit || (e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).overflowX === 'visible')) && !e.closest('[hidden]') && !e.classList.contains('zb-gloss') && !e.closest('.zb-md table'));
     if (wide.length) bad.push(`${topic.id}/${card.id} ${exercise.id} ${exercise.template}: ${wide[0].tagName}.${wide[0].className} «${wide[0].textContent.replace(/\s+/g, " ").trim().slice(0, 40)}» +${Math.round(wide[0].getBoundingClientRect().right - limit)}px`);
   }
   return { total, bad };

@@ -70,7 +70,7 @@ button { font: inherit; -webkit-user-select: none; user-select: none; }
 .zb-card-q .zb-row { justify-content: center; }
 .zb-prompt { font: 500 22px/1.3 var(--zb-font); margin: 0; text-wrap: balance; }
 .zb-prompt.word { font: 600 44px/1.05 var(--zb-display); letter-spacing: -.035em; }
-.zb-prompt, .ci-word, .ci-ru, .zb-answer { min-width: 0; max-width: 100%; overflow-wrap: break-word; }
+.zb-prompt, .ci-word, .ci-ru, .zb-answer, .zb-md h1, .zb-md h2, .zb-md h3 { min-width: 0; max-width: 100%; overflow-wrap: break-word; }
 .zb-fitting { overflow-wrap: normal !important; }
 .zb-tight { hyphens: auto; -webkit-hyphens: auto; }
 @media (max-width: 360px) { .zb-card-q { padding: 22px 12px 18px; } }
