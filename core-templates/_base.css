@@ -164,7 +164,7 @@ button [data-w], [data-zb-chip] [data-w] { cursor: inherit; -webkit-touch-callou
 @keyframes zb-gloss-in { from { transform: translateY(4px) scale(.98); } to { transform: none; } }
 
 /* Clip player (listening cards): range-limited audio or video, live transcript behind a toggle. */
-.zb-player { width: 100%; display: grid; gap: 10px; padding: 12px; border-radius: 16px; background: var(--zb-soft); text-align: left; }
+.zb-player { width: 100%; box-sizing: border-box; display: grid; gap: 10px; padding: 12px; border-radius: 16px; background: var(--zb-soft); text-align: left; }
 .zb-screen video { display: block; width: 100%; border-radius: 12px; background: var(--zb-brand); aspect-ratio: 16 / 9; object-fit: contain; }
 .zb-pbar { height: 4px; border-radius: 2px; background: var(--zb-soft-2); overflow: hidden; }
 .zb-pbar span { display: block; height: 100%; width: 0; background: var(--zb-amber); }
@@ -191,3 +191,8 @@ button [data-w], [data-zb-chip] [data-w] { cursor: inherit; -webkit-touch-callou
 .zb-source { font: 400 12px/1.4 var(--zb-font); color: var(--zb-ink-3); }
 .zb-tx.static { max-height: none; }
 .zb-tx.static .zb-seek { display: none; }
+.zb-tx[hidden] { display: none; }
+.zb-open { width: 100%; box-sizing: border-box; min-height: 88px; padding: 12px 14px; border: 1px solid var(--zb-rule-strong); border-radius: 12px; background: var(--zb-surface); color: var(--zb-ink); font: 400 17px/1.4 var(--zb-font); resize: vertical; }
+.zb-open:focus { outline: none; border-color: var(--zb-ink); }
+.zb-bank.phrases, .zb-slot.phrases { flex-direction: column; align-items: stretch; }
+.zb-bank.phrases .zb-chip, .zb-slot.phrases .zb-chip { text-align: left; white-space: normal; height: auto; min-height: 44px; padding: 10px 14px; }

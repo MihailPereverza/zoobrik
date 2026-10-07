@@ -92,7 +92,7 @@ describe('markdown exercises', () => {
   it('parses a chip builder with distractors', () => {
     const md = parseMdExercise('Build it: [[chips: She · goes · to · work. | go · going]]', media);
     expect(md.kind).toBe('chips');
-    expect(md.chips).toEqual({ answer: 'She goes to work.', extra: ['go', 'going'] });
+    expect(md.chips).toMatchObject({ answer: 'She goes to work.', extra: ['go', 'going'], phrases: false });
   });
 
   it('turns !audio() into a play button pointing at the card file', () => {
