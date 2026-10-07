@@ -1,12 +1,2 @@
 {% import "core/_macros" as m %}
-{% if card.kind == 'listening' %}
-<div class="zb-card">
-  <div class="ci-head"><div><div class="ci-word" style="font-size:22px">{{ card.content.title }}</div>{% if card.content.source %}<div class="ci-meta">{{ card.content.source }}</div>{% endif %}</div></div>
-  {% if card.content.summary %}<div class="ci-note zb-md">{{ card.content.summary | md | safe }}</div>{% endif %}
-  <div class="ci-sep"></div>
-  <div class="zb-tx static">{{ transcript }}</div>
-  {% if card.content.attribution %}<p class="zb-source">{{ card.content.attribution }}</p>{% endif %}
-</div>
-{% else %}
 {{ m.cardInfo(card, theory, media) }}
-{% endif %}

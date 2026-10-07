@@ -1,9 +1,7 @@
 import { marked } from 'marked';
 
 export interface MdExercise {
-  kind: 'choice' | 'gaps' | 'chips' | 'flip' | 'open';
-  /** For open questions: the model answer as plain text, given to the AI grader or shown for self-grading. */
-  reference: string;
+  kind: 'choice' | 'gaps' | 'chips' | 'flip';
   front: string;
   back: string;
   options: string[];
@@ -16,7 +14,6 @@ const OPTION = /^\s*[-*] \[( |x|X)\] (.+)$/;
 const CHIPS = /\[\[chips:\s*([^\]]+?)\]\]/;
 const GAP = /\[\[([^\]]+?)\]\]/g;
 const AUDIO = /!audio\(([^)]+)\)/g;
-const CLIP = /!clip\(([^)]*)\)/g;
 
 export function renderMarkdown(text: string): string {
   return marked.parse(String(text ?? ''), { async: false, breaks: false }) as string;
@@ -47,19 +44,10 @@ function withMedia(html: string, audios: string[], media: (f: string) => string)
   return html.replace(/ZBAUDIO(\d+)ZB/g, (_, i) => playButton(media(audios[Number(i)])));
 }
 
-/** `!clip(12-30)` puts the card's audio or video player (that range) into an exercise; listening cards supply it. */
-export type ClipRenderer = (range: string) => string;
-
-export function parseMdExercise(body: string, media: (file: string) => string, clip?: ClipRenderer): MdExercise {
+export function parseMdExercise(body: string, media: (file: string) => string): MdExercise {
   const [frontRaw, ...backParts] = body.split(/^\?\?\?\s*$/m);
   const audios: string[] = [];
-  const clips: string[] = [];
-  const keepAudio = (text: string) => text
-    .replace(AUDIO, (_, f) => `ZBAUDIO${audios.push(f.trim()) - 1}ZB`)
-    .replace(CLIP, (_, r) => `\n\nZBCLIP${clips.push(r.trim()) - 1}ZB\n\n`);
-  const withClips = (html: string) => html
-    .replace(/<p>ZBCLIP(\d+)ZB<\/p>/g, (_, i) => (clip ? clip(clips[Number(i)]) : ''))
-    .replace(/ZBCLIP(\d+)ZB/g, (_, i) => (clip ? clip(clips[Number(i)]) : ''));
+  const keepAudio = (text: string) => text.replace(AUDIO, (_, f) => `ZBAUDIO${audios.push(f.trim()) - 1}ZB`);
   const { rest, options, answer } = extractOptions(keepAudio(frontRaw).split('\n'));
   let front = rest.join('\n');
   const chipsMatch = CHIPS.exec(front);
@@ -69,16 +57,12 @@ export function parseMdExercise(body: string, media: (file: string) => string, c
     chips = { answer: splitWords(answerPart).join(' '), extra: splitWords(extraPart) };
     front = front.replace(CHIPS, '');
   }
-  const open = /\[\[open\]\]/.test(front);
-  front = front.replace(/\[\[open\]\]/, 'ZBOPENZB');
   const gaps: string[][] = [];
   front = front.replace(GAP, (_, inner: string) => `ZBGAP${gaps.push(inner.split('|').map((v) => v.trim())) - 1}ZB`);
   let frontHtml = renderMarkdown(front).replace(/ZBGAP(\d+)ZB/g, (_, i) =>
     `<input class="zb-gap" data-zb-input data-gap="${i}" autocomplete="off" autocapitalize="off" spellcheck="false" style="width:${Math.max(4, gaps[Number(i)][0].length + 2)}ch">`);
-  frontHtml = frontHtml.replace(/(<p>)?ZBOPENZB(<\/p>)?/, '<textarea class="zb-open" data-zb-input rows="3" autocapitalize="sentences" spellcheck="false" placeholder="Ответ по-английски" aria-label="Твой ответ"></textarea>');
-  frontHtml = withClips(withMedia(frontHtml, audios, media));
-  const back = withClips(withMedia(renderMarkdown(keepAudio(backParts.join('\n'))), audios, media));
-  const kind = open ? 'open' : options.length ? 'choice' : chips.answer ? 'chips' : gaps.length ? 'gaps' : 'flip';
-  const reference = backParts.join('\n').replace(/[*_`>#]/g, '').replace(/\s+/g, ' ').trim();
-  return { kind, front: frontHtml, back: back.trim(), options, answer, gaps, chips, reference };
+  frontHtml = withMedia(frontHtml, audios, media);
+  const back = withMedia(renderMarkdown(keepAudio(backParts.join('\n'))), audios, media);
+  const kind = options.length ? 'choice' : chips.answer ? 'chips' : gaps.length ? 'gaps' : 'flip';
+  return { kind, front: frontHtml, back: back.trim(), options, answer, gaps, chips };
 }

@@ -51,7 +51,6 @@ function buildCard(files: FileMap, root: string, langs: DeckLangs, topicId: stri
     path: dir,
     content: normalizeContent(raw.content ?? {}, langs),
     theory: theoryFile ? files.get(`${dir}/${theoryFile}`) ?? null : null,
-    transcript: raw.content?.transcript ? parse(files.get(`${dir}/${raw.content.transcript}`)) : null,
     exercises: [...(raw.exercises ?? []), ...mdExercises(files, dir)],
     templates: templatesUnder(files, `${dir}/views/`, `card:${topicId}/${cardId}`),
   };

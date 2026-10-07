@@ -4,7 +4,6 @@ import { RUNTIME } from './runtime';
 import { zubrikSvg, type Mood } from './mascot';
 import { fontFaceCss } from './fonts';
 import { deckLangs } from './lang';
-import { playerHtml, transcriptHtml } from './clip';
 import type { Card, DeckData, Exercise, Mode, TemplateSource, Topic } from './types';
 
 export interface Rendered {
@@ -178,13 +177,10 @@ export function render(data: DeckData, card: Card, exercise: Exercise, mode: Mod
   const seed = hashSeed(`${card.id}:${exercise.id}:${new Date().toISOString().slice(0, 10)}${salt}`);
   const voiceSeed = hashSeed(`${seed}:voice`);
   const media = (file: string) => mediaUrl(card, pickVoice(data, card, file, voiceSeed));
-  const clip = (range: string) => (card.content.media ? playerHtml(card, mediaUrl(card, card.content.media), range) : '');
-  const md = exercise.template === 'md' ? parseMdExercise(exercise.params?.markdown ?? '', media, clip) : undefined;
+  const md = exercise.template === 'md' ? parseMdExercise(exercise.params?.markdown ?? '', media) : undefined;
   const context = {
     params: exercise.params ?? {}, card, exercise, topic: { id: topic.id, title: topic.title }, mode, seed, md,
     theory: card.theory, media, skills: card.progress?.skills ?? {}, lang: deckLangs(data.deck),
-    player: (range = '') => new nunjucks.runtime.SafeString(clip(range)),
-    transcript: new nunjucks.runtime.SafeString(card.transcript ? transcriptHtml(card.transcript, 0, null) : ''),
   };
   try {
     const e = environment(data);
