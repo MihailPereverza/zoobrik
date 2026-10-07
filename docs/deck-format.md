@@ -72,6 +72,21 @@ to `deck.yaml` covers every other word and phrase: `word: перевод`. Quote
 `difficulty: 1…5` on an exercise (or in a markdown exercise's frontmatter) overrides the template's difficulty. While a card
 is being learned, its exercises go from easy to hard; reviews mix them. Use 4–5 for trap exercises.
 
+## Listening cards
+
+`kind: listening` cards live in `topics/listening/<id>/` and are made by `tools/listening.py` from `tools/listening-clips.yaml`
+(licensed sources only: public domain or Creative Commons; the licence is stored in `content.source`):
+
+- `clip.mp4` (360p, subtitles burned into the source are cropped with `crop_bottom`) or `clip.mp3`, `poster.jpg`;
+- `transcript.yaml` — `segments: [{n, start, end, speaker?, text, words: [[word, start, end], …]}]`, timed by Whisper and
+  aligned to the official script when there is one;
+- `seg<N>.mp3` — audio of transcript line N (1.2–12 s) for dictations (`listen-type`).
+
+The app shows the player above every exercise of the card; the transcript opens on demand (counts as a hint), follows the
+audio word by word, lines seek on tap and words translate on tap. Exercises: markdown questions (choice, True/False/Not said,
+gaps, `[[order: a · b · c]]` to order events), dictations, and `open-answer` (free text graded by an OpenRouter model chosen
+by the learner, or self-checked against `model_answer`). Authoring rules: `docs/listening-authoring.md`.
+
 ## Several voices
 
 `tools/voice.py` voices every recording with several engines (default: `qwen`, `turbo`, `melo`, `piper`) and keeps only

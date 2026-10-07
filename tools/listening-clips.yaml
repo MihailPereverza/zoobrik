@@ -1,0 +1,279 @@
+# Listening clips for the English deck: what to cut and from where (paths are relative to --sources).
+# Every source is public domain or Creative Commons; the licence travels with the card.
+
+voa: &voa
+  name: VOA Learning English
+  license: Public domain
+  credit: voanews.com, Voice of America
+nasa: &nasa
+  name: NASA
+  license: Public domain (NASA media)
+  credit: NASA
+librivox: &librivox
+  name: LibriVox · Aesop's Fables
+  license: Public domain
+  credit: librivox.org
+hillbillies: &hillbillies
+  name: The Beverly Hillbillies (1962) · archive.org
+  license: Public domain (US, copyright not renewed)
+  credit: Filmways, via archive.org
+
+clips:
+  # ---- VOA Let's Learn English: whole dialogues, video, official transcript with speakers
+  - id: lle-06-where-is-the-gym
+    title: "Where Is the Gym?"
+    level: A2
+    crop_bottom: 0.27
+    file: voa_lle/l1_06.mp4
+    script_file: voa_lle/l1_06.txt
+    tags: [prepositions, places]
+    summary: "Анна ищет спортзал и спрашивает дорогу. Предлоги места — across from, next to, behind."
+    source: {<<: *voa, url: "https://learningenglish.voanews.com/a/lets-learn-english-lesson-6-where-is-the-gym/3225958.html"}
+  - id: lle-07-what-are-you-doing
+    title: "What Are You Doing?"
+    level: A2
+    crop_bottom: 0.27
+    file: voa_lle/l1_07.mp4
+    script_file: voa_lle/l1_07.txt
+    tags: [present-continuous]
+    summary: "Коллеги Анны заняты своими делами — что каждый делает прямо сейчас."
+    source: {<<: *voa, url: "https://learningenglish.voanews.com/a/lets-learn-english-lesson-7-what-are-you-doing/3240468.html"}
+  - id: lle-11-my-neighborhood
+    title: "This Is My Neighborhood"
+    level: A2
+    crop_bottom: 0.27
+    file: voa_lle/l1_11.mp4
+    script_file: voa_lle/l1_11.txt
+    tags: [prepositions, places]
+    summary: "Анна ищет библиотеку, почту и банк: on the corner, far, across from, behind."
+    source: {<<: *voa, url: "https://learningenglish.voanews.com/a/lets-learn-english-lesson-11-this-is-my-neighborhood/3293986.html"}
+  - id: lle-14-how-about-this
+    title: "How About This?"
+    level: A2
+    crop_bottom: 0.27
+    file: voa_lle/l1_14.mp4
+    script_file: voa_lle/l1_14.txt
+    tags: [clothes]
+    summary: "Анна и Пит собираются в театр и выбирают одежду: casual или formal, размеры, «подходит / не подходит»."
+    source: {<<: *voa, url: "https://learningenglish.voanews.com/a/lets-learn-english-lesson-14-how-about-this/3323771.html"}
+  - id: lle-15-people-watching
+    title: "I Love People-Watching!"
+    level: A2
+    crop_bottom: 0.27
+    file: voa_lle/l1_15.mp4
+    script_file: voa_lle/l1_15.txt
+    tags: [appearance, present-simple-vs-continuous]
+    summary: "Анна и Эшли разглядывают прохожих: внешность, волосы, рост — и «Is she wearing a blue sweater today?»"
+    source: {<<: *voa, url: "https://learningenglish.voanews.com/a/lets-learn-english-lesson-15-i-love-people-watching/3343720.html"}
+  - id: lle-18-she-always-does-that
+    title: "She Always Does That!"
+    level: A2
+    crop_bottom: 0.27
+    file: voa_lle/l1_18.mp4
+    script_file: voa_lle/l1_18.txt
+    tags: [adverbs-of-frequency, feelings]
+    summary: "Анна читает новости и рассказывает истории в эфире. Наречия частоты — always, rarely, often, never."
+    source: {<<: *voa, url: "https://learningenglish.voanews.com/a/lets-learn-english-lesson-18-she-always-does-that/3357748.html"}
+  - id: lle-19-when-do-you-start
+    title: "When Do You Start?"
+    level: A2
+    crop_bottom: 0.27
+    file: voa_lle/l1_19.mp4
+    script_file: voa_lle/l1_19.txt
+    tags: [present-simple-vs-continuous]
+    summary: "«I always ride the Metro… but today I am walking» — обычное против сегодняшнего; хорошие и плохие новости на работе."
+    source: {<<: *voa, url: "https://learningenglish.voanews.com/a/lets-learn-english-lesson-19-when-do-you-start/3357760.html"}
+  - id: lle-2-24-super-suit
+    title: "The Superhero Convention"
+    level: B1
+    crop_bottom: 0.27
+    file: voa_lle/l2_24.mp4
+    script_file: voa_lle/l2_24.txt
+    tags: [clothes]
+    summary: "Анна собирается на фестиваль супергероев; после удара молнии её волосы и одежда изменились — «This is my super suit!». Уровень B1."
+    source: {<<: *voa, url: "https://learningenglish.voanews.com/a/lets-learn-english-level-2-lesson-24/4307612.html"}
+
+  # ---- VOA audio lessons: explanations with examples (fragments)
+  - id: voa-ask-teacher-clothes-1
+    title: "Ask a Teacher: All About Clothes (1)"
+    level: A2
+    file: voa_stories/at_clothes.mp3
+    script_file: voa_stories/at_clothes.txt
+    start: 27
+    end: 116
+    tags: [clothes, grammar]
+    summary: "Учитель объясняет, почему clothes — всегда множественное число, и какие бывают виды одежды."
+    source: {<<: *voa, url: "https://learningenglish.voanews.com/a/all-about-clothes-/6868141.html"}
+  - id: voa-ask-teacher-clothes-2
+    title: "Ask a Teacher: All About Clothes (2)"
+    level: A2
+    file: voa_stories/at_clothes.mp3
+    script_file: voa_stories/at_clothes.txt
+    start: 110
+    end: 184
+    tags: [clothes]
+    summary: "Outfit, suit, swimsuit — слова для комплектов одежды."
+    source: {<<: *voa, url: "https://learningenglish.voanews.com/a/all-about-clothes-/6868141.html"}
+  - id: voa-progressive-vs-simple
+    title: "Everyday Grammar: Progressive Tenses"
+    level: B1
+    file: voa_stories/eg_progtenses.mp3
+    script_file: voa_stories/eg_progtenses.txt
+    start: 55
+    end: 120
+    tags: [present-simple-vs-continuous]
+    summary: "«It rains in Seattle» и «It is raining» — чем отличаются Simple и Continuous."
+    source: {<<: *voa, url: "https://learningenglish.voanews.com/a/are-you-learning-the-progressive-tenses/3628468.html"}
+  - id: voa-what-is-dad-doing
+    title: "Everyday Grammar: Activities and Places"
+    level: B1
+    file: voa_stories/eg_actplaces.mp3
+    script_file: voa_stories/eg_actplaces.txt
+    start: 106
+    end: 170
+    tags: [present-continuous, prepositions]
+    summary: "«What is Dad doing? — He is sleeping upstairs» — Continuous вместе с местом."
+    source: {<<: *voa, url: "https://learningenglish.voanews.com/a/the-progressive-activities-and-places/5109273.html"}
+  - id: voa-sew-and-knit
+    title: "Ask a Teacher: Sew and Knit"
+    level: B1
+    file: voa_stories/at_sewknit.mp3
+    script_file: voa_stories/at_sewknit.txt
+    start: 127
+    end: 195
+    tags: [clothes]
+    summary: "Шить и вязать: sweaters, hats, scarves; кто такие seamstress и tailor."
+    source: {<<: *voa, url: "https://learningenglish.voanews.com/a/sew-and-knit-/7995839.html"}
+  - id: voa-in-on-at
+    title: "Everyday Grammar: In, On, At"
+    level: B1
+    file: voa_stories/eg_inonat.mp3
+    script_file: voa_stories/eg_inonat.txt
+    start: 128
+    end: 196
+    tags: [prepositions]
+    summary: "In, on, at для мест — страна и город, улица, адрес."
+    source: {<<: *voa, url: "https://learningenglish.voanews.com/a/learn-prepositions-in-on-at/3073690.html"}
+  - id: voa-prepositions-teacher
+    title: "Ask a Teacher: Learning Prepositions"
+    level: B1
+    file: voa_stories/at_preps.mp3
+    script_file: voa_stories/at_preps.txt
+    start: 20
+    end: 95
+    tags: [prepositions]
+    summary: "Учитель отвечает на вопрос, как учить предлоги, и начинает со своих советов."
+    source: {<<: *voa, url: "https://learningenglish.voanews.com/a/learning-prepositions/7865589.html"}
+  - id: voa-hats-off
+    title: "Words and Their Stories: Tailor-Made"
+    level: B2
+    file: voa_stories/wts_hats.mp3
+    script_file: voa_stories/wts_hats.txt
+    start: 15
+    end: 105
+    tags: [clothes, idioms]
+    summary: "Учитель рассказывает о словах tailor и tailor-made: как портной шьёт костюм по меркам. Уровень B2."
+    source: {<<: *voa, url: "https://learningenglish.voanews.com/a/words-and-their-stories-clothing-expressions/3538378.html"}
+
+  # ---- NASA
+  - id: nasa-exercise-in-space
+    title: "How Do Astronauts Exercise in Space?"
+    level: B1
+    file: nasa/exercise.mp4
+    start: 0
+    end: 89
+    tags: [present-simple, science]
+    summary: "Как космонавты тренируются на МКС — привычки и распорядок в Present Simple."
+    source: {<<: *nasa, url: "https://images.nasa.gov/details/jsc2025m000002_How_Do_Astronauts_Exercise_in_Space_250106-MP4"}
+  - id: nasa-back-to-school
+    title: "A Message from Space: Back to School"
+    level: B1
+    file: nasa/megan.mp4
+    start: 0
+    end: 84
+    tags: [present-continuous, science]
+    summary: "Астронавт Меган Макартур поздравляет школьников с МКС и рассказывает, что она сейчас делает."
+    source: {<<: *nasa, url: "https://images.nasa.gov/details/jsc2022m000201-Megan_Back_to_School_1080p"}
+
+  # ---- LibriVox: Aesop's fables (whole fables, text from Project Gutenberg)
+  - id: aesop-north-wind-and-sun
+    title: "The North Wind and the Sun"
+    level: B1
+    file: librivox/aesop_v1_22.mp3
+    script_file: librivox/aesop_v1_22.txt
+    tags: [clothes, story]
+    summary: "Басня о споре Ветра и Солнца — кто быстрее снимет с путника плащ."
+    source: {<<: *librivox, url: "https://librivox.org/aesops-fables-volume-1-fables-1-25/"}
+  - id: aesop-lion-and-mouse
+    title: "The Lion and the Mouse"
+    level: B1
+    file: librivox/aesop_v1_19.mp3
+    script_file: librivox/aesop_v1_19.txt
+    tags: [story]
+    summary: "Лев отпускает мышь, а потом она спасает его."
+    source: {<<: *librivox, url: "https://librivox.org/aesops-fables-volume-1-fables-1-25/"}
+  - id: aesop-fox-and-grapes
+    title: "The Fox and the Grapes"
+    level: B1
+    file: librivox/aesop_v1_01.mp3
+    script_file: librivox/aesop_v1_01.txt
+    tags: [story]
+    summary: "Лиса не может достать виноград и решает, что он кислый."
+    source: {<<: *librivox, url: "https://librivox.org/aesops-fables-volume-1-fables-1-25/"}
+  - id: aesop-fox-and-crow
+    title: "The Fox and the Crow"
+    level: B1
+    file: librivox/aesop_v1_09.mp3
+    script_file: librivox/aesop_v1_09.txt
+    tags: [story]
+    summary: "Лиса хитростью получает у вороны сыр."
+    source: {<<: *librivox, url: "https://librivox.org/aesops-fables-volume-1-fables-1-25/"}
+
+  # ---- Blender open films (CC BY; also on Wikimedia Commons)
+  - id: film-cosmos-laundromat-victor
+    title: "Cosmos Laundromat: Meet Victor"
+    level: B2
+    file: blender/cosmos_laundromat_300p.mp4
+    start: 140
+    end: 212
+    tags: [film, dialogue]
+    summary: "Странный продавец Виктор знакомится с овцой Франком, которая хочет покончить со всем."
+    source: {name: "Cosmos Laundromat · Blender Foundation", license: "CC BY 3.0", credit: "(CC) Blender Foundation | gooseberry.blender.org", url: "https://gooseberry.blender.org/"}
+  - id: film-sprite-fright-tea
+    title: "Sprite Fright: Peppermint Tea"
+    level: B2
+    file: blender/sprite_fright_480p.mp4
+    start: 192
+    end: 236
+    tags: [film, dialogue]
+    summary: "Подростки встречают в лесу вежливых грибных эльфов, которые предлагают им мятный чай."
+    source: {name: "Sprite Fright · Blender Foundation", license: "CC BY 4.0", credit: "(CC) Blender Foundation | studio.blender.org", url: "https://studio.blender.org/projects/sprite-fright/pages/about/"}
+  - id: film-tears-of-steel-passions
+    title: "Tears of Steel: Follow Our Passions"
+    level: B2
+    file: blender/tears_of_steel_480p.mp4
+    start: 22
+    end: 46
+    tags: [film, dialogue]
+    summary: "Ссора двух героев на мосту в Амстердаме."
+    source: {name: "Tears of Steel · Blender Foundation", license: "CC BY 3.0", credit: "(CC) Blender Foundation | mango.blender.org", url: "https://mango.blender.org/"}
+
+  # ---- Public-domain TV
+  - id: tv-hillbillies-telephone
+    title: "The Beverly Hillbillies: Have You Got a Telephone?"
+    level: B2
+    file: pd_tv/beverly_hillbillies_s01e01.mp4
+    start: 300
+    end: 360
+    tags: [tv, dialogue]
+    summary: "Нефтяник просит у Джеда телефон, а тот не понимает, что это. Сильный южный акцент."
+    source: {<<: *hillbillies, url: "https://archive.org/details/Beverly_Hillbillies_Ep01_The_Clampetts_Strike_Oil"}
+  - id: tv-hillbillies-clothes-manners
+    title: "The Beverly Hillbillies: Clothes, Manners, the Works"
+    level: B2
+    file: pd_tv/beverly_hillbillies_s01e07.mp4
+    start: 300
+    end: 360
+    tags: [tv, clothes, dialogue]
+    summary: "Банкир Драйсдейл и мисс Хэтэуэй обсуждают, как подготовить новых соседей: одежда, манеры, прислуга."
+    source: {<<: *hillbillies, url: "https://archive.org/details/Beverly_Hillbillies_Ep07_The_Servants"}

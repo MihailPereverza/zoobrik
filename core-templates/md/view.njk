@@ -3,6 +3,9 @@
   <div class="zb-card-q" style="align-items:stretch;text-align:left"><div class="zb-md front">{{ md.front | safe }}</div></div>
   {% if md.kind == 'choice' %}{{ m.options(md.options, seed) }}{% endif %}
   {% if md.kind == 'chips' %}{{ m.chips(md.chips.answer, md.chips.extra, seed) }}{% endif %}
+  {% if md.kind == 'order' %}<div class="zb-slot zb-order" data-zb-slot></div>
+  <div class="zb-bank zb-order">{% for p in md.order | shuffle(seed) %}<button class="zb-chip" type="button" data-zb-chip="{{ p }}">{{ p }}</button>{% endfor %}</div>
+  <button class="zb-submit" type="button" data-zb="submit" disabled>Проверить</button>{% endif %}
   {% if md.kind == 'gaps' %}<button class="zb-submit" type="button" data-zb="submit">Проверить</button>{% endif %}
   {% if md.kind == 'flip' %}<button class="zb-flip" type="button" data-zb="flip">Показать ответ</button>{% endif %}
   {% if md.back %}<div class="zb-back zb-md" data-zb-back hidden>{{ md.back | safe }}</div>{% endif %}

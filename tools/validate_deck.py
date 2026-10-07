@@ -23,6 +23,7 @@ TEMPLATE_PARAMS: dict[str, set[str]] = {
     'grammar-fix': {'wrong', 'answer'},
     'word-order': {'instruction', 'tokens', 'answer'},
     'match-pairs': {'pairs'},
+    'open-answer': {'question', 'model_answer'},
 }
 # Ids from before decks became language-neutral; the app maps them to the new templates.
 LEGACY_TEMPLATES: dict[str, str] = {
@@ -135,6 +136,14 @@ def check_examples(*, where: str, content: dict[str, Any], report: Report) -> No
             report.errors.append(f'{where}: example {example.get("id")} needs the sentence and its translation')
 
 
+def check_listening(*, card_dir: Path, where: str, content: dict[str, Any], report: Report) -> None:
+    for key in ('media', 'transcript'):
+        if not content.get(key) or not (card_dir / content[key]).exists():
+            report.errors.append(f'{where}: listening {key} file missing')
+    if not (content.get('source') or {}).get('license'):
+        report.errors.append(f'{where}: listening clip without a licence')
+
+
 def check_card(*, card_dir: Path, report: Report) -> str:
     card = load_yaml(card_dir / 'card.yaml')
     where = f'{card_dir.parent.name}/{card_dir.name}'
@@ -144,8 +153,12 @@ def check_card(*, card_dir: Path, report: Report) -> str:
     content = card.get('content') or {}
     if card.get('kind') == 'grammar' and content.get('theory') and not (card_dir / content['theory']).exists():
         report.errors.append(f'{where}: theory file missing')
-    check_examples(where=where, content=content, report=report)
-    audio_files = content_audio_files(content)
+    if card.get('kind') == 'listening':
+        check_listening(card_dir=card_dir, where=where, content=content, report=report)
+        audio_files = {path.name for path in card_dir.glob('seg*.mp3')}
+    else:
+        check_examples(where=where, content=content, report=report)
+        audio_files = content_audio_files(content)
     ids = [exercise.get('id') for exercise in card.get('exercises') or []]
     if len(ids) != len(set(ids)):
         report.errors.append(f'{where}: duplicate exercise ids')

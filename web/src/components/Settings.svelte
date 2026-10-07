@@ -1,6 +1,7 @@
 <script lang="ts">
   import Connect from './Connect.svelte';
-  import { activeDeck, app, backend, setDevice, setGoal, setMascot, setMascotMotion, setRepo, setTheme, STANDALONE, sync, reload, THEMES, type MascotMode } from '../lib/state.svelte';
+  import { aiGrade } from '../lib/ai';
+  import { activeDeck, app, backend, setAi, setDevice, setGoal, setMascot, setMascotMotion, setRepo, setTheme, STANDALONE, sync, reload, THEMES, type MascotMode } from '../lib/state.svelte';
   import Zubrik from './Zubrik.svelte';
   import { audioVariants, mediaUrl } from '../lib/render';
   import { onMount } from 'svelte';
@@ -14,6 +15,18 @@
   let device = $state(app.device);
   let log = $state('');
   let downloading = $state('');
+  let aiKey = $state(app.ai.key);
+  let aiStatus = $state('');
+  let aiTesting = $state(false);
+
+  function saveAi() { setAi({ ...app.ai, key: aiKey.trim() }); aiStatus = aiKey.trim() ? 'Ключ сохранён.' : 'Ключ удалён.'; }
+
+  async function testAi() {
+    aiTesting = true; aiStatus = '';
+    const v = await aiGrade(app.ai, { question: 'What is the woman wearing?', answer: 'She wear a red dress.', modelAnswer: 'She is wearing a red dress.' }, app.aiModels);
+    aiStatus = v ? `Работает: ${v.model.replace(/:free$/, '')} — «${v.feedback}»` : 'Не удалось: проверь ключ или попробуй позже (бесплатные модели бывают заняты).';
+    aiTesting = false;
+  }
 
   async function runSync() { log = await sync(); }
 
@@ -107,6 +120,25 @@
   </a>
 
   <section class="panel box">
+    <h2>Проверка ответов (ИИ)</h2>
+    <p class="muted">Свободные ответы и пересказы проверяет бесплатная модель OpenRouter по твоему ключу (openrouter.ai → Keys). Ключ хранится только на этом устройстве. Без ключа — самопроверка по образцу.</p>
+    <div class="row">
+      <input type="password" bind:value={aiKey} placeholder="sk-or-v1-…" autocomplete="off" aria-label="Ключ OpenRouter" />
+      <button class="btn small" type="button" onclick={saveAi} disabled={aiKey === app.ai.key}>Сохранить</button>
+    </div>
+    {#if app.aiModels.length}
+      <label class="field">Модель
+        <select value={app.ai.model} onchange={(e) => setAi({ ...app.ai, model: (e.currentTarget as HTMLSelectElement).value })}>
+          {#each app.aiModels as m, i (m)}<option value={m}>{i < 3 ? '★ ' : ''}{m.replace(/:free$/, '')}</option>{/each}
+        </select>
+      </label>
+      <p class="muted small">★ — лучшие по тир-листу колоды; если модель занята, проверит следующая.</p>
+    {/if}
+    {#if app.ai.key}<button class="btn small ghost" type="button" onclick={testAi} disabled={aiTesting}>{aiTesting ? 'Проверяю…' : 'Проверить подключение'}</button>{/if}
+    {#if aiStatus}<p class="mono status">{aiStatus}</p>{/if}
+  </section>
+
+  <section class="panel box">
     <h2>Цель на день</h2>
     <p class="muted">Сколько заданий в день считать выполненной нормой. Кольцо на главной заполняется по мере занятий.</p>
     <div class="seg" role="radiogroup" aria-label="Цель на день">
@@ -190,6 +222,9 @@
   .decks-link > span { display: grid; gap: 4px; }
   .decks-link .muted { font-size: 14px; }
   .decks-link svg { width: 22px; height: 22px; flex: none; fill: none; stroke: var(--ink-3); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .field { display: grid; gap: 6px; width: 100%; font-size: 14px; color: var(--ink-2); }
+  .field select { padding: 9px 10px; border-radius: 8px; border: 1px solid var(--rule-strong); background: var(--paper); color: var(--ink); font-size: 14px; }
+  .small { font-size: 12px; }
   .box { padding: 18px; margin-top: 14px; display: grid; gap: 10px; justify-items: start; }
   h2 { font: 600 16px/1.3 var(--font-body); margin: 0; }
   p { font-size: 14px; margin: 0; }

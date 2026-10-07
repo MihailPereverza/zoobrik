@@ -1,0 +1,12 @@
+id: open-answer
+name: Ответь своими словами
+trains: [context]
+reveals: []
+asks: []
+difficulty: 4
+check: { type: ai }
+params:
+  question: { type: markdown, label: Вопрос или задание, required: true }
+  model_answer: { type: text, label: Образец ответа, required: true }
+  criteria: { type: text, label: Что должно быть в хорошем ответе }
+  placeholder: { type: text, label: Подсказка в поле }

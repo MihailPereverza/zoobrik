@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { app, backend, goalMet, needsSetup, reload, sync } from './lib/state.svelte';
+  import { app, backend, goalMet, loadAiModels, needsSetup, reload, sync } from './lib/state.svelte';
   import { dayStats } from './lib/activity';
   import Home from './components/Home.svelte';
   import Words from './components/Words.svelte';
@@ -17,6 +17,7 @@
   let route = $state(location.hash.slice(1) || '/');
   onMount(() => {
     reload();
+    loadAiModels();
     const onHash = () => { route = location.hash.slice(1) || '/'; window.scrollTo(0, 0); };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);

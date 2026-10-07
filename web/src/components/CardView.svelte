@@ -1,6 +1,7 @@
 <script lang="ts">
   import YAML from 'yaml';
   import ExerciseFrame from './ExerciseFrame.svelte';
+  import ListeningPanel from './ListeningPanel.svelte';
   import { app, backend, refreshPending, scheduleSync, touch } from '../lib/state.svelte';
   import { check } from '../lib/check';
   import { formatInterval, retrievability } from '../lib/fsrs';
@@ -98,6 +99,7 @@
           <button class="btn small ghost" type="button" onclick={toggleSuspend}>{card.progress?.stage === 'suspended' ? 'Вернуть в занятия' : 'Приостановить'}</button>
         </div>
         {#if card.progress?.leech}<p class="leech-note">Это слово часто забывается. Помогает своя заметка-ассоциация, ещё один пример или картинка — отредактируйте карточку.</p>{/if}
+        {#if card.listening}<ListeningPanel {card} />{/if}
         <div class="title">
           {#if card.content.audio}<button class="play" type="button" aria-label="Прослушать" onclick={() => playUrl(mediaUrl(card, pickVoice(data, card, card.content.audio!, Math.floor(Math.random() * 1e9))))}><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z" /></svg></button>{/if}
           <h1 class="display">{card.content.term ?? card.content.title}</h1>

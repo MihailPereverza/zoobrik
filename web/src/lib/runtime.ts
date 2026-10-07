@@ -64,6 +64,7 @@ export const RUNTIME = String.raw`(function () {
   function submit() {
     if (answered) return;
     if (slot) { if (slot.children.length) zb.answer({ tokens: slotTokens() }); return; }
+    if (inputs.length === 1 && inputs[0].tagName === 'TEXTAREA') { if (inputs[0].value.trim()) zb.answer({ text: inputs[0].value.trim() }); return; }
     if (inputs.length > 1 || $('[data-gap]')) { zb.answer({ texts: inputs.map(function (i) { return i.value; }) }); return; }
     if (inputs.length === 1) { if (inputs[0].value.trim()) zb.answer({ text: inputs[0].value }); }
   }
@@ -74,6 +75,8 @@ export const RUNTIME = String.raw`(function () {
   inputs.forEach(function (input, i) {
     input.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter') return;
+      // In a free-text box Enter is a new line; Cmd/Ctrl+Enter sends the answer.
+      if (input.tagName === 'TEXTAREA' && !(e.metaKey || e.ctrlKey)) return;
       e.preventDefault(); e.stopPropagation();
       if (answered) { post('key', { key: 'Enter' }); return; }
       if (i < inputs.length - 1 && !inputs[i + 1].value) { inputs[i + 1].focus(); return; }

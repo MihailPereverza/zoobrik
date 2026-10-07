@@ -8,6 +8,8 @@
   import InlineView from './InlineView.svelte';
   import GradeBar from './GradeBar.svelte';
   import Zubrik from './Zubrik.svelte';
+  import ListeningPanel from './ListeningPanel.svelte';
+  import { aiGrade } from '../lib/ai';
   import { moodFor } from '../lib/mascot';
   import { typoLetters } from '../lib/typo';
   import { dayStats, plural } from '../lib/activity';
@@ -57,6 +59,10 @@
   let menuOpen = $state(false);
   let notice = $state('');
   let goalReached = $state(false);
+  // Free-text answers: AI feedback (or the model answer for self-checking) shown with the explanation.
+  let aiNote = $state<{ feedback: string; corrected: string; modelAnswer: string; model?: string; self?: boolean } | null>(null);
+  let checking = $state(false);
+  let peeks = 0;
   const audio = new Audio();
 
   const item = $derived(queue[index]);
@@ -69,7 +75,7 @@
 
   function show() {
     const current = queue[index];
-    result = null; practice = false; hints = 0; phase = 'answer'; selected = null; given = '';
+    result = null; practice = false; hints = 0; phase = 'answer'; selected = null; given = ''; aiNote = null; checking = false; peeks = 0;
     rendered = current ? render(data, current.card, current.exercise, current.mode, app.effectiveTheme, String(index)) : null;
     if (current) {
       prefetch([current]);
@@ -119,22 +125,55 @@
     const current = item;
     const r = rendered && 'template' in rendered ? rendered : null;
     if (!current || !r) return;
-    answerMs = ms; hints = hintCount;
-    const res = check(current.exercise, r.template.manifest, value, r.md);
+    if (r.template.manifest.check?.type === 'ai') { aiAnswer(String(value?.text ?? ''), ms, hintCount); return; }
+    finishAnswer(current, check(current.exercise, r.template.manifest, value, r.md), ms, hintCount, typeof value?.text === 'string' ? value.text : '');
+  }
+
+  function finishAnswer(current: QueueItem, res: CheckResult, ms: number, hintCount: number, text: string) {
+    answerMs = ms; hints = hintCount + peeks;
     let grade = res.suggested;
-    if (res.correct && hints > 0) grade = 2;
+    // Peeking at a transcript or a hint means the answer was not fully on one's own.
+    if (res.correct && hints > 0) grade = Math.min(grade, 2) as Grade;
     const avg = current.card.progress?.exercises?.[current.exercise.id]?.avg_ms ?? 0;
-    if (res.correct && grade === 3 && ms > Math.max(25000, avg * 2.5)) grade = 2;
+    if (res.correct && grade === 3 && ms > Math.max(current.card.listening ? 90000 : 25000, avg * 2.5)) grade = 2;
     result = res;
     suggested = grade;
     selected = grade;
-    given = typeof value?.text === 'string' ? value.text : '';
+    given = text;
     streak = res.correct && !res.typo ? streak + 1 : 0;
     results[index] = !res.correct ? 'bad' : grade === 2 ? 'hard' : 'good';
     practice = res.correct && primed(current);
-    log('session', 'answer', { correct: res.correct, typo: res.typo, suggested: grade, ms, hints, practice: res.correct && primed(current) });
+    log('session', 'answer', { correct: res.correct, typo: res.typo, suggested: grade, ms, hints, practice });
     navigator.vibrate?.(res.correct ? 12 : [20, 40, 20]);
     reveal(res, 'graded');
+  }
+
+  const transcriptOf = (card: QueueItem['card']) => card.listening?.segments.map((s) => `${s.speaker ? `${s.speaker}: ` : ''}${s.text}`).join('\n');
+
+  async function aiAnswer(text: string, ms: number, hintCount: number) {
+    const current = item;
+    if (!current) return;
+    const p = current.exercise.params ?? {};
+    const modelAnswer = String(p.model_answer ?? '');
+    if (!app.ai.key) { selfCheck(text, modelAnswer, 'ИИ не подключён (Профиль → Проверка ответов). Сравни свой ответ с образцом и оцени сам.'); return; }
+    checking = true;
+    const verdict = await aiGrade(app.ai, { question: String(p.question ?? ''), answer: text, modelAnswer, criteria: p.criteria, context: transcriptOf(current.card) }, app.aiModels);
+    checking = false;
+    if (item !== current) return;
+    if (!verdict) { selfCheck(text, modelAnswer, 'ИИ сейчас недоступен. Сравни свой ответ с образцом и оцени сам.'); return; }
+    log('ai', 'graded', { verdict: verdict.verdict, model: verdict.model });
+    aiNote = { feedback: verdict.feedback, corrected: verdict.corrected, modelAnswer, model: verdict.model };
+    const res: CheckResult = { correct: verdict.verdict !== 'wrong', typo: false, expected: verdict.corrected || modelAnswer, suggested: verdict.verdict === 'correct' ? 3 : verdict.verdict === 'partly' ? 2 : 1 };
+    finishAnswer(current, res, ms, hintCount, text);
+  }
+
+  // Without AI the learner compares with the model answer and grades themselves, like a flip card.
+  function selfCheck(text: string, modelAnswer: string, why: string) {
+    given = text;
+    aiNote = { feedback: why, corrected: '', modelAnswer, self: true };
+    suggested = 3; selected = 3; result = null;
+    phase = 'reveal'; target = 'flipped';
+    flipNow();
   }
 
   let flipping = $state(false);
@@ -337,7 +376,7 @@
   $effect(() => { if (phase === 'graded' || phase === 'flipped') tick().then(() => document.querySelector<HTMLButtonElement>('.grades .suggested')?.focus({ preventScroll: true })); });
 
   const BACK = { id: 'back', template: 'back', status: 'ready', params: {} } as const;
-  const showBack = $derived((phase === 'graded' || phase === 'flipped') && !!item && !item.topicCards && item.mode !== 'intro');
+  const showBack = $derived((phase === 'graded' || phase === 'flipped') && !!item && !item.topicCards && item.mode !== 'intro' && !item.card.listening);
   const backRendered = $derived(showBack && item ? render(data, item.card, { ...BACK }, 'review', app.effectiveTheme, `b${index}`) : null);
 
   const extra = $derived.by(() => {
@@ -363,12 +402,12 @@
   const GRADE_NAME: Record<Grade, string> = { 1: 'Заново', 2: 'Трудно', 3: 'Хорошо', 4: 'Легко' };
   const tone = $derived(phase === 'flipped' || !result ? 'neutral' : !result.correct ? 'bad' : result.typo || suggested === 2 ? 'hard' : 'good');
   const mood = $derived(phase === 'flipped' ? 'think' : moodFor(result, streak));
-  const verdictTitle = $derived(phase === 'flipped' ? 'Как вспомнилось?' : !result ? '' : !result.correct ? 'Не то' : result.typo ? 'Опечатка' : streak > 0 && streak % 5 === 0 ? 'Пять подряд' : 'Верно');
+  const verdictTitle = $derived(phase === 'flipped' ? (aiNote?.self ? 'Сравни с образцом' : 'Как вспомнилось?') : !result ? '' : !result.correct ? 'Не то' : result.typo ? 'Опечатка' : aiNote && suggested === 2 ? 'Почти' : streak > 0 && streak % 5 === 0 ? 'Пять подряд' : 'Верно');
   const verdictLine = $derived.by(() => {
     const g = selected ?? suggested;
     const when = intervals ? `через ${intervals[g]}` : '';
     const chosen = `${selected !== null && selected !== suggested ? 'вы выбрали' : 'авто'}: ${GRADE_NAME[g]}${when ? ', ' + when : ''}`;
-    if (phase === 'flipped') return 'Оцени, насколько легко вспомнилось';
+    if (phase === 'flipped') return aiNote?.self ? 'Сравни свой ответ с образцом и оцени его' : 'Оцени, насколько легко вспомнилось';
     if (result && !result.correct && result.expected) return `Правильно: ${result.expected} · ${chosen}`;
     if (result?.typo) return `Засчитано как «${GRADE_NAME[g]}»${when ? ' · ' + when : ''}`;
     return chosen;
@@ -444,6 +483,9 @@
       {/if}
     </div>
 
+    {#if item.card.listening}
+      {#key item.key}<ListeningPanel card={item.card} onpeek={() => { peeks += 1; }} />{/key}
+    {/if}
     {#key item.key}
       <div class="step" in:fly={{ y: 14, duration: 320, opacity: 1 }}>
         {#if phase === 'answer' || phase === 'reveal'}<article class="exercise" class:flipping>
@@ -457,7 +499,17 @@
       </div>
     {/key}
 
-    {#if (phase === 'graded' || phase === 'flipped') && extra && (extra.explanation || extra.translation || (extra.sentence && (phase === 'flipped' || result?.correct)))}
+    {#if checking}<p class="checking" role="status"><span class="dot-pulse"></span>ИИ проверяет ответ…</p>{/if}
+    {#if (phase === 'graded' || phase === 'flipped') && aiNote}
+      <div class="explain surface ai" in:flipIn={{ duration: 320 }}>
+        {#if given}<p class="mine"><span class="muted small">Твой ответ</span>{given}</p>{/if}
+        {#if aiNote.feedback}<p>{aiNote.feedback}</p>{/if}
+        {#if aiNote.corrected && aiNote.corrected.trim() !== given.trim()}<p class="better"><span class="muted small">Лучше так</span>{aiNote.corrected}</p>{/if}
+        {#if aiNote.modelAnswer}<p class="model"><span class="muted small">Образец</span>{aiNote.modelAnswer}</p>{/if}
+        {#if aiNote.model}<p class="muted small">проверил {aiNote.model.replace(/:free$/, '')}</p>{/if}
+      </div>
+    {/if}
+    {#if (phase === 'graded' || phase === 'flipped') && !aiNote && extra && (extra.explanation || extra.translation || (extra.sentence && (phase === 'flipped' || result?.correct)))}
       <div class="explain surface" in:flipIn={{ duration: 320 }}>
         {#if extra.sentence && (phase === 'flipped' || result?.correct)}<p class="sentence">{extra.sentence}</p>{/if}
         {#if extra.translation}<p class="muted">{extra.translation}</p>{/if}
@@ -572,6 +624,11 @@
   .goal-done b { font: 600 15px/1.2 var(--font-display); }
   .goal-done span span { font-size: 13px; color: var(--ink-2); }
   .goal-pic { flex: none; width: 48px; height: 48px; border-radius: 50%; background: var(--card); overflow: hidden; display: flex; align-items: flex-end; justify-content: center; }
+  .checking { display: flex; align-items: center; gap: 10px; margin: 10px 4px 0; color: var(--ink-2); font-size: 14px; }
+  .dot-pulse { width: 10px; height: 10px; border-radius: 50%; background: var(--amber); animation: zb-breathe 1s ease-in-out infinite; }
+  .explain.ai p { margin: 0 0 8px; }
+  .explain.ai p span { display: block; margin-bottom: 2px; }
+  .explain.ai .better { color: var(--good); font-weight: 500; }
   .notice { margin: 10px 4px 0; padding: 10px 14px; border-radius: 12px; background: var(--amber-soft); color: var(--ink); font-size: 14px; }
   .toast { margin: 12px 4px 0; font-size: 13px; color: var(--again); }
 

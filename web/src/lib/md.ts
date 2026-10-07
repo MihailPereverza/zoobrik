@@ -1,7 +1,9 @@
 import { marked } from 'marked';
 
 export interface MdExercise {
-  kind: 'choice' | 'gaps' | 'chips' | 'flip';
+  kind: 'choice' | 'gaps' | 'chips' | 'order' | 'flip';
+  /** Phrases to put in order (events of a story); the written order is the right one. */
+  order: string[];
   front: string;
   back: string;
   options: string[];
@@ -12,6 +14,7 @@ export interface MdExercise {
 
 const OPTION = /^\s*[-*] \[( |x|X)\] (.+)$/;
 const CHIPS = /\[\[chips:\s*([^\]]+?)\]\]/;
+const ORDER = /\[\[order:\s*([^\]]+?)\]\]/;
 const GAP = /\[\[([^\]]+?)\]\]/g;
 const AUDIO = /!audio\(([^)]+)\)/g;
 
@@ -57,12 +60,15 @@ export function parseMdExercise(body: string, media: (file: string) => string): 
     chips = { answer: splitWords(answerPart).join(' '), extra: splitWords(extraPart) };
     front = front.replace(CHIPS, '');
   }
+  const orderMatch = ORDER.exec(front);
+  const order = orderMatch ? splitWords(orderMatch[1]) : [];
+  if (orderMatch) front = front.replace(ORDER, '');
   const gaps: string[][] = [];
   front = front.replace(GAP, (_, inner: string) => `ZBGAP${gaps.push(inner.split('|').map((v) => v.trim())) - 1}ZB`);
   let frontHtml = renderMarkdown(front).replace(/ZBGAP(\d+)ZB/g, (_, i) =>
     `<input class="zb-gap" data-zb-input data-gap="${i}" autocomplete="off" autocapitalize="off" spellcheck="false" style="width:${Math.max(4, gaps[Number(i)][0].length + 2)}ch">`);
   frontHtml = withMedia(frontHtml, audios, media);
   const back = withMedia(renderMarkdown(keepAudio(backParts.join('\n'))), audios, media);
-  const kind = options.length ? 'choice' : chips.answer ? 'chips' : gaps.length ? 'gaps' : 'flip';
-  return { kind, front: frontHtml, back: back.trim(), options, answer, gaps, chips };
+  const kind = options.length ? 'choice' : chips.answer ? 'chips' : order.length ? 'order' : gaps.length ? 'gaps' : 'flip';
+  return { kind, front: frontHtml, back: back.trim(), options, answer, gaps, chips, order };
 }

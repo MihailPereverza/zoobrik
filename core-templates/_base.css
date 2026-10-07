@@ -162,3 +162,13 @@ button [data-w], [data-zb-chip] [data-w] { cursor: inherit; -webkit-touch-callou
 .zb-gloss b { font-weight: 600; }
 .zb-gloss.none span { opacity: 1; color: var(--zb-on-brand); font-size: 13px; }
 @keyframes zb-gloss-in { from { transform: translateY(4px) scale(.98); } to { transform: none; } }
+
+/* Free-text answers checked by AI */
+.zb-open-q { text-align: left; }
+.zb-question { font-size: 18px; line-height: 1.45; }
+textarea.zb-open { min-height: 120px; resize: vertical; text-align: left; font-family: var(--zb-font); font-size: 17px; line-height: 1.4; }
+
+/* Ordering events: phrase chips stack as a numbered list */
+.zb-order { flex-direction: column; align-items: stretch; counter-reset: zb-step; }
+.zb-order .zb-chip { text-align: left; white-space: normal; height: auto; min-height: 44px; padding: 10px 14px; line-height: 1.35; }
+.zb-slot.zb-order .zb-chip::before { counter-increment: zb-step; content: counter(zb-step) ". "; font-weight: 600; }

@@ -3,6 +3,7 @@ import { countActivity, GitHubBackend, LocalBackend, localRoots, ServerBackend, 
 import { deckRoots } from './deckfs';
 import type { RepoConfig } from './github';
 import { deckLangs } from './lang';
+import { freeModels, type AiConfig, type TierEntry } from './ai';
 import { dayKey } from './progress';
 import type { DeckData } from './types';
 import { log } from './log';
@@ -24,6 +25,23 @@ function stored(key: string, fallback: string): string {
 
 function store(key: string, value: string | null) {
   try { if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value); } catch { /* storage unavailable: setting lives for this tab only */ }
+}
+
+function storedAi(): AiConfig {
+  try { return { key: '', model: '', ...JSON.parse(stored('zb.ai', '{}')) }; } catch { return { key: '', model: '' }; }
+}
+
+export function setAi(cfg: AiConfig) {
+  app.ai = cfg;
+  store('zb.ai', cfg.key || cfg.model ? JSON.stringify(cfg) : null);
+}
+
+/** Free OpenRouter models in tier-list order; the first one becomes the default model. */
+export async function loadAiModels() {
+  let tiers: TierEntry[] = [];
+  try { tiers = (await (await fetch(`${import.meta.env.BASE_URL}ai-tiers.json`, { cache: 'no-store' })).json()).models ?? []; } catch { /* no tier list yet: OpenRouter's order */ }
+  app.aiModels = await freeModels(tiers);
+  if (!app.ai.model && app.aiModels[0]) app.ai = { ...app.ai, model: app.aiModels[0] };
 }
 
 function storedRepo(): RepoConfig | null {
@@ -48,6 +66,8 @@ export const app = $state({
   goal: Number(stored('zb.goal', '30')) || 30,
   activity: {} as Record<string, number>,
   decks: [] as DeckRef[],
+  ai: storedAi(),
+  aiModels: [] as string[],
   deckKey: stored('zb.deck', ''),
   scanned: false,
 });

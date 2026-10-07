@@ -1,0 +1,8 @@
+{% import "core/_macros" as m %}
+<div class="zb">
+  <div class="zb-card-q zb-open-q"><div class="zb-md zb-question">{{ params.question | md | safe }}</div></div>
+  <textarea class="zb-input zb-open" data-zb-input rows="4" autocomplete="off" autocapitalize="sentences" spellcheck="false" placeholder="{{ params.placeholder or 'Ответь по-английски' }}" aria-label="Твой ответ"></textarea>
+  <button class="zb-submit" data-zb="submit" type="button">Проверить</button>
+  <p class="zb-hint" style="font-size:13px">Можно 1–3 предложения. Ответ проверит ИИ, если он подключён в настройках.</p>
+  <div class="zb-back" data-zb-back hidden>{% if params.model_answer %}<div class="zb-answer">{{ params.model_answer }}</div>{% endif %}</div>
+</div>

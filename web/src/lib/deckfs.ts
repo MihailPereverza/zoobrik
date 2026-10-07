@@ -44,12 +44,14 @@ function buildCard(files: FileMap, root: string, langs: DeckLangs, topicId: stri
   const dir = `${root}topics/${topicId}/${cardId}`;
   const raw = parse(files.get(`${dir}/card.yaml`)) ?? {};
   const theoryFile = raw.content?.theory;
+  const transcript = raw.content?.transcript ? parse(files.get(`${dir}/${raw.content.transcript}`)) : null;
   return {
     ...raw,
     id: raw.id ?? cardId,
     topic: topicId,
     path: dir,
     content: normalizeContent(raw.content ?? {}, langs),
+    listening: transcript ? { media: raw.content.media, poster: raw.content.poster, duration: transcript.duration, segments: transcript.segments ?? [], source: raw.content.source } : undefined,
     theory: theoryFile ? files.get(`${dir}/${theoryFile}`) ?? null : null,
     exercises: [...(raw.exercises ?? []), ...mdExercises(files, dir)],
     templates: templatesUnder(files, `${dir}/views/`, `card:${topicId}/${cardId}`),

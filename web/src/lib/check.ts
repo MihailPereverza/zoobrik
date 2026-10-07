@@ -67,6 +67,10 @@ function checkMd(md: MdExercise, answer: Answer): CheckResult {
   if (md.kind === 'chips') {
     return result(matchTokens(answer.tokens ?? [], [md.chips.answer]), false, md.chips.answer);
   }
+  if (md.kind === 'order') {
+    const given = answer.tokens ?? [];
+    return result(given.length === md.order.length && given.every((t, i) => t === md.order[i]), false, md.order.join(' → '));
+  }
   const gaps = md.gaps.map((variants, i) => matchText(answer.texts?.[i] ?? '', variants));
   const correct = gaps.every((g) => g.correct);
   return result(correct, gaps.some((g) => g.typo), md.gaps.map((v) => v[0]).join(' · '), { gaps: gaps.map((g) => g.correct) });

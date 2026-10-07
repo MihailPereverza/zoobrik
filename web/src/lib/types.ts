@@ -85,10 +85,23 @@ export interface TemplateManifest {
   autoplay?: boolean;
 }
 
+/** One line of a listening transcript; words carry their own timing so the text can follow the audio. */
+export interface Segment { start: number; end: number; speaker?: string; text: string; words: [string, number, number][] }
+
+/** A listening card's clip: media file in the card folder, its timed transcript and where it comes from. */
+export interface Listening {
+  media: string;
+  poster?: string;
+  duration?: number;
+  segments: Segment[];
+  source?: { name: string; url?: string; license?: string; credit?: string };
+}
+
 export interface Card {
   id: string;
   tags?: string[];
-  kind: 'word' | 'phrase' | 'idiom' | 'grammar';
+  kind: 'word' | 'phrase' | 'idiom' | 'grammar' | 'listening';
+  listening?: Listening;
   topic: string;
   path: string;
   content: CardContent;
@@ -102,7 +115,7 @@ export interface Topic {
   id: string;
   title: string;
   description?: string;
-  kind?: 'vocab' | 'grammar';
+  kind?: 'vocab' | 'grammar' | 'listening';
   level?: string;
   requires?: string[];
   batch?: number;
