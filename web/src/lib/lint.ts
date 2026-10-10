@@ -1,10 +1,11 @@
 import { check } from './check';
+import { deckOrder, lexiconReport, minCoverage, type WordFinding } from './lexicon';
 import { mediaUrl, render } from './render';
 import { backend } from './state.svelte';
 import type { Answer, Card, DeckData, Exercise } from './types';
 import type { MdExercise } from './md';
 
-export interface LintIssue { card: Card; exercise?: Exercise; message: string }
+export interface LintIssue { card: Card; exercise?: Exercise; message: string; words?: boolean; options?: boolean }
 
 function idealAnswer(exercise: Exercise, type: string, md?: MdExercise): Answer | null {
   const p = exercise.params ?? {};
@@ -84,5 +85,29 @@ export async function lintDeck(data: DeckData, onProgress: (done: number, total:
       lintExercise(data, member, exercise).forEach((message) => issues.push({ card: member, exercise, message }));
     }
   }
+  issues.push(...wordIssues(data));
   return { issues, exercises, audio };
+}
+
+/** Rule B: words an exercise uses before any card has taught them. Measured against known.yaml, else the placement top 1000. */
+function wordIssues(data: DeckData): LintIssue[] {
+  const base = data.known?.words ?? data.placement?.slice(0, 1000).map((w) => w.en);
+  if (!base) return [];
+  const report = lexiconReport(data, base);
+  const cards = deckOrder(data);
+  const find = (topic: string, id: string) => cards.find((c) => c.topic === topic && c.id === id);
+  const out: LintIssue[] = [];
+  const issue = (f: WordFinding, more: Partial<LintIssue> & { message: string }) => {
+    const topic = data.topics.find((t) => t.id === f.topic)!;
+    const card = f.card ? find(f.topic, f.card) : topic.cards[0];
+    const exercise = f.card ? card?.exercises.find((e) => e.id === f.exercise) : topic.exercises.find((e) => `topic:${e.id}` === f.exercise);
+    if (card) out.push({ card, exercise, words: true, ...more });
+  };
+  report.findings.forEach((f) => issue(f, { message: `незнакомые слова: ${f.words.join(', ')}` }));
+  report.distractors.forEach((f) => issue(f, { options: true, message: `незнакомые слова в неверных вариантах: ${f.words.join(', ')}` }));
+  for (const c of report.listening.filter((l) => l.locked)) {
+    const card = find(c.topic, c.card);
+    if (card) out.push({ card, words: true, message: `клип понятен на ${Math.round(c.coverage * 100)}% (нужно ${Math.round(minCoverage(data) * 100)}%): ${c.unknown.slice(0, 12).join(', ')}` });
+  }
+  return out;
 }

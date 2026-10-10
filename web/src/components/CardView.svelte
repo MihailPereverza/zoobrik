@@ -7,15 +7,19 @@
   import { formatInterval, retrievability } from '../lib/fsrs';
   import { renderMarkdown } from '../lib/md';
   import { mediaUrl, pickVoice, render, type Rendered } from '../lib/render';
-  import { cardSkills, exerciseSkills, manifestOf } from '../lib/scheduler';
+  import { exerciseSkills, manifestOf } from '../lib/scheduler';
   import { STAGE_LABEL, stageOf } from '../lib/summary';
-  import { isBuried, suspend, unsuspend } from '../lib/progress';
+  import { cardCoverage, cardLocked, minCoverage } from '../lib/lexicon';
+  import { isBuried, ladderOf, memoryOf, rungOf, suspend, unsuspend } from '../lib/progress';
   import type { CheckResult, Exercise, ExerciseStatus } from '../lib/types';
 
   let { topicId, cardId }: { topicId: string; cardId: string } = $props();
   const data = $derived(app.data!);
   const card = $derived(data.topics.find((t) => t.id === topicId)?.cards.find((c) => c.id === cardId));
   const now = $derived.by(() => { void app.version; return new Date(); });
+  const st = $derived(memoryOf(card?.progress));
+  const ladder = $derived(ladderOf(data.deck));
+  const rung = $derived(rungOf(card?.progress, ladder));
 
   let selectedId = $state('');
   let salt = $state(0);
@@ -96,6 +100,7 @@
         <div class="eyebrow tags">{card.kind} <span class="chip {stageOf(card)}">{STAGE_LABEL[stageOf(card)]}</span>
           {#if card.progress?.leech}<span class="chip leech">пиявка</span>{/if}
           {#if isBuried(card, now)}<span class="chip">отложено до завтра</span>{/if}
+          {#if card.listening}{@const pct = Math.round(cardCoverage(data, card) * 100)}<span class="chip" data-coverage={pct}>{data.known ? `знакомо ${pct}% слов` : 'нужен тест на знание слов'}{data.known && cardLocked(data, card) ? ` · откроется с ${Math.round(minCoverage(data) * 100)}%` : ''}</span>{/if}
           <button class="btn small ghost" type="button" onclick={toggleSuspend}>{card.progress?.stage === 'suspended' ? 'Вернуть в занятия' : 'Приостановить'}</button>
         </div>
         {#if card.progress?.leech}<p class="leech-note">Это слово часто забывается. Помогает своя заметка-ассоциация, ещё один пример или картинка — отредактируйте карточку.</p>{/if}
@@ -120,19 +125,16 @@
           {/each}
         </ul>
 
-        <h2 class="section">Навыки</h2>
+        <h2 class="section">Память</h2>
         <table class="skills">
-          <thead><tr><th>Навык</th><th>Память</th><th>Стабильность</th><th>Следующий</th></tr></thead>
+          <thead><tr><th>Ступень</th><th>Память</th><th>Стабильность</th><th>Следующий</th></tr></thead>
           <tbody>
-            {#each cardSkills(data, card) as s (s)}
-              {@const st = card.progress?.skills?.[s]}
-              <tr>
-                <td>{s}</td>
-                <td class="mono">{st ? `${Math.round(retrievability(data.deck, s, st, now) * 100)}%` : '—'}</td>
-                <td class="mono">{st ? `${Math.round(st.s * 10) / 10} дн` : '—'}</td>
-                <td class="mono">{st ? (new Date(st.due) <= now ? 'сейчас' : `через ${formatInterval(now, new Date(st.due))}`) : 'новый'}</td>
-              </tr>
-            {/each}
+            <tr>
+              <td>{ladder[rung]} · {rung + 1}/{ladder.length}</td>
+              <td class="mono">{st ? `${Math.round(retrievability(data.deck, st, now) * 100)}%` : '—'}</td>
+              <td class="mono">{st ? `${Math.round(st.s * 10) / 10} дн` : '—'}</td>
+              <td class="mono">{st ? (new Date(st.due) <= now ? 'сейчас' : `через ${formatInterval(now, new Date(st.due))}`) : 'новый'}</td>
+            </tr>
           </tbody>
         </table>
       </section>

@@ -11,6 +11,8 @@ import { audioVariants, pickVoice, resolveTemplate } from './render';
 const deckYaml = 'id: english-a2\nname: Английский A2\nlang: { target: en-GB, native: ru }\nlimits: { new_cards_per_day: 8, reviews_per_day: 250 }\nfsrs:\n  retention: { recall: 0.9 }\n  params: [0.2, 1.2]\ntopics: [travel]\n';
 const card = 'id: luggage\nkind: word\ncontent:\n  en: luggage\n  ru: багаж\n  alt_ru: [вещи]\n  examples:\n    - { id: ex1, en: My luggage is heavy., ru: Мой багаж тяжёлый. }\nexercises:\n  - { id: e1, template: ru-en-type, status: ready, params: { prompt: багаж, answer: luggage } }\n';
 const progress = { stage: 'review', totals: { answers: 3, correct: 3, lapses: 0 }, skills: { recall: { state: 'review', s: 5, d: 5, due: '2026-10-10T00:00:00Z', reps: 3, lapses: 0, step: 0 } }, exercises: {}, recent: [] };
+const placementYaml = 'words:\n  - { en: go, ru: идти, forms: [went, gone] }\n  - { en: luggage, ru: багаж }\n';
+const knownYaml = 'tested: 2026-10-07\nwords: [go]\nunknown: [luggage]\n';
 const mp3 = new Uint8Array([0xff, 0xfb, 0x90, 0x64, 1, 2, 3]);
 
 function deckFiles(): PackageFile[] {
@@ -20,6 +22,8 @@ function deckFiles(): PackageFile[] {
     { path: 'topics/travel/luggage/card.yaml', text: withProgress(card, progress) },
     { path: 'topics/travel/luggage/word.mp3', bytes: mp3 },
     { path: 'topics/travel/luggage/exercises/gap.md', text: '---\nid: gap\nstatus: ready\n---\nMy [[luggage]] is heavy.\n' },
+    { path: 'placement.yaml', text: placementYaml },
+    { path: 'known.yaml', text: knownYaml },
     { path: 'journal/2026-10/iphone.tsv', text: '2026-10-01T10:00:00Z\tluggage\te1\trecall\t3\n' },
   ];
 }
@@ -33,6 +37,8 @@ describe('package paths', () => {
     expect(isPackagePath('../secret.yaml')).toBe(false);
     expect(isPackagePath('/etc/passwd.txt')).toBe(false);
     expect(isPackagePath('topics/a/run.exe')).toBe(false);
+    expect(isPackagePath('placement.yaml')).toBe(true);
+    expect(isPackagePath('known.yaml')).toBe(false);
   });
 });
 
@@ -48,6 +54,11 @@ describe('.zoobrik round trip', () => {
     expect(deck.fsrs.params).toBeUndefined();
     expect(deck.fsrs.retention.recall).toBe(0.9);
     expect(deck.source).toBeUndefined();
+  });
+
+  it('shares the placement list but not the learner’s known.yaml', () => {
+    expect(byPath.get('placement.yaml')!.text).toBe(placementYaml);
+    expect(byPath.has('known.yaml')).toBe(false);
   });
 
   it('keeps media byte for byte and markdown exercises as text', () => {
@@ -98,6 +109,7 @@ describe('updating from the author', () => {
   const incoming: PackageFile[] = [
     { path: 'deck.yaml', text: deckYaml.replace('params: [0.2, 1.2]', 'params: null').replace('Английский A2', 'Английский A2+') },
     { path: 'topics/travel/topic.yaml', text: 'id: travel\ntitle: Путешествия\n' },
+    { path: 'placement.yaml', text: placementYaml },
     { path: 'topics/travel/luggage/card.yaml', text: card.replace('багаж', 'багаж, вещи') },
     { path: 'topics/travel/luggage/word.mp3', bytes: mp3 },
     { path: 'topics/travel/passport/card.yaml', text: 'id: passport\nkind: word\ncontent: { en: passport, ru: паспорт }\n' },
@@ -129,6 +141,7 @@ describe('updating from the author', () => {
 
   it('removes files the author deleted, except cards that have progress', () => {
     expect(plan.remove).toEqual(['topics/travel/luggage/exercises/gap.md']);
+    expect(written.has('known.yaml')).toBe(false);
     const withoutCard = planUpdate(local, media, incoming.filter((f) => !f.path.startsWith('topics/travel/luggage/')));
     expect(withoutCard.remove).not.toContain('topics/travel/luggage/card.yaml');
     expect(withoutCard.kept).toBe(1);
@@ -153,6 +166,14 @@ describe('library layout and languages', () => {
     const root = buildDeck(lib, CORE);
     expect(root.topics.map((t) => t.id)).toEqual(['travel']);
     expect(root.topics[0].cards[0].path).toBe('topics/travel/luggage');
+  });
+
+  it('reads the placement list and known.yaml of each deck', () => {
+    const files = new Map([...lib, ['decks/spanish/placement.yaml', placementYaml], ['decks/spanish/known.yaml', knownYaml]]);
+    const nested = buildDeck(files, CORE, 'decks/spanish/');
+    expect(nested.placement).toEqual([{ en: 'go', ru: 'идти', forms: ['went', 'gone'] }, { en: 'luggage', ru: 'багаж' }]);
+    expect(nested.known).toEqual({ tested: '2026-10-07', words: ['go'], unknown: ['luggage'] });
+    expect(buildDeck(lib, CORE).known).toBeUndefined();
   });
 
   it('builds a nested deck with full card paths and its own language', () => {

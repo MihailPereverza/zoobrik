@@ -3,6 +3,7 @@
   import { app, backend } from '../lib/state.svelte';
   import { log, mediaName } from '../lib/log';
   import { glossary, lookupGloss } from '../lib/gloss';
+  import { canMarkKnown, markKnown } from '../lib/known';
 
   interface Props {
     srcdoc: string;
@@ -39,7 +40,8 @@
   function answerGloss(data: { words: string[]; index: number; rect: unknown }) {
     const found = app.data ? lookupGloss(glossary(app.data), data.words ?? [], data.index) : null;
     log(name, 'gloss', { word: data.words?.[data.index], found: found?.phrase ?? null });
-    send({ type: 'gloss-result', rect: data.rect, word: data.words?.[data.index], ...(found ?? {}) });
+    const knownWords = found ? data.words.slice(found.start, found.start + found.length) : [data.words?.[data.index]].filter(Boolean);
+    send({ type: 'gloss-result', rect: data.rect, word: data.words?.[data.index], ...(found ?? {}), canKnow: canMarkKnown(knownWords), knownWords });
   }
 
   export function focus() {
@@ -57,6 +59,7 @@
       if (type === 'need-media') { deliverMedia(data.urls ?? []); return; }
       if (type === 'log') { log(`${name}:inside`, data.msg, data.data); return; }
       if (type === 'gloss') { answerGloss(data); return; }
+      if (type === 'known') { markKnown(data.words ?? []).catch((e) => log(name, 'known failed', String(e?.message ?? e))); return; }
       onevent(type, data);
     };
     window.addEventListener('message', onMessage);

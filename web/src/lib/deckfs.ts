@@ -1,7 +1,7 @@
 import YAML from 'yaml';
 import { splitFrontmatter } from './cardyaml';
 import { deckLangs, normalizeContent, type DeckLangs } from './lang';
-import type { Card, DeckData, Exercise, TemplateSource, Topic } from './types';
+import type { Card, DeckData, Exercise, KnownWords, PlacementWord, TemplateSource, Topic } from './types';
 
 export type FileMap = Map<string, string>;
 
@@ -75,6 +75,18 @@ function buildTopic(files: FileMap, root: string, langs: DeckLangs, topicId: str
   };
 }
 
+function placementWords(raw: any): PlacementWord[] | undefined {
+  // A word listed twice would show twice on a test screen (and break its keyed list): the first, more frequent rank wins.
+  const seen = new Set<string>();
+  const words = (raw?.words ?? []).filter((w: any) => w?.en && !seen.has(String(w.en)) && seen.add(String(w.en))).map((w: any) => ({ en: String(w.en), ru: String(w.ru ?? ''), ...(w.forms?.length ? { forms: w.forms.map(String) } : {}) }));
+  return words.length ? words : undefined;
+}
+
+function knownWords(raw: any): KnownWords | undefined {
+  if (!raw) return undefined;
+  return { ...(raw.tested ? { tested: String(raw.tested) } : {}), words: (raw.words ?? []).map(String), ...(raw.unknown?.length ? { unknown: raw.unknown.map(String) } : {}) };
+}
+
 export function buildDeck(files: FileMap, core: CoreBundle, root = '', media: Iterable<string> = []): DeckData {
   const deck = parse(files.get(`${root}deck.yaml`));
   if (!deck) throw new Error(`Нет ${root}deck.yaml`);
@@ -88,6 +100,8 @@ export function buildDeck(files: FileMap, core: CoreBundle, root = '', media: It
     root,
     media: [...media].filter((p) => p.startsWith(root)),
     glossary: parse(files.get(`${root}glossary.yaml`)) ?? {},
+    placement: placementWords(parse(files.get(`${root}placement.yaml`))),
+    known: knownWords(parse(files.get(`${root}known.yaml`))),
     deck,
     topics: ids.map((id) => buildTopic(files, root, langs, id)),
     templates: [...core.templates, ...templatesUnder(files, `${root}templates/`, 'deck')],

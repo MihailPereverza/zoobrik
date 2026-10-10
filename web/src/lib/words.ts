@@ -1,4 +1,4 @@
-import { dueSkills, isIntroduced } from './scheduler';
+import { isDue, isIntroduced } from './scheduler';
 import { stageOf } from './summary';
 import type { Card, DeckData } from './types';
 
@@ -31,7 +31,7 @@ function statusOf(data: DeckData, card: Card, now: Date): WordStatus[] {
   if (stage === 'review' || stage === 'mastered') out.push('known');
   if (stage === 'suspended') out.push('paused');
   if (card.progress?.leech || (card.progress?.totals.lapses ?? 0) >= 3) out.push('hard');
-  if (isIntroduced(card) && stage !== 'suspended' && dueSkills(data, card, now, 0).length) out.push('due');
+  if (isIntroduced(card) && stage !== 'suspended' && isDue(data, card, now)) out.push('due');
   return out;
 }
 

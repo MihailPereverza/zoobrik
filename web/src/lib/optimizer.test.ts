@@ -46,20 +46,20 @@ describe('journal parsing', () => {
   it('ignores intro views, practice answers and malformed lines', () => {
     const lines = [line(T0, 't/a', '3'), line(T0 + DAY, 't/a', 'p3'), line(T0, 't/a', 'seen'), 'garbage', line(T0 + 2 * DAY, 't/a', '1')];
     const h = histories(parseJournal(lines));
-    expect(h.get('t/a|recall')?.map((r) => r.rating)).toEqual([3, 1]);
+    expect(h.get('t/a')?.map((r) => r.rating)).toEqual([3, 1]);
   });
 
   it('drops answers that were undone', () => {
     const answered = T0 + DAY;
     const lines = [line(T0, 't/a', '3'), line(answered, 't/a', '1'), line(answered + 5000, 't/a', 'undo', `ref=${new Date(answered).toISOString()}`), line(answered + 9000, 't/a', '3')];
-    expect(histories(parseJournal(lines)).get('t/a|recall')?.map((r) => r.rating)).toEqual([3, 3]);
+    expect(histories(parseJournal(lines)).get('t/a')?.map((r) => r.rating)).toEqual([3, 3]);
   });
 
-  it('keeps skills of one card as separate histories, sorted by time', () => {
-    const lines = [line(T0 + DAY, 't/a', '3', '', 'listen'), line(T0, 't/a', '1', '', 'listen'), line(T0, 't/a', '3', '', 'recall')];
+  it('keeps one history per card, one review per answer, sorted by time', () => {
+    const lines = [line(T0 + DAY, 't/a', '3', '', 'listen'), line(T0, 't/a', '1', '', 'listen'), line(T0, 't/a', '1', '', 'spell'), line(T0 + 2 * DAY, 't/a', '3', '', 'recall')];
     const h = histories(parseJournal(lines));
-    expect([...h.keys()].sort()).toEqual(['t/a|listen', 't/a|recall']);
-    expect(h.get('t/a|listen')?.map((r) => r.rating)).toEqual([1, 3]);
+    expect([...h.keys()]).toEqual(['t/a']);
+    expect(h.get('t/a')?.map((r) => r.rating)).toEqual([1, 3, 3]);
   });
 });
 

@@ -1,7 +1,6 @@
 import { createEmptyCard, fsrs, generatorParameters, S_MIN, State, type Card as FsrsCard, type FSRS, type Grade as FsrsGrade, type Steps } from 'ts-fsrs';
-import type { DeckConfig, Grade, Skill, SkillPhase, SkillState } from './types';
+import type { DeckConfig, Grade, SkillPhase, SkillState } from './types';
 
-const DEFAULT_RETENTION: Record<Skill, number> = { recognize: 0.92, recall: 0.9, listen: 0.88, spell: 0.85, context: 0.88, apply: 0.88 };
 const PHASES: SkillPhase[] = ['new', 'learning', 'review', 'relearning'];
 const engines = new Map<string, FSRS>();
 
@@ -11,9 +10,24 @@ function days(value: string | undefined, fallback: number): number {
   return value.endsWith('d') ? n : value.endsWith('y') ? n * 365 : n;
 }
 
-function engine(deck: DeckConfig, skill: Skill): FSRS {
-  const retention = deck.fsrs?.retention?.[skill] ?? DEFAULT_RETENTION[skill];
-  const key = JSON.stringify([skill, retention, deck.fsrs?.params ?? null, deck.fsrs?.learning_steps ?? null, deck.fsrs?.relearning_steps ?? null, deck.fsrs?.max_interval ?? null]);
+/** One retention for the card's single memory; an old per-skill map gives its `recall` value. */
+export function retentionOf(deck: DeckConfig): number {
+  const r = deck.fsrs?.retention;
+  return typeof r === 'number' ? r : r?.recall ?? 0.9;
+}
+
+const minutes = (step: string) => parseFloat(step) * (step.endsWith('d') ? 1440 : step.endsWith('h') ? 60 : step.endsWith('s') ? 1 / 60 : 1);
+
+// A new word is checked once more at the end of the session, never a minute later: shorter steps become 10m.
+function learningSteps(deck: DeckConfig): Steps {
+  const steps = deck.fsrs?.learning_steps?.length ? deck.fsrs.learning_steps : ['10m', '10m'];
+  return steps.map((s) => (minutes(s) < 10 ? '10m' : s)) as Steps;
+}
+
+function engine(deck: DeckConfig): FSRS {
+  const retention = retentionOf(deck);
+  const steps = learningSteps(deck);
+  const key = JSON.stringify([retention, deck.fsrs?.params ?? null, steps, deck.fsrs?.relearning_steps ?? null, deck.fsrs?.max_interval ?? null]);
   let f = engines.get(key);
   if (!f) {
     f = fsrs(generatorParameters({
@@ -21,7 +35,7 @@ function engine(deck: DeckConfig, skill: Skill): FSRS {
       maximum_interval: days(deck.fsrs?.max_interval, 365),
       enable_fuzz: true,
       enable_short_term: true,
-      learning_steps: (deck.fsrs?.learning_steps ?? ['1m', '10m']) as Steps,
+      learning_steps: steps,
       relearning_steps: (deck.fsrs?.relearning_steps ?? ['10m']) as Steps,
       ...(deck.fsrs?.params?.length ? { w: deck.fsrs.params } : {}),
     }));
@@ -60,21 +74,21 @@ function clampToMaximum(deck: DeckConfig, state: SkillState): SkillState {
   return new Date(state.due).getTime() > limit ? { ...state, due: new Date(limit).toISOString() } : state;
 }
 
-export function review(deck: DeckConfig, skill: Skill, state: SkillState | undefined, grade: Grade, now: Date): SkillState {
-  const f = engine(deck, skill);
+export function review(deck: DeckConfig, state: SkillState | undefined, grade: Grade, now: Date): SkillState {
+  const f = engine(deck);
   return clampToMaximum(deck, fromFsrs(f.next(toFsrs(state, now), now, grade as FsrsGrade).card));
 }
 
-export function preview(deck: DeckConfig, skill: Skill, state: SkillState | undefined, now: Date): Record<Grade, Date> {
-  const f = engine(deck, skill);
+export function preview(deck: DeckConfig, state: SkillState | undefined, now: Date): Record<Grade, Date> {
+  const f = engine(deck);
   const result = f.repeat(toFsrs(state, now), now);
   const due = (g: Grade) => new Date(clampToMaximum(deck, fromFsrs(result[g].card)).due);
   return { 1: due(1), 2: due(2), 3: due(3), 4: due(4) };
 }
 
-export function retrievability(deck: DeckConfig, skill: Skill, state: SkillState | undefined, now: Date): number {
+export function retrievability(deck: DeckConfig, state: SkillState | undefined, now: Date): number {
   if (!state || state.state === 'new') return 0;
-  return engine(deck, skill).get_retrievability(toFsrs(state, now), now, false);
+  return engine(deck).get_retrievability(toFsrs(state, now), now, false);
 }
 
 export function formatInterval(from: Date, to: Date): string {

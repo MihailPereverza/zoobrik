@@ -3,12 +3,14 @@
   import { app } from '../lib/state.svelte';
   import { log } from '../lib/log';
   import { glossary, lookupGloss } from '../lib/gloss';
+  import { canMarkKnown, markKnown } from '../lib/known';
 
   // Display-only templates (card back) render into the page through Shadow DOM: styles stay isolated,
   // and taps are handled by the app itself, so audio starts synchronously on every browser.
   let { html, css, onplay }: { html: string; css: string; onplay: (src: string, rate: number) => void } = $props();
   let host: HTMLDivElement;
   let root: ShadowRoot;
+  let tipWords: string[] = [];
 
   function scopedCss(source: string): string {
     return source
@@ -47,11 +49,14 @@
     const list = [...block.querySelectorAll<HTMLElement>('[data-w]')];
     const found = app.data ? lookupGloss(glossary(app.data), list.map((w) => w.textContent ?? ''), list.indexOf(word)) : null;
     log('back', 'gloss', { word: word.textContent, found: found?.phrase ?? null });
+    tipWords = found ? list.slice(found.start, found.start + found.length).map((w) => w.textContent ?? '') : [word.textContent ?? ''];
+    const canKnow = canMarkKnown(tipWords);
     const tip = document.createElement('div');
-    tip.className = `zb-gloss${found ? '' : ' none'}`;
+    tip.className = `zb-gloss${found ? '' : ' none'}${canKnow ? ' can-know' : ''}`;
     tip.innerHTML = '<b></b><span></span>';
     tip.firstElementChild!.textContent = found?.phrase ?? word.textContent;
     tip.lastElementChild!.textContent = found?.ru ?? 'нет в словаре колоды';
+    if (canKnow) tip.insertAdjacentHTML('beforeend', '<button type="button" class="zb-known" data-zb-known>знаю</button>');
     root.querySelector('.zb-root')!.appendChild(tip);
     if (found) list.slice(found.start, found.start + found.length).forEach((w) => w.classList.add('zb-glossed'));
     const box = host.getBoundingClientRect(), r = word.getBoundingClientRect();
@@ -64,6 +69,7 @@
   onMount(() => {
     root = host.attachShadow({ mode: 'open' });
     root.addEventListener('click', (event) => {
+      if ((event.target as Element).closest?.('[data-zb-known]')) { hideTip(); markKnown(tipWords).catch((e) => log('back', 'known failed', String(e?.message ?? e))); return; }
       const word = (event.target as Element).closest?.('[data-w]') as HTMLElement | null;
       const button = (event.target as Element).closest?.('[data-zb="play"]') as HTMLElement | null;
       if (word && !button) { showGloss(word); return; }

@@ -158,14 +158,15 @@ export const RUNTIME = String.raw`(function () {
     glossWords = list;
     post('gloss', { words: list.map(function (w) { return w.textContent; }), index: list.indexOf(el), rect: { left: r.left, top: r.top, bottom: r.bottom, width: r.width } });
   }
-  var glossWords = [];
+  var glossWords = [], tipWords = [];
   function showTip(m) {
     hideTip();
     tip = document.createElement('div');
-    tip.className = 'zb-gloss' + (m.ru ? '' : ' none');
+    tip.className = 'zb-gloss' + (m.ru ? '' : ' none') + (m.canKnow ? ' can-know' : '');
     tip.innerHTML = '<b></b><span></span>';
     tip.firstChild.textContent = m.phrase || m.word;
     tip.lastChild.textContent = m.ru || 'нет в словаре колоды';
+    if (m.canKnow) { tip.insertAdjacentHTML('beforeend', '<button type="button" class="zb-known" data-zb-known>знаю</button>'); tipWords = m.knownWords; }
     document.body.appendChild(tip);
     if (m.ru) glossWords.slice(m.start, m.start + m.length).forEach(function (w) { w.classList.add('zb-glossed'); });
     var r = m.rect, w = tip.offsetWidth, h = tip.offsetHeight;
@@ -187,6 +188,7 @@ export const RUNTIME = String.raw`(function () {
   document.addEventListener('contextmenu', function (e) { if (e.target.closest && e.target.closest('[data-w]')) e.preventDefault(); }, true);
   document.addEventListener('click', function (e) {
     if (suppress) { suppress = false; e.preventDefault(); e.stopPropagation(); return; }
+    if (e.target.closest && e.target.closest('[data-zb-known]')) { e.stopPropagation(); post('known', { words: tipWords }); hideTip(); return; }
     var w = e.target.closest && e.target.closest('[data-w]');
     if (w && !w.closest(INTERACTIVE)) { e.stopPropagation(); askGloss(w); return; }
     hideTip();

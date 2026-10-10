@@ -116,6 +116,7 @@
           <div class="actions">
             {#if ref.description}<p class="muted desc">{ref.description}</p>{/if}
             {#if ref.key !== active}<button class="btn small" type="button" onclick={() => choose(ref)}>Учить эту</button>{/if}
+            {#if ref.key === active && app.data?.placement?.length}<a class="btn small ghost" href="#/placement">{app.data.known ? `Тест словаря заново · знаю ${app.data.known.words.length}` : 'Тест словаря'}</a>{/if}
             <button class="btn small ghost" type="button" disabled={!!busy} onclick={() => share(ref)}>Поделиться файлом</button>
             {#if linkOf(ref)}<button class="btn small ghost" type="button" onclick={() => copyLink(ref)}>Скопировать ссылку</button>{/if}
             {#if ref.source}<button class="btn small ghost" type="button" disabled={!!busy} onclick={() => fromSource(ref)}>Обновить из источника</button>{/if}

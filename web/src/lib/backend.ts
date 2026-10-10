@@ -27,6 +27,8 @@ export interface Backend {
   pendingCount(): Promise<number>;
   journal(): Promise<string[]>;
   saveParams(params: number[] | null): Promise<void>;
+  /** Writes the learner's known.yaml; it travels with progress (pending commit on GitHub, deck files on the Mac). */
+  saveKnown(text: string): Promise<void>;
   /** Every file of the deck, paths relative to its folder; media is downloaded. */
   files(onProgress?: OnProgress): Promise<PackageFile[]>;
   /** Text files of the deck (relative paths) and the set of its media paths, without downloading media. */
@@ -100,6 +102,7 @@ export class ServerBackend implements Backend {
   async mediaExists(url: string) { const path = mediaPathOf(url); return Boolean(path && (await serverFiles()).binaries.includes(path)); }
   async pendingCount() { return 0; }
   async saveParams(params: number[] | null) { await api.saveDeckParams(this.root, params); }
+  async saveKnown(text: string) { await api.writeFiles(this.root, [{ path: 'known.yaml', text }], []); }
   async listing() {
     const l = await serverFiles();
     return { texts: new Map(relative(this.root, Object.keys(l.texts)).map((p) => [p, l.texts[this.root + p]])), media: new Set(relative(this.root, l.binaries)) };
@@ -178,6 +181,11 @@ export class LocalBackend implements Backend {
   async activity() { return countActivity(await this.journal()); }
   async pendingCount() { return 0; }
   async saveParams(params: number[] | null) { await this.editText(`${this.root}deck.yaml`, (t) => withDeckParams(t, params)); }
+  async saveKnown(text: string) {
+    const d = await this.deck();
+    d.texts[`${this.root}known.yaml`] = text;
+    await this.save(d);
+  }
 
   async media(url: string) {
     const path = mediaPathOf(url);
@@ -324,10 +332,10 @@ export class GitHubBackend implements Backend {
     return text;
   }
 
-  private async edit(path: string, change: (text: string) => string) {
+  private async edit(path: string, change: (text: string) => string, create = false) {
     const [snap, pending] = [await this.snapshot(), await this.pending()];
     if (!snap) throw new Error('Колода ещё не загружена');
-    const text = await this.currentText(path, pending, snap);
+    const text = create && !(path in pending.files) && !snap.shas[path] ? '' : await this.currentText(path, pending, snap);
     if (!(path in pending.base)) pending.base[path] = snap.shas[path] ?? '';
     pending.files[path] = change(text);
     await this.savePending(pending);
@@ -421,6 +429,7 @@ export class GitHubBackend implements Backend {
   async journal(): Promise<string[]> { return (await this.journalTexts()).sort(); }
   async activity(): Promise<Record<string, number>> { return countActivity(await this.journalTexts()); }
   async saveParams(params: number[] | null) { await this.edit(`${this.root}deck.yaml`, (text) => withDeckParams(text, params)); }
+  async saveKnown(text: string) { await this.edit(`${this.root}known.yaml`, () => text, true); }
 
   private async mediaBlob(path: string, sha: string): Promise<Blob> {
     let blob: Blob | undefined = await get(`media:${sha}`, store);

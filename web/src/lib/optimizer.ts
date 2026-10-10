@@ -29,16 +29,21 @@ export function parseJournal(lines: string[]): JournalEntry[] {
   return out;
 }
 
-/** Review histories per card×skill: graded answers only, without practice, intro views and undone answers. */
+/**
+ * Review histories per card (one memory per card): graded answers only, without practice, intro views and undone answers.
+ * Journals of the six-skill model wrote one line per trained skill; lines of one answer (same card and time) count once.
+ */
 export function histories(entries: JournalEntry[]): Map<string, Review[]> {
-  const undone = new Set(entries.filter((e) => e.grade === 'undo').map((e) => `${e.card}|${e.skill}|${Date.parse(e.flags.replace(/^ref=/, ''))}`));
+  const undone = new Set(entries.filter((e) => e.grade === 'undo').map((e) => `${e.card}|${Date.parse(e.flags.replace(/^ref=/, ''))}`));
   const map = new Map<string, Review[]>();
+  const seen = new Set<string>();
   for (const e of entries) {
-    if (!/^[1-4]$/.test(e.grade) || undone.has(`${e.card}|${e.skill}|${e.time}`)) continue;
-    const key = `${e.card}|${e.skill}`;
-    const list = map.get(key) ?? [];
+    const answer = `${e.card}|${e.time}`;
+    if (!/^[1-4]$/.test(e.grade) || undone.has(answer) || seen.has(answer)) continue;
+    seen.add(answer);
+    const list = map.get(e.card) ?? [];
     list.push({ time: e.time, rating: Number(e.grade) as FsrsRating });
-    map.set(key, list);
+    map.set(e.card, list);
   }
   for (const list of map.values()) list.sort((a, b) => a.time - b.time);
   return map;

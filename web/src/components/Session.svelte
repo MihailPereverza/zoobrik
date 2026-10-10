@@ -16,10 +16,10 @@
   import { app, backend, bumpActivity, goalMet, refreshPending, scheduleSync, sync, touch } from '../lib/state.svelte';
   import { check } from '../lib/check';
   import { formatInterval, preview } from '../lib/fsrs';
-  import { applyAnswer, applyIntro, bury, suspend } from '../lib/progress';
+  import { applyAnswer, applyIntro, bury, memoryOf, suspend } from '../lib/progress';
   import { audioVariants, mediaUrl, render, type Rendered } from '../lib/render';
   import { filterCards, queryToFilter } from '../lib/words';
-  import { balanceDue, buildSession, isPrimed, LEARN_AHEAD, manifestOf, practiceSession, replacementItem } from '../lib/scheduler';
+  import { balanceDue, buildSession, exerciseRung, isPrimed, LEARN_AHEAD, manifestOf, movesSchedule, practiceSession, queueAfter } from '../lib/scheduler';
   import type { CheckResult, Grade, QueueItem, Skill } from '../lib/types';
 
   type Phase = 'answer' | 'reveal' | 'graded' | 'flipped' | 'wait' | 'done';
@@ -53,8 +53,7 @@
   let answered = $state(0);
   let correct = $state(0);
   const revealed = new Map<string, Map<string, number>>();
-  const requeued = new Map<string, number>();
-  interface UndoStep { index: number; snapshots: { card: QueueItem['card']; progress: unknown }[]; lines: string[]; inserted?: string }
+  interface UndoStep { index: number; snapshots: { card: QueueItem['card']; progress: unknown }[]; lines: string[]; queue: QueueItem[] }
   let history = $state<UndoStep[]>([]);
   let menuOpen = $state(false);
   let notice = $state('');
@@ -67,9 +66,9 @@
 
   const item = $derived(queue[index]);
   const intervals = $derived.by(() => {
-    if (!item || item.topicCards || !item.skills[0] || (phase !== 'graded' && phase !== 'flipped')) return null;
+    if (!item || item.topicCards || item.mode === 'practice' || !item.skills[0] || (phase !== 'graded' && phase !== 'flipped')) return null;
     const now = new Date();
-    const due = preview(data.deck, item.skills[0], item.card.progress?.skills?.[item.skills[0]], now);
+    const due = preview(data.deck, memoryOf(item.card.progress), now);
     return Object.fromEntries(GRADES.map(({ g }) => [g, formatInterval(now, due[g])])) as Record<Grade, string>;
   });
 
@@ -231,11 +230,13 @@
     const updates = [];
     const lines: string[] = [];
     const snapshots = members.map((card) => ({ card, progress: card.progress ? $state.snapshot(card.progress) : undefined }));
-    const isPractice = practice || current.mode === 'practice';
+    const isPractice = practice || !movesSchedule(current);
+    const before = [...queue];
     for (const card of members) {
-      const skills = current.topicCards ? [current.exercise.cards![card.id]] : current.skills;
-      const effect = applyAnswer({ deck: data.deck, card, exercise: current.exercise, skills, grade: g, practice: isPractice, ms: answerMs, now, device: app.device });
-      if (!isPractice) for (const s of skills) if (effect.progress.skills[s]) effect.progress.skills[s] = balanceDue(data, card, effect.progress.skills[s]!);
+      const skill = current.topicCards ? current.exercise.cards![card.id] : current.skills[0] ?? '-';
+      const rung = current.topicCards ? undefined : exerciseRung(data, card, current.exercise) ?? undefined;
+      const effect = applyAnswer({ deck: data.deck, card, exercise: current.exercise, skill, rung, grade: g, practice: isPractice, ms: answerMs, now, device: app.device });
+      if (!isPractice && effect.progress.memory) effect.progress.memory = balanceDue(data, card, effect.progress.memory);
       if (effect.becameLeech) { notice = `«${card.content.term ?? card.content.title}» стало пиявкой: слишком много ошибок. Загляните в карточку — поможет своя заметка или пример.`; log('session', 'leech', card.id); }
       card.progress = effect.progress;
       updates.push({ cardPath: card.path, progress: $state.snapshot(effect.progress) });
@@ -245,13 +246,8 @@
     answered += 1;
     if (g > 1) correct += 1;
     remember(current.card.id, manifestOf(data, current.card, current.exercise)?.reveals ?? []);
-    const key = `${current.card.id}:${current.skills[0]}`;
-    let inserted: string | undefined;
-    if (g === 1 && !isPractice && (requeued.get(key) ?? 0) < 2) {
-      const again = replacementItem(data, current);
-      if (again) { queue.splice(Math.min(queue.length, index + 4), 0, again); requeued.set(key, (requeued.get(key) ?? 0) + 1); inserted = again.key; }
-    }
-    history = [...history.slice(-19), { index, snapshots, lines, inserted }];
+    queue = queueAfter(data, queue, index, g, isPractice, now);
+    history = [...history.slice(-19), { index, snapshots, lines, queue: before }];
     touch();
     advance();
   }
@@ -311,7 +307,7 @@
     const now = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
     const undoLines = step.lines.map((l) => { const f = l.split('\t'); return [now, f[1], f[2], f[3], 'undo', 0, app.device, `ref=${f[0]}`].join('\t'); });
     persist(updates, undoLines);
-    if (step.inserted) queue = queue.filter((q) => q.key !== step.inserted);
+    queue = step.queue;
     answered = Math.max(0, answered - 1);
     log('session', 'undo', { card: step.snapshots[0]?.card.id, back_to: step.index + 1 });
     menuOpen = false; notice = '';

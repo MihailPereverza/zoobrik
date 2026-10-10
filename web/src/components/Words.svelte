@@ -5,6 +5,7 @@
   import { STAGE_LABEL, stageOf } from '../lib/summary';
   import { allTags, countsByStatus, filterCards, filterToQuery, KIND_LABEL, queryToFilter, sortCards, STATUS_LABEL, type WordKind, type WordStatus } from '../lib/words';
   import { isIntroduced } from '../lib/scheduler';
+  import { cardCoverage, cardLocked } from '../lib/lexicon';
 
   let { query = '' }: { query?: string } = $props();
   const initial = queryToFilter(untrack(() => query));
@@ -67,6 +68,7 @@
         <li>
           <a href="#/card/{card.topic}/{card.id}">
             <span class="txt"><b>{card.content.term ?? card.content.title}</b><span class="muted">{card.content.meaning ?? card.content.formula ?? ''}</span></span>
+            {#if card.listening && !isIntroduced(card)}<span class="st cov" class:locked={cardLocked(data, card)} title="Знакомых слов в клипе">{data.known ? `${Math.round(cardCoverage(data, card) * 100)}%` : 'тест'}</span>{/if}
             {#if card.progress?.leech}<span class="st hard">трудное</span>{/if}
             <span class="st {stage}">{STAGE_LABEL[stage]}</span>
           </a>
@@ -105,6 +107,8 @@
   .st { flex: none; height: 24px; padding: 0 8px; border-radius: 6px; font: 400 12px/24px var(--font-mono); background: var(--soft); color: var(--ink-2); }
   .st.learning { background: var(--amber-soft); color: var(--amber-ink); }
   .st.review, .st.mastered { background: var(--good-bg); color: var(--good); }
+  .st.cov { background: none; border: 1px solid var(--line); line-height: 22px; }
+  .st.cov.locked { color: var(--ink-3); }
   .st.hard { background: var(--again-bg); color: var(--again); }
   .empty { text-align: center; padding: 40px 0; }
 </style>

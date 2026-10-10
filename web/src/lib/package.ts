@@ -13,11 +13,11 @@ export interface PackageFile { path: string; text?: string; bytes?: Uint8Array }
 export const PACKAGE_FORMAT = 1;
 export const PACKAGE_EXT = '.zoobrik';
 const MEDIA = /\.(mp3|ogg|opus|wav|m4a|webp|png|jpe?g|gif|svg)$/i;
-const SKIPPED = /^(journal\/|\.git\/|\.github\/|zoobrik\.json$)|(^|\/)\.DS_Store$/;
+const SKIPPED = /^(journal\/|\.git\/|\.github\/|zoobrik\.json$|known\.yaml$)|(^|\/)\.DS_Store$/;
 
 export const isMediaFile = (path: string) => MEDIA.test(path);
 
-/** Only deck content travels: no hidden folders, no journals, no path tricks, no unknown file types. */
+/** Only deck content travels: no hidden folders, no journals or known.yaml, no path tricks, no unknown file types. */
 export function isPackagePath(path: string): boolean {
   if (!path || path.startsWith('/') || path.split('/').some((part) => part === '..' || part === '')) return false;
   if (SKIPPED.test(path)) return false;

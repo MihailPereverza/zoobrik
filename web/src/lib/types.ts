@@ -28,6 +28,10 @@ export interface Progress {
   recent: string[];
   buried_until?: string;
   leech?: boolean;
+  /** The card's single FSRS memory (Rule A); old per-skill `skills` stay only as history. */
+  memory?: SkillState;
+  /** Position on the deck's ladder of exercise formats. */
+  rung?: number;
 }
 
 export interface Example { id: string; term: string; meaning: string; audio?: string }
@@ -45,6 +49,8 @@ export interface CardContent {
   formula?: string;
   theory?: string;
   examples?: Example[];
+  /** Irregular forms of the term (went, gone) — still this word for Rule B. */
+  forms?: string[];
 }
 
 export interface Exercise {
@@ -61,6 +67,10 @@ export interface Exercise {
   check?: { type: string; expected?: string };
   /** 1 (easy) … 5 (traps); overrides the template's difficulty, so learning goes from easy to hard. */
   difficulty?: number;
+  /** Locked until these cards are introduced (a contrast that belongs after them). */
+  needs?: string[];
+  /** Words that never lock this exercise. */
+  allow?: string[];
 }
 
 export interface TemplateSource {
@@ -136,7 +146,8 @@ export interface DeckConfig {
   source?: DeckSource;
   limits: { new_cards_per_day: number; reviews_per_day: number; max_backlog_ratio?: number };
   fsrs: {
-    retention: Partial<Record<Skill, number>>;
+    /** One number for the card's memory; an old per-skill map still works (its `recall` is used). */
+    retention: number | Partial<Record<Skill, number>>;
     params?: number[] | null;
     learning_steps?: string[];
     relearning_steps?: string[];
@@ -146,7 +157,11 @@ export interface DeckConfig {
     load_balance?: boolean;
     easy_days?: number[];
   };
-  cycle?: { cards?: number; min_gap?: number; max_exercises_per_card?: number };
+  /** max_per_day: graded exercises per card per day (default 3). */
+  cycle?: { cards?: number; min_gap?: number; max_exercises_per_card?: number; max_per_day?: number };
+  /** Formats a card climbs, easiest first (default recognize → recall → context → listen → apply). */
+  ladder?: Skill[];
+  listening?: { min_coverage?: number };
 }
 
 export interface DeckSource { url: string; imported?: string; version?: string; media?: string }
@@ -157,6 +172,10 @@ export interface DeckData {
   deck: DeckConfig;
   /** Translations of words and set phrases used in exercises (glossary.yaml next to deck.yaml). */
   glossary?: Record<string, string>;
+  /** Frequency list for the placement test (placement.yaml), most frequent first. */
+  placement?: PlacementWord[];
+  /** What the learner already knew before this deck (known.yaml, written by the placement test). */
+  known?: KnownWords;
   /** Media files of the library (full paths); used to find the other voices of a recording. */
   media?: string[];
   topics: Topic[];
@@ -190,3 +209,9 @@ export interface QueueItem {
   mode: Mode;
   topicCards?: Card[];
 }
+
+/** One entry of placement.yaml: a dictionary form, its translation and the irregular forms that are still this word. */
+export interface PlacementWord { en: string; ru: string; forms?: string[] }
+
+/** known.yaml: the learner's own vocabulary for this deck; per deck, synced like progress, never exported. */
+export interface KnownWords { tested?: string; words: string[]; unknown?: string[] }

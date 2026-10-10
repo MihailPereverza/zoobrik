@@ -4,6 +4,7 @@
   import { mediaUrl } from '../lib/render';
   import { glossary, lookupGloss, type Gloss } from '../lib/gloss';
   import { log } from '../lib/log';
+  import { canMarkKnown, markKnown } from '../lib/known';
   import type { Card } from '../lib/types';
 
   // The clip stays in the app (not in the exercise frame) so it keeps playing between the questions of one card.
@@ -23,6 +24,8 @@
   let box = $state<HTMLDivElement>();
   let tip = $state<(Gloss & { x: number; y: number }) | null>(null);
   let missing = $state<{ word: string; x: number; y: number } | null>(null);
+  let tipWords = $state<string[]>([]);
+  const canKnow = $derived.by(() => { void app.data?.known; return canMarkKnown(tipWords); });
   let frame = 0;
 
   onMount(async () => {
@@ -89,6 +92,13 @@
     tip = found ? { ...found, x, y } : null;
     missing = found ? null : { word: words[wordIndex], x, y };
     glossSeg = segIndex;
+    tipWords = found ? words.slice(found.start, found.start + found.length) : [words[wordIndex]];
+  }
+
+  function know() {
+    const words = tipWords;
+    tip = null; missing = null; tipWords = [];
+    markKnown(words).catch((e) => log('listening', 'known failed', String(e?.message ?? e)));
   }
   let glossSeg = $state(-1);
 
@@ -134,8 +144,8 @@
               role="button" tabindex="-1" onclick={(e) => gloss(e, si, wi)} onkeydown={() => {}}>{w[0]}</span>{' '}{/each}
         </p>
       {/each}
-      {#if tip}<div class="tip" style:left="{tip.x}px" style:top="{tip.y}px"><b>{tip.phrase}</b><span>{tip.ru}</span></div>{/if}
-      {#if missing}<div class="tip none" style:left="{missing.x}px" style:top="{missing.y}px"><b>{missing.word}</b><span>нет в словаре колоды</span></div>{/if}
+      {#if tip}<div class="tip" class:can-know={canKnow} style:left="{tip.x}px" style:top="{tip.y}px"><b>{tip.phrase}</b><span>{tip.ru}</span>{#if canKnow}<button type="button" class="known" onclick={know}>знаю</button>{/if}</div>{/if}
+      {#if missing}<div class="tip none" class:can-know={canKnow} style:left="{missing.x}px" style:top="{missing.y}px"><b>{missing.word}</b><span>нет в словаре колоды</span>{#if canKnow}<button type="button" class="known" onclick={know}>знаю</button>{/if}</div>{/if}
     </div>
   {/if}
   {#if clip.source}<p class="src">{clip.source.name}{clip.source.license ? ` · ${clip.source.license}` : ''}{clip.source.credit ? ` · ${clip.source.credit}` : ''}</p>{/if}
@@ -164,6 +174,8 @@
   .w.glossed { background: var(--amber-soft); box-shadow: 0 0 0 2px var(--amber-soft); }
   .tip { position: absolute; z-index: 5; transform: translate(-50%, calc(-100% - 8px)); max-width: 280px; padding: 8px 12px; border-radius: 12px; background: var(--brand); color: var(--on-brand); display: grid; gap: 2px; font-size: 14px; pointer-events: none; }
   .tip b { font-weight: 600; }
+  .tip.can-know { grid-template-columns: minmax(0, 1fr) auto; column-gap: 14px; }
+  .known { grid-column: 2; grid-row: 1 / span 2; align-self: center; pointer-events: auto; height: 32px; padding: 0 12px; border-radius: 9px; border: 1px solid var(--on-brand); background: var(--brand); color: var(--on-brand); font: 500 13px/1 var(--font-body); cursor: pointer; }
   .src { margin: 0; font-size: 11px; color: var(--ink-3); }
   .err { margin: 0; color: var(--again); font-size: 14px; }
 </style>

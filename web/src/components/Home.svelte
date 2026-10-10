@@ -65,6 +65,13 @@
     </section>
   </div>
 
+  {#if data.placement?.length && !data.known}
+    <a class="panel placement appear" href="#/placement">
+      <span><b>Какие слова ты уже знаешь?</b><span class="muted">Тест на пару минут: задания будут только из знакомых слов</span></span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+    </a>
+  {/if}
+
   <section class="goal panel appear">
     <Ring value={days.today} max={app.goal} size={72} label="заданий сегодня" />
     <div class="goal-text">
@@ -109,6 +116,11 @@
   .start { margin-top: auto; width: 190px; height: 48px; }
   .pic { position: absolute; right: -12px; bottom: -6px; }
   .bubble { position: absolute; z-index: 2; top: 10px; right: 10px; width: 160px; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 14px 14px 4px 14px; padding: 9px 11px; font-size: 13px; line-height: 1.35; transform-origin: 100% 0; animation: zb-bubble 220ms var(--ease-out) both; }
+  .placement { margin-top: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); border-color: var(--rule-strong); }
+  .placement > span { flex: 1; display: grid; gap: 2px; }
+  .placement b { font-size: 16px; font-weight: 600; }
+  .placement .muted { font-size: 13px; }
+  .placement svg { width: 22px; height: 22px; flex: none; fill: none; stroke: var(--ink-3); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .goal { margin-top: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; }
   .goal-text { display: grid; gap: 2px; }
   .goal-text b { font-size: 16px; font-weight: 600; }

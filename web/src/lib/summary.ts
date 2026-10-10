@@ -1,4 +1,5 @@
-import { cardSkills, dueSkills, gateOpen, isIntroduced, nextBatch, topicIsOpen } from './scheduler';
+import { memoryOf } from './progress';
+import { gateOpen, isDue, isIntroduced, nextBatch, topicIsOpen } from './scheduler';
 import type { Card, DeckData, Stage, Topic } from './types';
 
 export const STAGE_LABEL: Record<Stage, string> = { new: 'новая', learning: 'учу', review: 'повторяю', mastered: 'освоено', suspended: 'пауза' };
@@ -22,14 +23,14 @@ export function topicSummary(data: DeckData, topic: Topic, now: Date): TopicSumm
   for (const card of topic.cards) counts[stageOf(card)] += 1;
   return {
     topic, counts, total: topic.cards.length,
-    due: topic.cards.filter((c) => dueSkills(data, c, now, 0).length > 0).length,
+    due: topic.cards.filter((c) => isDue(data, c, now)).length,
     open: topicIsOpen(data, topic), gate: gateOpen(data, topic),
   };
 }
 
 export function deckSummary(data: DeckData, now: Date) {
   const cards = data.topics.flatMap((t) => t.cards);
-  const due = cards.filter((c) => dueSkills(data, c, now).length > 0);
+  const due = cards.filter((c) => isDue(data, c, now));
   const batch = nextBatch(data, now, due.length);
   return {
     cards: cards.length,
@@ -46,9 +47,9 @@ export function forecast(data: DeckData, now: Date, daysAhead: number): number[]
   const start = new Date(now); start.setHours(0, 0, 0, 0);
   for (const card of data.topics.flatMap((t) => t.cards)) {
     if (!isIntroduced(card)) continue;
-    const dues = cardSkills(data, card).map((s) => card.progress?.skills?.[s]?.due).filter(Boolean).map((d) => new Date(d!).getTime());
-    if (!dues.length) continue;
-    const day = Math.max(0, Math.floor((Math.min(...dues) - start.getTime()) / 86400000));
+    const due = memoryOf(card.progress)?.due;
+    if (!due) continue;
+    const day = Math.max(0, Math.floor((new Date(due).getTime() - start.getTime()) / 86400000));
     if (day < daysAhead) result[day] += 1;
   }
   return result;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { default_w } from 'ts-fsrs';
-import { formatInterval, preview, retrievability, review } from './fsrs';
-import type { DeckConfig, Grade, Skill, SkillState } from './types';
+import { formatInterval, preview, retentionOf, retrievability, review } from './fsrs';
+import type { DeckConfig, Grade, SkillState } from './types';
 
 const MIN = 60_000;
 const DAY = 86_400_000;
@@ -21,12 +21,12 @@ const dueIn = (state: SkillState, now: Date) => new Date(state.due).getTime() - 
 const days = (ms: number) => ms / DAY;
 
 /** Answer with the given grade each time the card becomes due, returning every state. */
-function walk(grades: Grade[], skill: Skill = 'recall', cfg = deck, start = T0): { state: SkillState; now: Date }[] {
+function walk(grades: Grade[], cfg = deck, start = T0): { state: SkillState; now: Date }[] {
   const out: { state: SkillState; now: Date }[] = [];
   let state: SkillState | undefined;
   let now = start;
   for (const g of grades) {
-    state = review(cfg, skill, state, g, now);
+    state = review(cfg, state, g, now);
     out.push({ state, now });
     now = new Date(state.due);
   }
@@ -40,49 +40,49 @@ function matureState(): { state: SkillState; now: Date } {
   return { state: last.state, now: new Date(last.state.due) };
 }
 
-describe('learning steps (Anki-style 1m → 10m → graduate)', () => {
-  it('Again on a new card schedules the first step: 1 minute', () => {
-    const s = review(deck, 'recall', undefined, 1, T0);
+describe('learning steps (one 10m check after the first answer, then graduate)', () => {
+  it('Again on a new card waits 10 minutes, never 1', () => {
+    const s = review(deck, undefined, 1, T0);
     expect(s.state).toBe('learning');
-    expect(dueIn(s, T0)).toBe(1 * MIN);
+    expect(dueIn(s, T0)).toBe(10 * MIN);
     expect(s.reps).toBe(1);
   });
 
-  it('Good on a new card moves to the second step: 10 minutes', () => {
-    const s = review(deck, 'recall', undefined, 3, T0);
+  it('Good on a new card schedules the end-of-session check: 10 minutes', () => {
+    const s = review(deck, undefined, 3, T0);
     expect(s.state).toBe('learning');
     expect(dueIn(s, T0)).toBe(10 * MIN);
   });
 
-  it('Hard on a new card stays in the first step, between Again and Good', () => {
-    const s = review(deck, 'recall', undefined, 2, T0);
+  it('Hard on a new card stays in learning', () => {
+    const s = review(deck, undefined, 2, T0);
     expect(s.state).toBe('learning');
-    expect(dueIn(s, T0)).toBeGreaterThan(1 * MIN);
-    expect(dueIn(s, T0)).toBeLessThan(10 * MIN);
+    expect(dueIn(s, T0)).toBe(10 * MIN);
   });
 
   it('Easy on a new card graduates straight to review with a multi-day interval', () => {
-    const s = review(deck, 'recall', undefined, 4, T0);
+    const s = review(deck, undefined, 4, T0);
     expect(s.state).toBe('review');
     expect(days(dueIn(s, T0))).toBeGreaterThanOrEqual(1);
   });
 
-  it('Good at the last learning step graduates the card to review', () => {
+  it('Good at the 10m check graduates the card to review', () => {
     const [, second] = walk([3, 3]);
     expect(second.state.state).toBe('review');
     expect(days(dueIn(second.state, second.now))).toBeGreaterThanOrEqual(1);
   });
 
-  it('Again during learning returns to the first step', () => {
-    const first = review(deck, 'recall', undefined, 3, T0);
-    const again = review(deck, 'recall', first, 1, at(T0, 10 * MIN));
+  it('Again during learning returns to the 10m step', () => {
+    const first = review(deck, undefined, 3, T0);
+    const again = review(deck, first, 1, at(T0, 10 * MIN));
     expect(again.state).toBe('learning');
-    expect(dueIn(again, at(T0, 10 * MIN))).toBe(1 * MIN);
+    expect(dueIn(again, at(T0, 10 * MIN))).toBe(10 * MIN);
   });
 
-  it('honours custom learning steps from deck.yaml', () => {
+  it('honours longer custom learning steps from deck.yaml, raising steps under 10m to 10m', () => {
     const cfg = deckWith({ learning_steps: ['5m', '30m', '2h'] });
-    const [a, b, c] = walk([3, 3, 3], 'recall', cfg);
+    expect(dueIn(review(cfg, undefined, 1, T0), T0)).toBe(10 * MIN);
+    const [a, b, c] = walk([3, 3, 3], cfg);
     expect(dueIn(a.state, a.now)).toBe(30 * MIN);
     expect(dueIn(b.state, b.now)).toBe(120 * MIN);
     expect(c.state.state).toBe('review');
@@ -92,7 +92,7 @@ describe('learning steps (Anki-style 1m → 10m → graduate)', () => {
 describe('review and relearning', () => {
   it('orders the next interval Again < Hard < Good < Easy', () => {
     const { state, now } = matureState();
-    const due = preview(deck, 'recall', state, now);
+    const due = preview(deck, state, now);
     expect(due[1].getTime()).toBeLessThan(due[2].getTime());
     expect(due[2].getTime()).toBeLessThan(due[3].getTime());
     expect(due[3].getTime()).toBeLessThan(due[4].getTime());
@@ -100,13 +100,13 @@ describe('review and relearning', () => {
 
   it('preview matches what review() actually schedules', () => {
     const { state, now } = matureState();
-    const due = preview(deck, 'recall', state, now);
-    for (const g of [1, 2, 3, 4] as Grade[]) expect(review(deck, 'recall', state, g, now).due).toBe(due[g].toISOString());
+    const due = preview(deck, state, now);
+    for (const g of [1, 2, 3, 4] as Grade[]) expect(review(deck, state, g, now).due).toBe(due[g].toISOString());
   });
 
   it('a lapse moves the card to relearning, counts the lapse and cuts stability', () => {
     const { state, now } = matureState();
-    const lapsed = review(deck, 'recall', state, 1, now);
+    const lapsed = review(deck, state, 1, now);
     expect(lapsed.state).toBe('relearning');
     expect(lapsed.lapses).toBe(state.lapses + 1);
     expect(lapsed.s).toBeLessThan(state.s);
@@ -115,8 +115,8 @@ describe('review and relearning', () => {
 
   it('passing the relearning step returns the card to review', () => {
     const { state, now } = matureState();
-    const lapsed = review(deck, 'recall', state, 1, now);
-    const back = review(deck, 'recall', lapsed, 3, new Date(lapsed.due));
+    const lapsed = review(deck, state, 1, now);
+    const back = review(deck, lapsed, 3, new Date(lapsed.due));
     expect(back.state).toBe('review');
   });
 
@@ -128,15 +128,15 @@ describe('review and relearning', () => {
 
   it('Hard grows stability less than Good, Easy more', () => {
     const { state, now } = matureState();
-    const [hard, good, easy] = ([2, 3, 4] as Grade[]).map((g) => review(deck, 'recall', state, g, now).s);
+    const [hard, good, easy] = ([2, 3, 4] as Grade[]).map((g) => review(deck, state, g, now).s);
     expect(hard).toBeLessThan(good);
     expect(good).toBeLessThan(easy);
   });
 
   it('Again raises difficulty and Easy lowers it', () => {
     const { state, now } = matureState();
-    expect(review(deck, 'recall', state, 1, now).d).toBeGreaterThan(state.d);
-    expect(review(deck, 'recall', state, 4, now).d).toBeLessThan(state.d);
+    expect(review(deck, state, 1, now).d).toBeGreaterThan(state.d);
+    expect(review(deck, state, 4, now).d).toBeLessThan(state.d);
   });
 
   it('survives twenty lapses in a row without an invalid state (leech words)', () => {
@@ -144,7 +144,7 @@ describe('review and relearning', () => {
     let s = state;
     let t = now;
     for (let i = 0; i < 20; i++) {
-      s = review(deck, 'recall', s, 1, t);
+      s = review(deck, s, 1, t);
       t = new Date(s.due);
       expect(s.s).toBeGreaterThan(0);
     }
@@ -162,22 +162,22 @@ describe('review and relearning', () => {
 
   it('never schedules beyond the maximum interval (fuzz included)', () => {
     const cfg = deckWith({ max_interval: '60d' });
-    for (const { state, now } of walk(Array(15).fill(4) as Grade[], 'recall', cfg)) expect(days(dueIn(state, now))).toBeLessThanOrEqual(60);
+    for (const { state, now } of walk(Array(15).fill(4) as Grade[], cfg)) expect(days(dueIn(state, now))).toBeLessThanOrEqual(60);
   });
 });
 
 describe('memory model', () => {
   it('a skill never reviewed has zero retrievability', () => {
-    expect(retrievability(deck, 'recall', undefined, T0)).toBe(0);
+    expect(retrievability(deck, undefined, T0)).toBe(0);
   });
 
   it('retrievability is ~1 right after a review and decays monotonically', () => {
     const { state } = matureState();
     const last = new Date(state.last!);
-    let prev = retrievability(deck, 'recall', state, last);
+    let prev = retrievability(deck, state, last);
     expect(prev).toBeGreaterThan(0.99);
     for (const d of [1, 3, 7, 30, 90]) {
-      const r = retrievability(deck, 'recall', state, at(last, d * DAY));
+      const r = retrievability(deck, state, at(last, d * DAY));
       expect(r).toBeLessThan(prev);
       prev = r;
     }
@@ -185,7 +185,7 @@ describe('memory model', () => {
 
   it('stability is the time at which recall probability falls to 90%', () => {
     const { state } = matureState();
-    const r = retrievability(deck, 'recall', state, at(new Date(state.last!), state.s * DAY));
+    const r = retrievability(deck, state, at(new Date(state.last!), state.s * DAY));
     expect(r).toBeCloseTo(0.9, 2);
   });
 
@@ -193,25 +193,28 @@ describe('memory model', () => {
     const { state, now } = matureState();
     const strict = deckWith({ retention: { recall: 0.95 } });
     const relaxed = deckWith({ retention: { recall: 0.8 } });
-    expect(dueIn(review(strict, 'recall', state, 3, now), now)).toBeLessThan(dueIn(review(relaxed, 'recall', state, 3, now), now));
+    expect(dueIn(review(strict, state, 3, now), now)).toBeLessThan(dueIn(review(relaxed, state, 3, now), now));
   });
 
-  it('per-skill retention from deck.yaml is applied: spell (0.85) waits longer than recall (0.9)', () => {
+  it('retention is one number, or the recall value of an old per-skill map', () => {
     const { state, now } = matureState();
-    expect(dueIn(review(deck, 'spell', state, 3, now), now)).toBeGreaterThan(dueIn(review(deck, 'recall', state, 3, now), now));
+    const single = deckWith({ retention: 0.8 });
+    const map = deckWith({ retention: { recognize: 0.95, recall: 0.8 } });
+    expect(review(map, state, 3, now).due).toBe(review(single, state, 3, now).due);
+    expect(retentionOf(deckWith({ retention: {} }))).toBe(0.9);
   });
 
   it('an overdue success raises stability more than an on-time one (spacing effect)', () => {
     const { state, now } = matureState();
-    const onTime = review(deck, 'recall', state, 3, now);
-    const late = review(deck, 'recall', state, 3, at(now, 3 * state.s * DAY));
+    const onTime = review(deck, state, 3, now);
+    const late = review(deck, state, 3, at(now, 3 * state.s * DAY));
     expect(late.s).toBeGreaterThan(onTime.s);
   });
 
   it('an early review adds little stability', () => {
     const { state, now } = matureState();
-    const early = review(deck, 'recall', state, 3, at(new Date(state.last!), 2 * 60 * MIN));
-    const onTime = review(deck, 'recall', state, 3, now);
+    const early = review(deck, state, 3, at(new Date(state.last!), 2 * 60 * MIN));
+    const onTime = review(deck, state, 3, now);
     expect(early.s - state.s).toBeLessThan(onTime.s - state.s);
   });
 
@@ -219,8 +222,8 @@ describe('memory model', () => {
     const tuned = [...default_w];
     tuned[3] = default_w[3] * 3;
     const cfg = deckWith({ params: tuned });
-    const base = review(deck, 'recall', undefined, 4, T0);
-    const fast = review(cfg, 'recall', undefined, 4, T0);
+    const base = review(deck, undefined, 4, T0);
+    const fast = review(cfg, undefined, 4, T0);
     expect(fast.s).toBeGreaterThan(base.s * 2);
     expect(dueIn(fast, T0)).toBeGreaterThan(dueIn(base, T0));
   });
@@ -235,7 +238,7 @@ describe('determinism and storage', () => {
   it('a state survives a JSON round-trip through card.yaml', () => {
     const { state, now } = matureState();
     const stored: SkillState = JSON.parse(JSON.stringify(state));
-    expect(review(deck, 'recall', stored, 3, now)).toEqual(review(deck, 'recall', state, 3, now));
+    expect(review(deck, stored, 3, now)).toEqual(review(deck, state, 3, now));
   });
 
   it('keeps reps and lapses counters consistent with the history', () => {

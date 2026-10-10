@@ -169,6 +169,9 @@ button [data-w], [data-zb-chip] [data-w] { cursor: inherit; -webkit-touch-callou
   font: 400 15px/1.35 var(--zb-font); display: grid; gap: 2px; pointer-events: none; animation: zb-gloss-in 160ms var(--zb-ease-out) both; }
 .zb-gloss b { font-weight: 600; }
 .zb-gloss.none span { opacity: 1; color: var(--zb-on-brand); font-size: 13px; }
+.zb-gloss.can-know { grid-template-columns: minmax(0, 1fr) auto; column-gap: 14px; }
+.zb-known { grid-column: 2; grid-row: 1 / span 2; align-self: center; pointer-events: auto; height: 32px; padding: 0 12px; border-radius: 9px; border: 1px solid var(--zb-on-brand);
+  background: var(--zb-brand); color: var(--zb-on-brand); font: 500 13px/1 var(--zb-font); cursor: pointer; }
 @keyframes zb-gloss-in { from { transform: translateY(4px) scale(.98); } to { transform: none; } }
 
 /* Free-text answers checked by AI */
