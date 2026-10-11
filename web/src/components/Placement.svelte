@@ -1,27 +1,31 @@
 <script lang="ts">
   import { app } from '../lib/state.svelte';
   import { saveKnown } from '../lib/known';
-  import { answerScreen, BAND, bandCount, placementResult, startPlacement, type PlacementState } from '../lib/placement';
+  import { answerScreen, BAND, bandCount, placementResult, resumePlacement, startPlacement, type PlacementState } from '../lib/placement';
   import { dayKey } from '../lib/progress';
   import { plural } from '../lib/activity';
   import { log } from '../lib/log';
 
   const words = $derived(app.data?.placement ?? []);
   const previous = app.data?.known;
+  const resumable = previous ? resumePlacement(previous) : null;
   const ru = $derived(new Map(words.map((w) => [w.en, w.ru])));
   const bands = $derived(bandCount(words));
 
   let test = $state.raw<PlacementState | null>(null);
   let tapped = $state<Set<string>>(new Set());
   let showRu = $state(false);
-  let result = $state.raw<{ known: number } | null>(null);
+  // Screens answered in this sitting, newest last: «Назад» puts the previous screen back with its marks.
+  let back = $state.raw<{ test: PlacementState; tapped: Set<string> }[]>([]);
+  let result = $state.raw<{ known: number; paused: boolean } | null>(null);
   let error = $state('');
   let saving = $state(false);
 
-  function start() {
-    test = startPlacement(words);
+  function start(fresh: boolean) {
+    test = !fresh && resumable ? resumable : startPlacement(words);
     tapped = new Set();
-    log('placement', 'start', { words: words.length });
+    back = [];
+    log('placement', fresh || !resumable ? 'start' : 'resume', { words: words.length, band: test.band });
   }
 
   function toggle(w: string) {
@@ -30,22 +34,46 @@
     tapped = next;
   }
 
+  // Every screen is saved at once, so closing the app or the test loses nothing.
+  async function save(state: PlacementState) {
+    const known = placementResult(words, state, dayKey(new Date()));
+    saving = true;
+    try { await saveKnown(known); error = ''; } catch (e) { error = `Не удалось сохранить: ${(e as Error).message}`; }
+    saving = false;
+    return known;
+  }
+
   async function next() {
     if (!test) return;
+    back = [...back, { test, tapped }];
     test = answerScreen(words, test, tapped);
     tapped = new Set();
     showRu = false;
     window.scrollTo(0, 0);
-    if (test.done) await finish();
+    const known = await save(test);
+    if (test.done) finish(known.words.length, false);
   }
 
-  async function finish() {
-    const known = placementResult(words, test!, dayKey(new Date()));
-    log('placement', 'done', { known: known.words.length, unknown: known.unknown?.length ?? 0, screens: test!.screens });
-    result = { known: known.words.length };
-    saving = true;
-    try { await saveKnown(known); } catch (e) { error = `Не удалось сохранить: ${(e as Error).message}`; }
-    saving = false;
+  function previousScreen() {
+    const step = back.at(-1);
+    if (!step) return;
+    back = back.slice(0, -1);
+    test = step.test;
+    tapped = step.tapped;
+    showRu = false;
+    log('placement', 'back', { band: test.band });
+    save(test);
+  }
+
+  async function pause() {
+    if (!test) return;
+    const known = await save(test);
+    finish(known.words.length, true);
+  }
+
+  function finish(count: number, paused: boolean) {
+    log('placement', paused ? 'paused' : 'done', { known: count, screens: test!.screens });
+    result = { known: count, paused };
   }
 
   const range = $derived(test ? `${test.band * BAND + 1}–${Math.min(words.length, (test.band + 1) * BAND)}` : '');
@@ -64,11 +92,12 @@
     <p class="muted lead">В этой колоде нет списка слов для теста (placement.yaml).</p>
   {:else if result}
     <section class="done appear">
-      <h1 class="display">Готово</h1>
+      <h1 class="display">{result.paused ? 'Сохранено' : 'Готово'}</h1>
       <div class="panel score">
         <b class="num">{result.known}</b>
         <span>{plural(result.known, 'слово', 'слова', 'слов')} из {words.length} самых частых ты уже знаешь</span>
       </div>
+      {#if result.paused}<p class="muted note">Продолжить можно с того же места — на главном экране или в меню колоды.</p>{/if}
       <p class="muted note">Примеры и задания будут опираться на эти слова и на те, что ты выучишь в карточках. Отдельное слово можно добавить позже: нажми на него в задании и выбери «знаю».</p>
       {#if error}<p class="error">{error}</p>{/if}
       <a class="btn block" href="#/" aria-disabled={saving}>{saving ? 'Сохраняю…' : 'К занятиям'}</a>
@@ -84,9 +113,11 @@
       {/each}
     </div>
     <div class="actions">
+      {#if back.length}<button class="btn ghost small icon" type="button" aria-label="Предыдущий экран" onclick={previousScreen}><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6" /></svg></button>{/if}
       <button class="btn ghost small" type="button" aria-pressed={showRu} class:on={showRu} onclick={() => (showRu = !showRu)}>{showRu ? 'Скрыть перевод' : 'Проверить себя'}</button>
       <button class="btn grow" type="button" onclick={next}>{tapped.size ? `Дальше · не знаю ${tapped.size}` : 'Знаю все'}</button>
     </div>
+    <button class="link" type="button" disabled={saving} onclick={pause}>Закончить и продолжить позже</button>
   {:else}
     <section class="intro appear">
       <h1 class="display">Какие слова ты уже знаешь?</h1>
@@ -94,10 +125,16 @@
       <ul class="facts">
         <li>Обычно 2–5 минут: чем увереннее ответы, тем быстрее</li>
         <li>Сомневаешься — нажми «Проверить себя», появится перевод</li>
-        <li>Без таймера, можно выйти в любой момент</li>
+        <li>Без таймера: можно закончить в любой момент и продолжить позже</li>
       </ul>
-      {#if previous}<p class="muted note">Прошлый результат: {previous.words.length} {plural(previous.words.length, 'слово', 'слова', 'слов')}{previous.tested ? ` (${previous.tested})` : ''}. Новый тест заменит его.</p>{/if}
-      <button class="btn block" type="button" onclick={start}>Начать</button>
+      {#if resumable}
+        <p class="muted note">Тест не закончен: уже знаешь {previous!.words.length} {plural(previous!.words.length, 'слово', 'слова', 'слов')}, слова {resumable.band * BAND + 1}–{Math.min(words.length, (resumable.band + 1) * BAND)} ещё впереди.</p>
+        <button class="btn block" type="button" onclick={() => start(false)}>Продолжить</button>
+        <button class="btn block ghost" type="button" onclick={() => start(true)}>Начать заново</button>
+      {:else}
+        {#if previous}<p class="muted note">Прошлый результат: {previous.words.length} {plural(previous.words.length, 'слово', 'слова', 'слов')}{previous.tested ? ` (${previous.tested})` : ''}. Новый тест заменит его.</p>{/if}
+        <button class="btn block" type="button" onclick={() => start(true)}>Начать</button>
+      {/if}
     </section>
   {/if}
 </div>
@@ -131,6 +168,10 @@
   .actions { margin-top: 16px; display: flex; gap: 8px; align-items: center; }
   .actions .small { height: 52px; flex: none; }
   .actions .on { background: var(--soft); }
+  .icon { width: 52px; padding: 0; display: grid; place-items: center; }
+  .icon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .link { display: block; margin: 14px auto 0; background: none; border: 0; color: var(--ink-3); font: inherit; font-size: 14px; cursor: pointer; padding: 8px; border-radius: 8px; }
+  .link:hover { color: var(--ink); }
   .grow { flex: 1; min-width: 0; padding: 0 12px; }
   .score { padding: 18px; display: grid; gap: 4px; }
   .score b { font: 600 40px/1 var(--font-display); letter-spacing: -.02em; }

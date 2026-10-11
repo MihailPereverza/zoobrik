@@ -1,6 +1,6 @@
 import YAML from 'yaml';
 import { baseForms } from './gloss';
-import type { KnownWords, PlacementWord } from './types';
+import type { KnownWords, PlacementResume, PlacementWord } from './types';
 
 export const BAND = 100;
 export const SCREEN = 10;
@@ -63,10 +63,22 @@ export function answerScreen(words: PlacementWord[], s: PlacementState, tapped: 
   return next.low >= 2 ? { ...next, screen: [], rest: [], done: true } : enterBand(words, next, s.band + 1, rng);
 }
 
-/** The test result in placement order, so known.yaml reads from the most frequent words down. */
+/**
+ * The test result in placement order, so known.yaml reads from the most frequent words down. An unfinished test keeps
+ * its place in `test`: what is marked so far already counts, and the test can go on later.
+ */
 export function placementResult(words: PlacementWord[], s: PlacementState, today: string): KnownWords {
   const known = new Set(s.known);
-  return { tested: today, words: words.map((w) => w.en).filter((w) => known.has(w)), unknown: [...s.unknown] };
+  const result: KnownWords = { tested: today, words: words.map((w) => w.en).filter((w) => known.has(w)), unknown: [...s.unknown] };
+  if (s.done) return result;
+  return { ...result, test: { band: s.band, phase: s.phase, screen: s.screen, rest: s.rest, low: s.low, screens: s.screens } };
+}
+
+/** Picks an unfinished test up where known.yaml left it. */
+export function resumePlacement(known: KnownWords): PlacementState | null {
+  const t: PlacementResume | undefined = known.test;
+  if (!t?.screen.length) return null;
+  return { ...t, known: [...known.words], unknown: [...(known.unknown ?? [])], done: false };
 }
 
 export function knownYaml(known: KnownWords): string {
@@ -74,6 +86,7 @@ export function knownYaml(known: KnownWords): string {
   if (known.tested) doc.tested = known.tested;
   doc.words = known.words;
   if (known.unknown?.length) doc.unknown = known.unknown;
+  if (known.test) doc.test = known.test;
   return YAML.stringify(doc, { lineWidth: 0 });
 }
 

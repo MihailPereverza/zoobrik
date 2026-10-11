@@ -65,9 +65,13 @@
     </section>
   </div>
 
-  {#if data.placement?.length && !data.known}
+  {#if data.placement?.length && (!data.known || data.known.test)}
     <a class="panel placement appear" href="#/placement">
-      <span><b>Какие слова ты уже знаешь?</b><span class="muted">Тест на пару минут: задания будут только из знакомых слов</span></span>
+      {#if data.known?.test}
+        <span><b>Продолжить тест словаря</b><span class="muted">Уже знаешь {data.known.words.length} — дальше с того же места</span></span>
+      {:else}
+        <span><b>Какие слова ты уже знаешь?</b><span class="muted">Тест на пару минут: задания будут только из знакомых слов</span></span>
+      {/if}
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
     </a>
   {/if}

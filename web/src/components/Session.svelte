@@ -55,6 +55,10 @@
   const revealed = new Map<string, Map<string, number>>();
   interface UndoStep { index: number; snapshots: { card: QueueItem['card']; progress: unknown }[]; lines: string[]; queue: QueueItem[] }
   let history = $state<UndoStep[]>([]);
+  // Answered items of this session, newest last: «‹» shows their cards again without touching the saved answers.
+  interface Seen { item: QueueItem; grade: Grade | null; given: string; expected: string; correct: boolean | null }
+  let seen = $state.raw<Seen[]>([]);
+  let look = $state<number | null>(null);
   let menuOpen = $state(false);
   let notice = $state('');
   let goalReached = $state(false);
@@ -248,6 +252,7 @@
     remember(current.card.id, manifestOf(data, current.card, current.exercise)?.reveals ?? []);
     queue = queueAfter(data, queue, index, g, isPractice, now);
     history = [...history.slice(-19), { index, snapshots, lines, queue: before }];
+    seen = [...seen, { item: current, grade: g, given, expected: result && !result.correct ? result.expected : '', correct: result ? result.correct : null }];
     touch();
     advance();
   }
@@ -261,6 +266,7 @@
     const effect = applyIntro(current.card, new Date(), app.device);
     current.card.progress = effect.progress;
     persist([{ cardPath: current.card.path, progress: $state.snapshot(effect.progress) }], effect.lines);
+    seen = [...seen, { item: current, grade: null, given: '', expected: '', correct: null }];
     touch();
     advance();
   }
@@ -310,7 +316,8 @@
     queue = step.queue;
     answered = Math.max(0, answered - 1);
     log('session', 'undo', { card: step.snapshots[0]?.card.id, back_to: step.index + 1 });
-    menuOpen = false; notice = '';
+    menuOpen = false; notice = ''; look = null;
+    seen = seen.slice(0, -1);
     index = step.index;
     touch();
     show();
@@ -331,7 +338,27 @@
     advance();
   }
 
+  function lookBack() {
+    if (!seen.length) return;
+    look = look === null ? seen.length - 1 : Math.max(0, look - 1);
+    menuOpen = false;
+    log('session', 'look back', { at: look + 1, of: seen.length });
+    window.scrollTo(0, 0);
+  }
+
+  function lookForward() {
+    if (look === null) return;
+    look = look + 1 < seen.length ? look + 1 : null;
+    window.scrollTo(0, 0);
+  }
+
   function handleKey(key: string) {
+    if (look !== null) {
+      if (key === 'ArrowLeft') lookBack();
+      else if (key === 'ArrowRight') lookForward();
+      else if (key === 'Escape' || key === 'Enter') look = null;
+      return;
+    }
     if (key === 'u' || key === 'г') { if (history.length && phase !== 'reveal') undo(); return; }
     if (phase === 'reveal') { if (key === 'Enter' || key === ' ') flipNow(); return; }
     if (phase === 'graded' || phase === 'flipped') {
@@ -372,6 +399,8 @@
   $effect(() => { if (phase === 'graded' || phase === 'flipped') tick().then(() => document.querySelector<HTMLButtonElement>('.grades .suggested')?.focus({ preventScroll: true })); });
 
   const BACK = { id: 'back', template: 'back', status: 'ready', params: {} } as const;
+  const looked = $derived(look === null ? null : seen[look] ?? null);
+  const lookedBacks = $derived(looked ? (looked.item.topicCards ?? [looked.item.card]).filter((c) => !c.listening).map((c) => ({ card: c, view: render(data, c, { ...BACK }, 'review', app.effectiveTheme, `l${look}-${c.id}`) })) : []);
   const showBack = $derived((phase === 'graded' || phase === 'flipped') && !!item && !item.topicCards && item.mode !== 'intro' && !item.card.listening);
   const backRendered = $derived(showBack && item ? render(data, item.card, { ...BACK }, 'review', app.effectiveTheme, `b${index}`) : null);
 
@@ -446,6 +475,7 @@
   {:else if item}
     <div class="head">
       <a class="close" href="#/" aria-label="Закончить сессию"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" /></svg></a>
+      <button class="close" type="button" aria-label="Посмотреть предыдущую карточку" disabled={!seen.length || look === 0} onclick={lookBack}><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6" /></svg></button>
       <div class="segs" role="progressbar" aria-valuemin="0" aria-valuemax={queue.length} aria-valuenow={index}>
         {#each queue as q, i (q.key)}<span class="seg {segColor(i)}"></span>{/each}
       </div>
@@ -462,6 +492,25 @@
         {/if}
       </div>
     </div>
+    {#if looked}
+      <div class="kicker"><span class="kname">Просмотр · {look! + 1} из {seen.length}</span><span class="chip">{looked.grade ? GRADE_NAME[looked.grade] : 'Новое'}</span></div>
+      {#if looked.given || looked.expected}
+        <div class="explain surface">
+          {#if looked.given}<p class="mine"><span class="muted small">Твой ответ</span> {looked.given}</p>{/if}
+          {#if looked.expected}<p><span class="muted small">Правильно</span> {looked.expected}</p>{/if}
+        </div>
+      {/if}
+      {#each lookedBacks as b (b.card.id)}
+        {#if 'srcdoc' in b.view}<section class="back surface">{#key `${look}-${b.card.id}`}<InlineView html={b.view.html} css={b.view.css} onplay={playNow} />{/key}</section>{/if}
+      {/each}
+      {#if looked.item.card.listening}<p class="muted small">{looked.item.card.content.title ?? looked.item.card.id} — <a href="#/card/{looked.item.card.topic}/{looked.item.card.id}">открыть карточку</a></p>{/if}
+      <p class="muted small saved">Ответ сохранён, здесь его не изменить. Отменить последний ответ можно в меню ⋯</p>
+      <div class="look-nav">
+        <button class="btn ghost" type="button" disabled={look === 0} onclick={lookBack}>‹ Раньше</button>
+        <button class="btn" type="button" onclick={() => (look = null)}>К заданию</button>
+      </div>
+    {/if}
+    <div class="live" hidden={look !== null}>
     {#if goalReached}
       <button class="goal-done" type="button" onclick={() => (goalReached = false)} aria-label="Норма на сегодня выполнена. Скрыть">
         {#if app.mascotMode !== 'off'}<span class="goal-pic"><Zubrik mood="happy" size={44} crop="head" /></span>{/if}
@@ -553,6 +602,7 @@
         <button class="link" type="button" onclick={skip}>Пропустить</button>
       </div>
     {/if}
+    </div>
     {#if saveError}<p class="toast">{saveError}</p>{/if}
   {/if}
 </div>
@@ -562,6 +612,8 @@
   .head { display: flex; align-items: center; gap: 10px; }
   .close { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; color: var(--ink-2); flex: none; }
   .close:hover { background: var(--soft); }
+  button.close { border: 0; background: none; cursor: pointer; padding: 0; }
+  button.close:disabled { color: var(--line); cursor: default; }
   .close svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 2.2; fill: none; stroke-linecap: round; }
   .segs { flex: 1; display: flex; gap: 3px; min-width: 0; }
   .seg { flex: 1; height: 6px; border-radius: 3px; background: var(--line); transition: background-color 200ms var(--ease); }
@@ -586,6 +638,10 @@
   .explain .sentence { font-size: 18px; font-weight: 500; }
   .explain .md { color: var(--ink-2); }
   .back { margin-top: 10px; padding: 18px 20px 20px; }
+  .live { display: contents; }
+  .live[hidden] { display: none; }
+  .saved { margin: 12px 4px 0; }
+  .look-nav { margin-top: auto; padding-top: 16px; display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }
 
   .sheet { --tint: var(--card); --tone: var(--ink); --edge: var(--accent-edge); position: sticky; bottom: 0; z-index: 6; margin: auto -16px 0; margin-top: 16px; padding: 16px 16px calc(20px + env(safe-area-inset-bottom, 0px)); border-radius: 20px 20px 0 0; background: var(--tint); display: grid; gap: 14px; border-top: 1px solid var(--line); }
   .sheet.good { --tint: var(--good-bg); --tone: var(--good); --edge: var(--good-deep); border-top-color: var(--good-bg); }

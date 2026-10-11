@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import YAML from 'yaml';
-import { answerScreen, knownYaml, lemmaOf, placementResult, startPlacement, withKnown, type PlacementState } from './placement';
+import { answerScreen, knownYaml, lemmaOf, placementResult, resumePlacement, startPlacement, withKnown, type PlacementState } from './placement';
 import type { PlacementWord } from './types';
 
 const words: PlacementWord[] = Array.from({ length: 450 }, (_, i) => ({ en: `w${i}`, ru: `с${i}` }));
@@ -16,6 +16,24 @@ function run(unknownOf: (w: string) => boolean) {
 const rank = (w: string) => Number(w.slice(1));
 
 describe('placement test', () => {
+  it('keeps an unfinished test in known.yaml and picks it up where it stopped', () => {
+    const s0 = startPlacement(words, rng);
+    const s1 = answerScreen(words, s0, s0.screen.slice(0, 4), rng);
+    const saved = placementResult(words, s1, '2026-10-11');
+    expect(saved.words).toHaveLength(6);
+    const reread = YAML.parse(knownYaml(saved));
+    expect(reread.test).toMatchObject({ band: 0, phase: 'rest', screen: s1.screen });
+    const resumed = resumePlacement(saved)!;
+    expect(resumed).toMatchObject({ band: s1.band, phase: s1.phase, screen: s1.screen, rest: s1.rest, done: false });
+    expect(answerScreen(words, resumed, [], rng)).toEqual(answerScreen(words, s1, [], rng));
+  });
+
+  it('drops the saved place once the test is finished', () => {
+    const { s } = run(() => false);
+    expect(placementResult(words, s, '2026-10-11').test).toBeUndefined();
+    expect(resumePlacement(placementResult(words, s, '2026-10-11'))).toBeNull();
+  });
+
   it('samples 10 words of the first band', () => {
     const s = startPlacement(words, rng);
     expect(s.screen).toHaveLength(10);

@@ -214,4 +214,7 @@ export interface QueueItem {
 export interface PlacementWord { en: string; ru: string; forms?: string[] }
 
 /** known.yaml: the learner's own vocabulary for this deck; per deck, synced like progress, never exported. */
-export interface KnownWords { tested?: string; words: string[]; unknown?: string[] }
+export interface KnownWords { tested?: string; words: string[]; unknown?: string[]; test?: PlacementResume }
+
+/** Where an unfinished placement test stopped, so it can go on later (also on another device). */
+export interface PlacementResume { band: number; phase: 'sample' | 'rest'; screen: string[]; rest: string[]; low: number; screens: number }

@@ -1,7 +1,7 @@
 import YAML from 'yaml';
 import { splitFrontmatter } from './cardyaml';
 import { deckLangs, normalizeContent, type DeckLangs } from './lang';
-import type { Card, DeckData, Exercise, KnownWords, PlacementWord, TemplateSource, Topic } from './types';
+import type { Card, DeckData, Exercise, KnownWords, PlacementResume, PlacementWord, TemplateSource, Topic } from './types';
 
 export type FileMap = Map<string, string>;
 
@@ -82,9 +82,14 @@ function placementWords(raw: any): PlacementWord[] | undefined {
   return words.length ? words : undefined;
 }
 
+const resumeOf = (t: any): PlacementResume => ({
+  band: Number(t.band) || 0, phase: t.phase === 'rest' ? 'rest' : 'sample', screen: (t.screen ?? []).map(String),
+  rest: (t.rest ?? []).map(String), low: Number(t.low) || 0, screens: Number(t.screens) || 0,
+});
+
 function knownWords(raw: any): KnownWords | undefined {
   if (!raw) return undefined;
-  return { ...(raw.tested ? { tested: String(raw.tested) } : {}), words: (raw.words ?? []).map(String), ...(raw.unknown?.length ? { unknown: raw.unknown.map(String) } : {}) };
+  return { ...(raw.tested ? { tested: String(raw.tested) } : {}), words: (raw.words ?? []).map(String), ...(raw.unknown?.length ? { unknown: raw.unknown.map(String) } : {}), ...(raw.test?.screen ? { test: resumeOf(raw.test) } : {}) };
 }
 
 export function buildDeck(files: FileMap, core: CoreBundle, root = '', media: Iterable<string> = []): DeckData {
