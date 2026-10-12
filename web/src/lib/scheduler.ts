@@ -1,7 +1,7 @@
 import { get_fuzz_range } from 'ts-fsrs';
 import { retrievability } from './fsrs';
 import { cardLocked, exerciseLocked } from './lexicon';
-import { dayKey, gradedToday, isBuried, ladderOf, maxPerDay, memoryOf, rungOf } from './progress';
+import { dayKey, gradedToday, isBuried, isLearned, ladderOf, MAX_LEARNING_PER_DAY, maxPerDay, memoryOf, rungOf } from './progress';
 import { resolveTemplate } from './render';
 import type { Card, DeckData, Exercise, Grade, Mode, QueueItem, Skill, SkillState, TemplateManifest, Topic } from './types';
 
@@ -62,7 +62,9 @@ export function introExercise(card: Card): Exercise {
 
 export const isIntroduced = (card: Card) => Boolean(card.progress?.introduced);
 const isSuspended = (card: Card) => card.progress?.stage === 'suspended';
-const atDailyCap = (data: DeckData, card: Card, now: Date) => gradedToday(card.progress, now) >= maxPerDay(data.deck);
+export const learned = (data: DeckData, card: Card) => isLearned(card.progress, ladderOf(data.deck));
+// Learned words get a few reviews a day; a word still on the ladder comes back as often as its steps say.
+const atDailyCap = (data: DeckData, card: Card, now: Date) => gradedToday(card.progress, now) >= (learned(data, card) ? maxPerDay(data.deck) : MAX_LEARNING_PER_DAY);
 
 export const LEARN_AHEAD = LEARN_AHEAD_MS;
 
@@ -72,6 +74,8 @@ export function isDue(data: DeckData, card: Card, now: Date, aheadMs = 0): boole
   if (!ladderPool(data, card, 'review').length) return false;
   const memory = memoryOf(card.progress);
   if (!memory) return true;
+  // Sent to long intervals before finishing the ladder (earlier scheduler): back to learning right away.
+  if (!learned(data, card) && memory.state === 'review') return true;
   const ahead = memory.state === 'learning' || memory.state === 'relearning' ? aheadMs : 0;
   return new Date(memory.due).getTime() <= now.getTime() + ahead;
 }
@@ -113,8 +117,7 @@ function ladderItem(data: DeckData, card: Card, target: number, mode: Mode): Que
 
 /** One exercise for a due card, from its current rung. */
 export function reviewItems(data: DeckData, card: Card, _now?: Date): QueueItem[] {
-  const memory = memoryOf(card.progress);
-  const mode: Mode = memory?.state === 'review' ? 'review' : 'learn';
+  const mode: Mode = learned(data, card) && memoryOf(card.progress)?.state === 'review' ? 'review' : 'learn';
   const item = ladderItem(data, card, rungOf(card.progress, ladderOf(data.deck)), mode);
   return item ? [item] : [];
 }
@@ -129,7 +132,7 @@ export function learnItems(data: DeckData, card: Card): QueueItem[] {
 /** After a graded answer: the next check of a card still in its learning step, for the end of this session. */
 export function followUp(data: DeckData, card: Card, now: Date): QueueItem | null {
   const memory = memoryOf(card.progress);
-  if (!memory || memory.state === 'review' || !isDue(data, card, now, LEARN_AHEAD_MS)) return null;
+  if (!memory || (learned(data, card) && memory.state === 'review') || !isDue(data, card, now, LEARN_AHEAD_MS)) return null;
   return reviewItems(data, card)[0] ?? null;
 }
 
@@ -143,10 +146,11 @@ export const movesSchedule = (item: QueueItem) => item.mode !== 'practice' && !i
 export function queueAfter(data: DeckData, queue: QueueItem[], index: number, grade: Grade, practice: boolean, now: Date): QueueItem[] {
   const current = queue[index];
   const later = queue.slice(index + 1);
-  if (grade === 4 && movesSchedule(current)) return [...queue.slice(0, index + 1), ...later.filter((q) => q.card !== current.card || q.topicCards)];
-  if (practice || !movesSchedule(current) || later.some((q) => q.card === current.card && !q.topicCards)) return queue;
+  if (practice || !movesSchedule(current)) return queue;
+  const kept = grade === 4 ? [...queue.slice(0, index + 1), ...later.filter((q) => q.card !== current.card || q.topicCards)] : queue;
+  if (kept.slice(index + 1).some((q) => q.card === current.card && !q.topicCards)) return kept;
   const next = followUp(data, current.card, now);
-  return next ? [...queue, next] : queue;
+  return next ? [...kept, next] : kept;
 }
 
 export function spread(lists: QueueItem[][], minGap: number, staggered: boolean): QueueItem[] {
@@ -180,27 +184,32 @@ function topicExerciseItems(data: DeckData, topic: Topic, cards: Card[]): QueueI
     .filter((item) => item.card && resolveTemplate(data, item.card, item.exercise));
 }
 
-function cardsIntroducedToday(data: DeckData, now: Date): number {
+const isRuleTopic = (topic: Topic) => topic.kind === 'grammar';
+
+function cardsIntroducedToday(data: DeckData, now: Date, rules: boolean): number {
   const today = now.toISOString().slice(0, 10);
-  return data.topics.flatMap((t) => t.cards).filter((c) => c.progress?.introduced === today).length;
+  return data.topics.filter((t) => isRuleTopic(t) === rules).flatMap((t) => t.cards).filter((c) => c.progress?.introduced === today).length;
 }
 
 // A started card with nothing left to ask (all its exercises locked) must not hold the gate shut.
 function graduated(data: DeckData, card: Card): boolean {
-  return memoryOf(card.progress)?.state === 'review' || !ladderPool(data, card, 'review').length;
+  return learned(data, card) || !ladderPool(data, card, 'review').length;
 }
+
+// The first formats (choose, recall) are behind: the word is no longer brand new and the next ones may start.
+const settled = (data: DeckData, card: Card) => graduated(data, card) || rungOf(card.progress, ladderOf(data.deck)) >= 2;
 
 export function topicIsOpen(data: DeckData, topic: Topic): boolean {
   return (topic.requires ?? []).every((id) => {
     const required = data.topics.find((t) => t.id === id);
     if (!required) return true;
-    const started = required.cards.filter(isIntroduced);
-    return started.length >= Math.min(required.cards.length, required.batch ?? 4) && started.every((c) => graduated(data, c));
+    // A rule opens once its words are under way, so rules come early and use the words being learned.
+    return required.cards.filter(isIntroduced).length >= Math.min(required.cards.length, required.batch ?? 4);
   });
 }
 
 export function gateOpen(data: DeckData, topic: Topic): boolean {
-  return topic.cards.filter(isIntroduced).every((c) => graduated(data, c));
+  return topic.cards.filter(isIntroduced).every((c) => settled(data, c));
 }
 
 export function orderedCards(topic: Topic): Card[] {
@@ -208,15 +217,36 @@ export function orderedCards(topic: Topic): Card[] {
   return [...topic.cards].sort((a, b) => (order.indexOf(a.id) + 1 || 999) - (order.indexOf(b.id) + 1 || 999));
 }
 
-export function nextBatch(data: DeckData, now: Date, dueCount: number): { topic: Topic; cards: Card[] } | null {
-  const left = (data.deck.limits?.new_cards_per_day ?? 8) - cardsIntroducedToday(data, now);
-  if (left <= 0 || dueCount > (data.deck.limits?.reviews_per_day ?? 250)) return null;
-  for (const topic of data.topics) {
+function firstOpen(data: DeckData, now: Date, rules: boolean, limit: number): { topic: Topic; cards: Card[] } | null {
+  if (limit <= 0) return null;
+  for (const topic of data.topics.filter((t) => isRuleTopic(t) === rules)) {
     const fresh = orderedCards(topic).filter((c) => !isIntroduced(c) && !isSuspended(c) && !isBuried(c, now) && !cardLocked(data, c) && ladderPool(data, c, 'learn').length > 0);
     if (!fresh.length || !topicIsOpen(data, topic) || !gateOpen(data, topic)) continue;
-    return { topic, cards: fresh.slice(0, Math.min(topic.batch ?? 4, left)) };
+    return { topic, cards: fresh.slice(0, Math.min(topic.batch ?? 4, limit)) };
   }
   return null;
+}
+
+export interface Batch { topic: Topic; cards: Card[]; rule: { topic: Topic; card: Card } | null }
+
+/**
+ * New cards for a session: a portion of words from the first open vocabulary topic plus one rule from the first open
+ * grammar topic, so rules come along with words instead of after all of them. `more` ignores the daily limits.
+ */
+export function nextBatch(data: DeckData, now: Date, dueCount: number, more = false): Batch | null {
+  if (!more && dueCount > (data.deck.limits?.reviews_per_day ?? 250)) return null;
+  const words = more ? 4 : (data.deck.limits?.new_cards_per_day ?? 8) - cardsIntroducedToday(data, now, false);
+  const rules = more ? 1 : (data.deck.limits?.new_rules_per_day ?? 2) - cardsIntroducedToday(data, now, true);
+  const vocab = firstOpen(data, now, false, words);
+  const grammar = firstOpen(data, now, true, Math.min(1, rules));
+  const rule = grammar ? { topic: grammar.topic, card: grammar.cards[0] } : null;
+  if (vocab) return { ...vocab, rule };
+  return rule ? { topic: rule.topic, cards: [rule.card], rule: null } : null;
+}
+
+/** A word on the ladder whose next format is due within `aheadMs`: «Продолжить сейчас» brings it forward. */
+export function learningSoon(data: DeckData, now: Date, aheadMs: number): boolean {
+  return data.topics.flatMap((t) => t.cards).some((c) => !learned(data, c) && isDue(data, c, now, aheadMs));
 }
 
 export interface SessionPlan {
@@ -226,7 +256,7 @@ export interface SessionPlan {
   nextDue: Date | null;
 }
 
-export function buildSession(data: DeckData, now: Date, allowNew = true, aheadMs = 0): SessionPlan {
+export function buildSession(data: DeckData, now: Date, allowNew = true, aheadMs = 0, more = false): SessionPlan {
   const cycleSize = data.deck.cycle?.cards ?? 4;
   const minGap = data.deck.cycle?.min_gap ?? 2;
   const queue: QueueItem[] = [];
@@ -242,14 +272,17 @@ export function buildSession(data: DeckData, now: Date, allowNew = true, aheadMs
       queue.push(...spread(window.map((c) => reviewItems(data, c)), minGap, false), ...topicExerciseItems(data, topic, window));
     }
   }
-  const batch = allowNew ? nextBatch(data, now, due.length) : null;
-  if (batch) queue.push(...spread(batch.cards.map((c) => learnItems(data, c)), minGap, true), ...topicExerciseItems(data, batch.topic, batch.cards));
-  return { queue, dueCards: due.length, newCards: batch?.cards.length ?? 0, nextDue: nextDueDate(data, now) };
+  const batch = allowNew ? nextBatch(data, now, due.length, more) : null;
+  if (batch) {
+    const fresh = batch.rule ? [...batch.cards, batch.rule.card] : batch.cards;
+    queue.push(...spread(fresh.map((c) => learnItems(data, c)), minGap, true), ...topicExerciseItems(data, batch.topic, batch.cards));
+  }
+  return { queue, dueCards: due.length, newCards: (batch?.cards.length ?? 0) + (batch?.rule ? 1 : 0), nextDue: nextDueDate(data, now) };
 }
 
 function isLearningCard(data: DeckData, card: Card, now: Date): boolean {
   if (card.progress?.introduced === dayKey(now)) return true;
-  return isDue(data, card, now, LEARN_AHEAD_MS) && memoryOf(card.progress)?.state !== 'review';
+  return isDue(data, card, now, LEARN_AHEAD_MS) && !learned(data, card);
 }
 
 export function reviewsDoneToday(data: DeckData, now: Date): number {

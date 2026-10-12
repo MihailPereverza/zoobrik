@@ -19,10 +19,10 @@ export function answerItem(data: DeckData, item: QueueItem, grade: Grade, now: D
 }
 
 /** Plays one sitting: the planned queue, its follow-ups, then fresh plans until nothing is due. */
-export function runSession(data: DeckData, start: Date, grader: (item: QueueItem) => Grade, opts: { allowNew?: boolean; queue?: QueueItem[]; stepMs?: number } = {}): { answers: SimAnswer[]; end: Date } {
+export function runSession(data: DeckData, start: Date, grader: (item: QueueItem) => Grade, opts: { allowNew?: boolean; queue?: QueueItem[]; stepMs?: number; aheadMs?: number } = {}): { answers: SimAnswer[]; end: Date } {
   const step = opts.stepMs ?? 20_000;
   let now = new Date(start);
-  let queue = opts.queue ?? buildSession(data, now, opts.allowNew ?? true).queue;
+  let queue = opts.queue ?? buildSession(data, now, opts.allowNew ?? true, opts.aheadMs ?? 0).queue;
   const answers: SimAnswer[] = [];
   for (let round = 0; round < 50 && queue.length; round++) {
     for (let i = 0; i < queue.length; i++) {
@@ -36,7 +36,7 @@ export function runSession(data: DeckData, start: Date, grader: (item: QueueItem
       }
       now = new Date(now.getTime() + step);
     }
-    queue = buildSession(data, now, opts.allowNew ?? true).queue;
+    queue = buildSession(data, now, opts.allowNew ?? true, opts.aheadMs ?? 0).queue;
   }
   return { answers, end: now };
 }

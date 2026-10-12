@@ -2,6 +2,7 @@ import { review } from './fsrs';
 import type { Card, DeckConfig, Exercise, Grade, Progress, Skill, SkillState, Stage } from './types';
 
 export const MASTERED_DAYS = 90;
+const RUNG_STEP: Record<Grade, number> = { 1: -1, 2: 0, 3: 1, 4: 2 };
 export const DEFAULT_LADDER: Skill[] = ['recognize', 'recall', 'context', 'listen', 'apply'];
 
 export const ladderOf = (deck: DeckConfig): Skill[] => (deck.ladder?.length ? deck.ladder : DEFAULT_LADDER);
@@ -32,6 +33,54 @@ export function gradedToday(progress: Progress | undefined, now: Date): number {
 }
 
 export const maxPerDay = (deck: DeckConfig) => deck.cycle?.max_per_day ?? 3;
+/** A word still climbing the ladder may come back often, but not forever in one day. */
+export const MAX_LEARNING_PER_DAY = 15;
+
+const DEFAULT_LADDER_STEPS = ['5m', '10m', '30m', '1h'];
+const AGAIN_STEP = '5m';
+const minutesOf = (step: string) => parseFloat(step) * (step.endsWith('d') ? 1440 : step.endsWith('h') ? 60 : 1);
+
+/**
+ * A card is learned once it has passed every format of the ladder. Cards that reached the top rung under the earlier
+ * scheduler count as learned; those that went to long intervals halfway up come back to finish the ladder.
+ */
+export function isLearned(progress: Progress | undefined, ladder: Skill[]): boolean {
+  if (!progress) return false;
+  if (progress.learned) return true;
+  return memoryOf(progress)?.state === 'review' && rungOf(progress, ladder) >= ladder.length - 1;
+}
+
+/** Wait before the next format of a word still on the ladder: short steps that grow with the rung. */
+export function ladderStepMs(deck: DeckConfig, rung: number, grade: Grade): number {
+  const steps = deck.fsrs?.ladder_steps?.length ? deck.fsrs.ladder_steps : DEFAULT_LADDER_STEPS;
+  const step = grade === 1 ? AGAIN_STEP : steps[Math.max(0, Math.min(steps.length - 1, rung - 1))];
+  return minutesOf(step) * 60_000;
+}
+
+export interface NextState { memory: SkillState; rung: number; learned?: string }
+
+/**
+ * What one graded answer does. On the ladder: Good climbs a rung, Easy two, Hard stays, Again steps down, and the card
+ * comes back after a short step. Passing the top rung hands the card to FSRS with its long intervals.
+ */
+export function nextState(deck: DeckConfig, progress: Progress | undefined, exerciseRung: number | undefined, grade: Grade, now: Date): NextState {
+  const ladder = ladderOf(deck);
+  const top = ladder.length - 1;
+  const before = memoryOf(progress);
+  const rung = rungOf(progress, ladder);
+  const from = grade > 2 ? Math.max(rung, exerciseRung ?? rung) : rung;
+  const target = from + RUNG_STEP[grade];
+  const fsrs = review(deck, before, grade, now);
+  if (isLearned(progress, ladder)) return { memory: fsrs, rung: Math.max(0, Math.min(top, target)), learned: progress?.learned };
+  if (target > top) {
+    const day = now.getTime() + 86_400_000;
+    const memory = fsrs.state === 'review' && Date.parse(fsrs.due) >= day ? fsrs : { ...fsrs, state: 'review' as const, s: Math.max(fsrs.s, 1), due: new Date(day).toISOString(), step: 0 };
+    return { memory, rung: top, learned: dayKey(now) };
+  }
+  const next = Math.max(0, target);
+  const state = before?.state === 'review' || before?.state === 'relearning' ? 'relearning' as const : 'learning' as const;
+  return { memory: { ...fsrs, state, due: new Date(now.getTime() + ladderStepMs(deck, next, grade)).toISOString() }, rung: next };
+}
 
 // One learning day is a UTC date: for Europe/Asia time zones it rolls over at night, close to Anki's 4 am.
 export const dayKey = (d: Date) => d.toISOString().slice(0, 10);
@@ -92,6 +141,12 @@ function journalLine(input: ApplyInput, skill: string, gradeText: string): strin
   return [time, `${input.card.topic}/${input.card.id}`, input.exercise.id, skill, gradeText, input.ms, input.device, input.flags ?? ''].join('\t').trimEnd();
 }
 
+/** When each grade would bring the card back, for the grade buttons. */
+export function previewNext(deck: DeckConfig, progress: Progress | undefined, exerciseRung: number | undefined, now: Date): Record<Grade, Date> {
+  const at = (g: Grade) => new Date(nextState(deck, progress, exerciseRung, g, now).memory.due);
+  return { 1: at(1), 2: at(2), 3: at(3), 4: at(4) };
+}
+
 export function applyIntro(card: Card, now: Date, device: string): AnswerEffect {
   const progress = clone(card.progress, now);
   progress.introduced ??= now.toISOString().slice(0, 10);
@@ -100,19 +155,17 @@ export function applyIntro(card: Card, now: Date, device: string): AnswerEffect 
   return { progress, lines: [line] };
 }
 
-const RUNG_STEP: Record<Grade, number> = { 1: -1, 2: 0, 3: 1, 4: 2 };
 
 export function applyAnswer(input: ApplyInput): AnswerEffect {
   const progress = clone(input.card.progress, input.now);
   const nowIso = input.now.toISOString();
   if (!input.practice) {
-    const ladder = ladderOf(input.deck);
     const before = memoryOf(progress);
-    const rung = rungOf(progress, ladder);
-    progress.memory = review(input.deck, before, input.grade, input.now);
+    const next = nextState(input.deck, progress, input.rung, input.grade, input.now);
+    progress.memory = next.memory;
+    progress.rung = next.rung;
+    if (next.learned) progress.learned = next.learned;
     if (input.grade === 1 && before?.state === 'review') progress.totals.lapses += 1;
-    const from = input.grade > 2 ? Math.max(rung, input.rung ?? rung) : rung;
-    progress.rung = Math.max(0, Math.min(ladder.length - 1, from + RUNG_STEP[input.grade]));
   }
   const lines = [journalLine(input, input.skill, input.practice ? `p${input.grade}` : String(input.grade))];
   progress.totals.answers += 1;

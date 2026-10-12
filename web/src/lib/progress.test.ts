@@ -157,7 +157,7 @@ describe('migration from the six-skill model', () => {
 
 describe('leeches', () => {
   function lapsedTimes(n: number, cfg = deck) {
-    let c = card({ stage: 'review', introduced: '2026-04-01', totals: { answers: 1, correct: 1, lapses: 0 }, skills: {}, memory: review(cfg, undefined, 4, NOW), exercises: {}, recent: [] });
+    let c = card({ stage: 'review', introduced: '2026-04-01', learned: '2026-04-02', totals: { answers: 1, correct: 1, lapses: 0 }, skills: {}, memory: review(cfg, undefined, 4, NOW), exercises: {}, recent: [] });
     let became = false;
     for (let i = 0; i < n; i++) {
       const fail = answer(c, 1, { now: new Date(c.progress!.memory!.due), deck: cfg });

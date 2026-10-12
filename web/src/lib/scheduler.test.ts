@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import YAML from 'yaml';
 import { CORE } from './core';
 import { review } from './fsrs';
-import { bury, dayKey, suspend } from './progress';
+import { applyIntro, bury, dayKey, suspend } from './progress';
 import { balanceDue, buildSession, cardSkills, exerciseRung, gateOpen, isDue, isPrimed, learnItems, limitReviews, movesSchedule, nextBatch, nextDueDate, practiceSession, queueAfter, reviewItems, spread, topicIsOpen } from './scheduler';
 import { answerItem, runSession } from './sessionsim';
 import type { Card, DeckConfig, DeckData, Exercise, Grade, Progress, QueueItem, SkillState, Topic } from './types';
@@ -48,7 +48,7 @@ function reviewState(dueOffsetDays: number, s = 10): SkillState {
 
 /** A card introduced long ago, its memory in review and due `dueOffsetDays` from NOW (negative = overdue). */
 function mature(card: Card, dueOffsetDays: number, rung = 2): Card {
-  card.progress = { stage: 'review', introduced: '2026-03-01', totals: { answers: 10, correct: 9, lapses: 0 }, skills: {}, memory: reviewState(dueOffsetDays), rung, exercises: {}, recent: [] };
+  card.progress = { stage: 'review', introduced: '2026-03-01', learned: '2026-03-02', totals: { answers: 10, correct: 9, lapses: 0 }, skills: {}, memory: reviewState(dueOffsetDays), rung, exercises: {}, recent: [] };
   return card;
 }
 
@@ -115,76 +115,83 @@ describe('ladder and due', () => {
   });
 });
 
-describe('first day of a word', () => {
-  it('Good, Good: intro, one rung-0 check, one rung-1 check at the end of the session, then tomorrow', () => {
-    const data = mkDeck([mkTopic('a', 4)]);
-    const { answers } = runSession(data, NOW, always(3));
-    for (const card of data.topics[0].cards) {
-      const own = answers.filter((a) => a.card === card);
-      expect(own.map((a) => a.item.skills[0])).toEqual(['recognize', 'recall']);
-      expect(card.progress!.memory!.state).toBe('review');
-      expect(card.progress!.rung).toBe(2);
-      expect(new Date(card.progress!.memory!.due).getTime()).toBeGreaterThanOrEqual(NOW.getTime() + DAY - 3600_000);
-    }
-    const last = answers.slice(-4).map((a) => a.item.skills[0]);
-    expect(last).toEqual(['recall', 'recall', 'recall', 'recall']);
-  });
+describe('learning a word: the whole ladder in short steps', () => {
+  const HOUR = 3600_000;
+  const PULL = 2 * HOUR;
 
-  it('never gives a new word more than 3 graded exercises on its first day, whatever the grades', () => {
-    for (const g of [1, 2, 3] as Grade[]) {
-      const data = mkDeck([mkTopic('a', 4)]);
-      const { answers } = runSession(data, NOW, always(g));
-      for (const card of data.topics[0].cards) expect(graded(answers, card)).toBeLessThanOrEqual(3);
-      const later = runSession(data, new Date(NOW.getTime() + 3 * 3600_000), always(g), { allowNew: false }).answers;
-      for (const card of data.topics[0].cards) expect(graded(later, card)).toBe(0);
-    }
-  });
-
-  it('Easy on the first check graduates the card at once', () => {
+  it('climbs every format with short waits and only then goes to days-long intervals', () => {
     const data = mkDeck([mkTopic('a', 1)]);
     const card = data.topics[0].cards[0];
-    const { answers } = runSession(data, NOW, always(4));
-    expect(graded(answers, card)).toBe(1);
+    // The fixture has no listening exercise, so rung 3 is asked from the nearest rung below.
+    const { answers } = runSession(data, NOW, always(3), { aheadMs: PULL });
+    const own = answers.filter((a) => a.card === card);
+    expect(own.map((a) => a.item.skills[0])).toEqual(['recognize', 'recall', 'context', 'context', 'apply']);
+    expect(card.progress!.learned).toBeTruthy();
     expect(card.progress!.memory!.state).toBe('review');
-    expect(card.progress!.rung).toBe(2);
-    expect(new Date(card.progress!.memory!.due).getTime() - NOW.getTime()).toBeGreaterThan(2 * DAY);
+    expect(new Date(card.progress!.memory!.due).getTime() - own.at(-1)!.at.getTime()).toBeGreaterThanOrEqual(DAY);
   });
 
-  it('Again drops back a rung and relearns within the same session', () => {
+  it('keeps a word on the ladder within an hour of the last answer until it is learned', () => {
+    const data = mkDeck([mkTopic('a', 1)]);
+    const card = data.topics[0].cards[0];
+    runSession(data, NOW, always(3), { queue: buildSession(data, NOW).queue.slice(0, 2), allowNew: false, aheadMs: 0 });
+    expect(card.progress!.learned).toBeUndefined();
+    expect(card.progress!.memory!.state).toBe('learning');
+    expect(new Date(card.progress!.memory!.due).getTime() - NOW.getTime()).toBeLessThanOrEqual(HOUR);
+  });
+
+  it('Easy skips a format but does not send the word away for days', () => {
+    const data = mkDeck([mkTopic('a', 1)]);
+    const card = data.topics[0].cards[0];
+    const first = buildSession(data, NOW).queue[1];
+    card.progress = applyIntro(card, NOW, 'sim').progress;
+    answerItem(data, first, 4, NOW);
+    expect(card.progress!.rung).toBe(2);
+    expect(card.progress!.memory!.state).toBe('learning');
+    expect(new Date(card.progress!.memory!.due).getTime() - NOW.getTime()).toBeLessThanOrEqual(HOUR);
+  });
+
+  it('Again steps down a format and comes back in minutes', () => {
     const data = mkDeck([mkTopic('a', 1)]);
     const card = data.topics[0].cards[0];
     const grades: Grade[] = [3, 1, 3];
-    const { answers } = runSession(data, NOW, () => grades.shift() ?? 3);
-    expect(answers.map((a) => a.item.skills[0])).toEqual(['recognize', 'recall', 'recognize']);
-    expect(card.progress!.rung).toBe(1);
+    const { answers } = runSession(data, NOW, () => grades.shift() ?? 3, { aheadMs: PULL });
+    expect(answers.slice(0, 3).map((a) => a.item.skills[0])).toEqual(['recognize', 'recall', 'recognize']);
+  });
+
+  it('is not held back by the daily cap while on the ladder, but a learned word is', () => {
+    const data = mkDeck([mkTopic('a', 1)], { cycle: { cards: 4, min_gap: 2, max_per_day: 3 } });
+    const card = data.topics[0].cards[0];
+    const { answers } = runSession(data, NOW, always(3), { aheadMs: PULL });
+    expect(graded(answers, card)).toBeGreaterThan(3);
+    expect(isDue(data, card, new Date(NOW.getTime() + 2 * HOUR), PULL)).toBe(false);
+  });
+
+  it('brings back a word that went to long intervals halfway up the ladder', () => {
+    const data = mkDeck([mkTopic('a', 1)]);
+    const card = mature(data.topics[0].cards[0], 5, 2);
+    delete card.progress!.learned;
+    expect(isDue(data, card, NOW)).toBe(true);
+    expect(reviewItems(data, card)[0].exercise.id).toBe('e3');
   });
 });
 
-describe('within a session', () => {
-  const item = (card: Card, id: string, extra: Partial<QueueItem> = {}): QueueItem => ({ key: `${card.id}:${id}`, card, exercise: card.exercises.find((e) => e.id === id) ?? { id, template: 'match-pairs', status: 'ready', params: {} }, skills: ['recall'], mode: 'review', ...extra });
-
-  it('Easy drops the card\'s other queued exercises but keeps topic exercises', () => {
-    const data = mkDeck([mkTopic('a', 2)]);
-    const [a, b] = data.topics[0].cards.map((c) => mature(c, -1));
-    const topicItem = item(a, 't1', { topicCards: [a, b] });
-    const queue = [item(a, 'e1'), item(b, 'e1'), item(a, 'e2'), topicItem];
-    answerItem(data, queue[0], 4, NOW);
-    expect(queueAfter(data, queue, 0, 4, false, NOW).map((q) => q.key)).toEqual(['a-0:e1', 'a-1:e1', 'a-0:t1']);
-    expect(queueAfter(data, queue, 0, 3, false, NOW)).toEqual(queue);
+describe('new cards mix words and rules', () => {
+  it('adds one rule from the first open grammar topic to a portion of words', () => {
+    const words = mkTopic('w', 6);
+    const rules = mkTopic('g', 3, { kind: 'grammar', requires: ['w'] });
+    const data = mkDeck([words, rules]);
+    expect(nextBatch(data, NOW, 0)!.rule).toBeNull();
+    words.cards.slice(0, 4).forEach((c) => { c.progress = { stage: 'learning', introduced: '2026-05-03', totals: { answers: 2, correct: 2, lapses: 0 }, skills: {}, rung: 2, memory: reviewState(1), exercises: {}, recent: [] }; });
+    const batch = nextBatch(data, NOW, 0)!;
+    expect(batch.cards.map((c) => c.id)).toEqual(['w-4', 'w-5']);
+    expect(batch.rule?.card.id).toBe('g-0');
   });
 
-  it('topic exercises are practice: they never move a card\'s schedule', () => {
-    const topic = mkTopic('a', 3);
-    topic.exercises = [{ id: 't1', template: 'match-pairs', status: 'ready', params: { pairs: [] }, cards: Object.fromEntries(topic.cards.map((c) => [c.id, 'recognize'])) }];
-    const data = mkDeck([topic]);
-    topic.cards.forEach((c) => mature(c, -1));
-    const t = buildSession(data, NOW, false).queue.find((q) => q.topicCards)!;
-    expect(t).toBeTruthy();
-    expect(movesSchedule(t)).toBe(false);
-    const before = topic.cards.map((c) => JSON.stringify([c.progress!.memory, c.progress!.rung]));
-    expect(answerItem(data, t, 1, NOW)).toBe(false);
-    expect(topic.cards.map((c) => JSON.stringify([c.progress!.memory, c.progress!.rung]))).toEqual(before);
-    expect(topic.cards.every((c) => c.progress!.recent[0].includes(' p1 '))).toBe(true);
+  it('gives more words past the daily limit when asked', () => {
+    const data = mkDeck([mkTopic('w', 12)], { limits: { new_cards_per_day: 0, reviews_per_day: 250 } });
+    expect(nextBatch(data, NOW, 0)).toBeNull();
+    expect(nextBatch(data, NOW, 0, true)!.cards).toHaveLength(4);
   });
 });
 

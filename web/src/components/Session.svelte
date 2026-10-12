@@ -15,11 +15,11 @@
   import { dayStats, plural } from '../lib/activity';
   import { app, backend, bumpActivity, goalMet, refreshPending, scheduleSync, sync, touch } from '../lib/state.svelte';
   import { check } from '../lib/check';
-  import { formatInterval, preview } from '../lib/fsrs';
-  import { applyAnswer, applyIntro, bury, memoryOf, suspend } from '../lib/progress';
+  import { formatInterval } from '../lib/fsrs';
+  import { applyAnswer, applyIntro, bury, previewNext, suspend } from '../lib/progress';
   import { audioVariants, mediaUrl, render, type Rendered } from '../lib/render';
   import { filterCards, queryToFilter } from '../lib/words';
-  import { balanceDue, buildSession, exerciseRung, isPrimed, LEARN_AHEAD, manifestOf, movesSchedule, practiceSession, queueAfter } from '../lib/scheduler';
+  import { balanceDue, buildSession, exerciseRung, isPrimed, learningSoon, manifestOf, movesSchedule, nextBatch, practiceSession, queueAfter } from '../lib/scheduler';
   import type { CheckResult, Grade, QueueItem, Skill } from '../lib/types';
 
   type Phase = 'answer' | 'reveal' | 'graded' | 'flipped' | 'wait' | 'done';
@@ -72,7 +72,7 @@
   const intervals = $derived.by(() => {
     if (!item || item.topicCards || item.mode === 'practice' || !item.skills[0] || (phase !== 'graded' && phase !== 'flipped')) return null;
     const now = new Date();
-    const due = preview(data.deck, memoryOf(item.card.progress), now);
+    const due = previewNext(data.deck, item.card.progress, exerciseRung(data, item.card, item.exercise) ?? undefined, now);
     return Object.fromEntries(GRADES.map(({ g }) => [g, formatInterval(now, due[g])])) as Record<Grade, string>;
   });
 
@@ -87,7 +87,11 @@
     }
   }
 
-  function start(aheadMs = 0) {
+  // Words on the ladder come back within the hour; «Продолжить сейчас» takes them early rather than making one wait.
+  const PULL_AHEAD = 2 * 60 * 60 * 1000;
+  let canMore = $state(false);
+
+  function start(aheadMs = 0, more = false) {
     if (practiceMode) {
       if (queue.length) { phase = 'done'; nextDue = null; if (answered) sync(); return; }
       queue = practiceSession(data, filterCards(data, queryToFilter(practiceQuery), new Date()), new Date());
@@ -96,10 +100,11 @@
       prefetch(queue); revealed.clear(); show();
       return;
     }
-    const plan = buildSession(data, new Date(), true, aheadMs);
+    const plan = buildSession(data, new Date(), true, aheadMs, more);
     nextDue = plan.nextDue;
     if (!plan.queue.length) {
-      phase = nextDue && nextDue.getTime() - Date.now() < LEARN_AHEAD ? 'wait' : 'done';
+      canMore = Boolean(nextBatch(data, new Date(), 0, true));
+      phase = learningSoon(data, new Date(), PULL_AHEAD) ? 'wait' : 'done';
       if (answered) sync();
       return;
     }
@@ -468,8 +473,9 @@
         </div>
       {/if}
       <div class="actions">
-        {#if phase === 'wait'}<button class="btn block" type="button" onclick={() => start(LEARN_AHEAD)}>Продолжить сейчас</button>{/if}
-        <a class="btn block" class:ghost={phase === 'wait'} href="#/">Готово</a>
+        {#if phase === 'wait'}<button class="btn block" type="button" onclick={() => start(PULL_AHEAD)}>Продолжить сейчас</button>{/if}
+        {#if canMore}<button class="btn block" class:ghost={phase === 'wait'} type="button" onclick={() => start(0, true)}>Ещё новые слова</button>{/if}
+        <a class="btn block" class:ghost={phase === 'wait' || canMore} href="#/">Готово</a>
       </div>
     </section>
   {:else if item}

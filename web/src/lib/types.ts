@@ -32,6 +32,8 @@ export interface Progress {
   memory?: SkillState;
   /** Position on the deck's ladder of exercise formats. */
   rung?: number;
+  /** Day the card passed every rung of the ladder; until then it stays in short learning steps. */
+  learned?: string;
 }
 
 export interface Example { id: string; term: string; meaning: string; audio?: string }
@@ -144,12 +146,14 @@ export interface DeckConfig {
   version?: string;
   author?: string;
   source?: DeckSource;
-  limits: { new_cards_per_day: number; reviews_per_day: number; max_backlog_ratio?: number };
+  limits: { new_cards_per_day: number; reviews_per_day: number; max_backlog_ratio?: number; new_rules_per_day?: number };
   fsrs: {
     /** One number for the card's memory; an old per-skill map still works (its `recall` is used). */
     retention: number | Partial<Record<Skill, number>>;
     params?: number[] | null;
     learning_steps?: string[];
+    /** Waits between ladder formats of a word being learned, by rung: 5m, 10m, 30m, 1h. */
+    ladder_steps?: string[];
     relearning_steps?: string[];
     max_interval?: string;
     leech_threshold?: number;
