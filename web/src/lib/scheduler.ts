@@ -1,5 +1,6 @@
 import { get_fuzz_range } from 'ts-fsrs';
 import { retrievability } from './fsrs';
+import { cardWaits, grammarLocked, ruleLearned } from './grammar';
 import { cardLocked, exerciseLocked } from './lexicon';
 import { dayKey, gradedToday, isBuried, isLearned, ladderOf, MAX_LEARNING_PER_DAY, maxPerDay, memoryOf, rungOf } from './progress';
 import { resolveTemplate } from './render';
@@ -39,7 +40,7 @@ function usable(data: DeckData, card: Card, exercise: Exercise, mode: Mode): boo
   if (exercise.status !== 'ready' || exercise.template === 'intro') return false;
   const manifest = manifestOf(data, card, exercise);
   if (!manifest || (manifest.modes && !manifest.modes.includes(mode))) return false;
-  return !exerciseLocked(data, card, exercise);
+  return !exerciseLocked(data, card, exercise) && !grammarLocked(data, card, exercise);
 }
 
 /** Exercises the schedule can ask, with their rungs. */
@@ -84,6 +85,32 @@ export function cardRetrievability(data: DeckData, card: Card, now: Date): numbe
   return retrievability(data.deck, memoryOf(card.progress), now);
 }
 
+// Typing a word or a sentence (fuzzy/exact checks, markdown gaps) and listening make the learner produce the answer;
+// choosing and chip-building only recognise it.
+const PRODUCED = new Set(['fuzzy', 'exact', 'ai']);
+
+export function effortful(data: DeckData, card: Card, exercise: Exercise): boolean {
+  const type = exercise.check?.type ?? manifestOf(data, card, exercise)?.check?.type ?? '';
+  if (PRODUCED.has(type)) return true;
+  if (type === 'md') { const md = String(exercise.params?.markdown ?? ''); return /\[\[(?!chips:|order:)/.test(md) && !/^\s*[-*] \[[ xX]\]/m.test(md); }
+  return exerciseSkills(data, card, exercise).some((s) => s === 'listen' || s === 'spell');
+}
+
+/**
+ * Past the first two formats, and in every review once the card is learned, the learner writes and listens: production
+ * formats win over choices and chips whenever the card has them. Every fourth review keeps the full mix for variety.
+ */
+function preferEffort(data: DeckData, card: Card, pool: Ladder, candidates: Ladder, target: number, mode: Mode): Ladder {
+  if (mode === 'practice' || target < 2) return candidates;
+  const review = mode === 'review';
+  if (review && (memoryOf(card.progress)?.reps ?? 0) % 4 === 3) return candidates;
+  const wider = review ? pool.filter((x) => x.rung >= 1) : candidates;
+  const produced = wider.filter((x) => effortful(data, card, x.exercise));
+  return produced.length ? produced : candidates;
+}
+
+type Ladder = { exercise: Exercise; rung: number }[];
+
 function pickExercise(data: DeckData, card: Card, target: number, mode: Mode, used: Set<string> = new Set()): { exercise: Exercise; rung: number } | null {
   const pool = ladderPool(data, card, mode).filter((x) => !used.has(x.exercise.id));
   if (!pool.length) return null;
@@ -97,6 +124,7 @@ function pickExercise(data: DeckData, card: Card, target: number, mode: Mode, us
     }, pool[0].rung);
     candidates = pool.filter((x) => x.rung === nearest);
   }
+  candidates = preferEffort(data, card, pool, candidates, target, mode);
   const stats = card.progress?.exercises ?? {};
   candidates.sort((a, b) => {
     const la = stats[a.exercise.id]?.last ?? '', lb = stats[b.exercise.id]?.last ?? '';
@@ -203,13 +231,17 @@ export function topicIsOpen(data: DeckData, topic: Topic): boolean {
   return (topic.requires ?? []).every((id) => {
     const required = data.topics.find((t) => t.id === id);
     if (!required) return true;
+    // A rule builds on the rules before it: it opens once every one of them is learned.
+    if (isRuleTopic(required)) return required.cards.every((c) => ruleLearned(data, c) || isSuspended(c) || !ladderPool(data, c, 'review').length);
     // A rule opens once its words are under way, so rules come early and use the words being learned.
     return required.cards.filter(isIntroduced).length >= Math.min(required.cards.length, required.batch ?? 4);
   });
 }
 
 export function gateOpen(data: DeckData, topic: Topic): boolean {
-  return topic.cards.filter(isIntroduced).every((c) => settled(data, c));
+  // The next rule of a grammar topic waits until the earlier ones are learned: each builds on the one before.
+  const ready = isRuleTopic(topic) ? graduated : settled;
+  return topic.cards.filter(isIntroduced).every((c) => ready(data, c));
 }
 
 export function orderedCards(topic: Topic): Card[] {
@@ -220,7 +252,7 @@ export function orderedCards(topic: Topic): Card[] {
 function firstOpen(data: DeckData, now: Date, rules: boolean, limit: number): { topic: Topic; cards: Card[] } | null {
   if (limit <= 0) return null;
   for (const topic of data.topics.filter((t) => isRuleTopic(t) === rules)) {
-    const fresh = orderedCards(topic).filter((c) => !isIntroduced(c) && !isSuspended(c) && !isBuried(c, now) && !cardLocked(data, c) && ladderPool(data, c, 'learn').length > 0);
+    const fresh = orderedCards(topic).filter((c) => !isIntroduced(c) && !isSuspended(c) && !isBuried(c, now) && !cardLocked(data, c) && !cardWaits(data, c) && ladderPool(data, c, 'learn').length > 0);
     if (!fresh.length || !topicIsOpen(data, topic) || !gateOpen(data, topic)) continue;
     return { topic, cards: fresh.slice(0, Math.min(topic.batch ?? 4, limit)) };
   }

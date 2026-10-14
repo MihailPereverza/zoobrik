@@ -74,6 +74,18 @@
     setRepo(app.repo, server ? 'server' : 'github');
     reload();
   }
+
+  // Recordings grouped by author and licence: one line each, with a link to one source file.
+  const credits = $derived.by(() => {
+    const groups = new Map<string, { key: string; author: string; license: string; source?: string; count: number }>();
+    for (const c of Object.values(app.data?.credits?.files ?? {})) {
+      const key = `${c.author}|${c.license}`;
+      const g = groups.get(key) ?? { key, author: c.author, license: c.license, source: c.source, count: 0 };
+      g.count += 1;
+      groups.set(key, g);
+    }
+    return [...groups.values()].sort((a, b) => b.count - a.count);
+  });
 </script>
 
 <div class="narrow">
@@ -191,6 +203,17 @@
     </div>
   </section>
 
+  {#if credits.length}
+    <section class="panel box">
+      <h2>Авторы записей</h2>
+      <p class="muted">Живые голоса взяты из открытых источников; где запись есть, она звучит вместо синтезированной.</p>
+      <ul class="credits">
+        {#each credits as c (c.key)}<li><b>{c.author}</b> · {c.license} · {c.count} {c.count === 1 ? 'запись' : 'записей'}{#if c.source} · <a href={c.source} target="_blank" rel="noopener">пример</a>{/if}</li>{/each}
+      </ul>
+      {#each app.data?.credits?.notices ?? [] as notice}<p class="muted notice">{notice}</p>{/each}
+    </section>
+  {/if}
+
   <section class="panel box">
     <h2>Версия приложения</h2>
     <p class="muted">Сборка от {__BUILD__} (UTC). Обновления подтягиваются сами при открытии. Если что-то выглядит по-старому — обновите вручную, ваш прогресс и колода сохранятся.</p>
@@ -218,6 +241,8 @@
 </div>
 
 <style>
+  .credits { margin: 0 0 8px; padding-left: 18px; font-size: 14px; line-height: 1.5; }
+  .notice { font-size: 12px; }
   .decks-link { display: flex !important; align-items: center; justify-content: space-between; text-decoration: none; color: var(--ink); }
   .decks-link > span { display: grid; gap: 4px; }
   .decks-link .muted { font-size: 14px; }

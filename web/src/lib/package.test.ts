@@ -6,7 +6,7 @@ import { CORE } from './core';
 import { buildDeck, deckRoots } from './deckfs';
 import { deckLangs, normalizeContent } from './lang';
 import { isPackagePath, packDeck, parseLink, planUpdate, previewDeck, slug, unpackDeck, withSource, type PackageFile } from './package';
-import { audioVariants, pickVoice, resolveTemplate } from './render';
+import { audioVariants, chipFace, pickVoice, resolveTemplate } from './render';
 
 const deckYaml = 'id: english-a2\nname: Английский A2\nlang: { target: en-GB, native: ru }\nlimits: { new_cards_per_day: 8, reviews_per_day: 250 }\nfsrs:\n  retention: { recall: 0.9 }\n  params: [0.2, 1.2]\ntopics: [travel]\n';
 const card = 'id: luggage\nkind: word\ncontent:\n  en: luggage\n  ru: багаж\n  alt_ru: [вещи]\n  examples:\n    - { id: ex1, en: My luggage is heavy., ru: Мой багаж тяжёлый. }\nexercises:\n  - { id: e1, template: ru-en-type, status: ready, params: { prompt: багаж, answer: luggage } }\n';
@@ -218,8 +218,22 @@ describe('several voices per recording', () => {
     expect(pickVoice(data, c, 'ex2.mp3', 7)).toBe('ex2.mp3');
   });
 
+  it('always prefers a human recording when the recording has one', () => {
+    const human = buildDeck(files, CORE, '', [...media, 'topics/travel/luggage/ex1.human.mp3']);
+    const hc = human.topics[0].cards[0];
+    expect(new Set(Array.from({ length: 10 }, (_, i) => pickVoice(human, hc, 'ex1.mp3', i)))).toEqual(new Set(['ex1.human.mp3']));
+    expect(new Set(Array.from({ length: 30 }, (_, i) => pickVoice(human, hc, 'word.mp3', i)))).toEqual(new Set(['word.mp3', 'word.piper.mp3', 'word.turbo.mp3']));
+  });
+
   it('works for decks without extra voices', () => {
     const plain = buildDeck(files, CORE);
     expect(audioVariants(plain, plain.topics[0].cards[0], 'word.mp3')).toEqual(['word.mp3']);
+  });
+});
+
+describe('chips do not give the order away', () => {
+  const data = buildDeck(new Map([['deck.yaml', 'name: t\n'], ['placement.yaml', 'words:\n  - { en: she, ru: она }\n  - { en: can, ru: мочь }\n  - { en: like, ru: нравиться }\n']]), CORE);
+  it('drops the sentence capital and the final full stop, keeps I and names', () => {
+    expect(['She', "Can't", 'like.', 'I', "I'm", 'Anna', 'Anna.', 'it?'].map((w) => chipFace(data, w))).toEqual(['she', "can't", 'like', 'I', "I'm", 'Anna', 'Anna', 'it']);
   });
 });

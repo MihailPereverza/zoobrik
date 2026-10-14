@@ -22,6 +22,11 @@ export function renderMarkdown(text: string): string {
   return marked.parse(String(text ?? ''), { async: false, breaks: false }) as string;
 }
 
+/** One line of markdown (bold, italics, code) without a wrapping paragraph: hints, translations, instructions. */
+export function renderInline(text: string): string {
+  return marked.parseInline(String(text ?? ''), { async: false }) as string;
+}
+
 function playButton(src: string): string {
   return `<button class="zb-play" data-zb="play" data-src="${src}" type="button" aria-label="Прослушать"><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z"/></svg></button>`;
 }

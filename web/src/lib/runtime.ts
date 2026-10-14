@@ -12,12 +12,22 @@ export const RUNTIME = String.raw`(function () {
   var audio = new Audio();
   var ms = function () { return Math.round(performance.now() - started); };
   function reveal() { $$('[data-zb-back]').forEach(function (e) { e.hidden = false; }); $$('[data-zb="flip"]').forEach(function (b) { b.disabled = true; }); }
-  function lock() { $$('[data-zb-choice],[data-zb-chip],[data-zb-input],[data-zb="submit"],[data-zb="hint"]').forEach(function (e) { e.disabled = true; }); }
+  function lock() { $$('[data-zb-choice],[data-zb-chip],[data-zb-input],[data-zb-lock],[data-zb="submit"],[data-zb="hint"]').forEach(function (e) { e.disabled = true; }); }
   var zb = {
     $: $, $$: $$,
     on: function (evt, fn) { (handlers[evt] = handlers[evt] || []).push(fn); },
     emit: function (evt, data) { (handlers[evt] || []).forEach(function (f) { f(data); }); },
-    answer: function (value) { if (answered) return; answered = true; lock(); post('answer', { value: value, ms: ms(), hints: hints }); },
+    answer: function (value) {
+      if (answered) return;
+      answered = true; lock();
+      var v = value && typeof value === 'object' ? Object.assign({}, value) : { value: value };
+      // A template's own check (logic.js: export function check) runs here, inside the sandbox; the app only reads its verdict.
+      if (window.__zbCheck) {
+        try { v.verdict = window.__zbCheck(value, zb.params) || { error: 'check() returned nothing' }; }
+        catch (e) { v.verdict = { error: String(e && e.message || e) }; post('log', { msg: 'custom check failed', data: String(e) }); }
+      }
+      post('answer', { value: v, ms: ms(), hints: hints });
+    },
     flip: function () { if (answered) return; answered = true; reveal(); post('flip', { ms: ms(), hints: hints }); },
     grade: function (g) { post('grade', { grade: g }); },
     skip: function (reason) { post('skip', { reason: reason || 'later' }); },
@@ -38,10 +48,11 @@ export const RUNTIME = String.raw`(function () {
     },
     log: function (msg, data) { post('log', { msg: msg, data: data }); },
     next: function () { post('next'); },
-    get answered() { return answered; }
+    get answered() { return answered; },
+    params: (function () { try { return JSON.parse(document.getElementById('zb-params').textContent); } catch (e) { return {}; } })()
   };
   window.zb = zb;
-  window.__zbStart = function () { if (window.__zbLogic) window.__zbLogic(zb); };
+  window.__zbStart = function () { if (window.__zbLogic) window.__zbLogic(zb); zb.emit('ready'); };
 
   var slot = $('[data-zb-slot]');
   var submitBtn = $('[data-zb="submit"]');
@@ -66,7 +77,9 @@ export const RUNTIME = String.raw`(function () {
     if (slot) { if (slot.children.length) zb.answer({ tokens: slotTokens() }); return; }
     if (inputs.length === 1 && inputs[0].tagName === 'TEXTAREA') { if (inputs[0].value.trim()) zb.answer({ text: inputs[0].value.trim() }); return; }
     if (inputs.length > 1 || $('[data-gap]')) { zb.answer({ texts: inputs.map(function (i) { return i.value; }) }); return; }
-    if (inputs.length === 1) { if (inputs[0].value.trim()) zb.answer({ text: inputs[0].value }); }
+    if (inputs.length === 1) { if (inputs[0].value.trim()) zb.answer({ text: inputs[0].value }); return; }
+    // A template with its own controls builds the answer itself on the standard button and Enter.
+    zb.emit('submit');
   }
   $$('[data-zb-chip]').forEach(function (chip) { chip.addEventListener('click', function () { addChip(chip); }); });
   $$('[data-zb-choice]').forEach(function (btn) {
@@ -134,7 +147,7 @@ export const RUNTIME = String.raw`(function () {
     }
   });
   // Every English word is tappable and shows its translation; on answer buttons it takes a long press, so a tap still answers.
-  var INTERACTIVE = 'button,a,label,input,[data-zb-chip],[data-zb-choice]';
+  var INTERACTIVE = 'button,a,label,input,[data-zb-chip],[data-zb-choice],[data-zb-tap]';
   function wrapWords(root) {
     var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: function (n) {
       var p = n.parentElement;

@@ -134,7 +134,11 @@
     const r = rendered && 'template' in rendered ? rendered : null;
     if (!current || !r) return;
     if (r.template.manifest.check?.type === 'ai') { aiAnswer(String(value?.text ?? ''), ms, hintCount); return; }
-    finishAnswer(current, check(current.exercise, r.template.manifest, value, r.md), ms, hintCount, typeof value?.text === 'string' ? value.text : '');
+    const res = check(current.exercise, r.template.manifest, value, r.md);
+    const text = typeof value?.text === 'string' ? value.text : '';
+    // A broken template must not cost the learner a step down the ladder: they grade themselves instead.
+    if (res.error) { log('session', 'check error', { error: res.error, template: r.template.id }); selfCheck(text, '', 'Задание не смогло проверить ответ (ошибка в шаблоне). Оцени себя сам.'); return; }
+    finishAnswer(current, res, ms, hintCount, text);
   }
 
   function finishAnswer(current: QueueItem, res: CheckResult, ms: number, hintCount: number, text: string) {

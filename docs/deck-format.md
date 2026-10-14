@@ -118,7 +118,54 @@ Passing the top step sets `progress.learned` and hands the card to FSRS with int
 
 New cards come as a portion of words from the first open vocabulary topic plus one rule from the first open grammar
 topic (`kind: grammar`), in `deck.yaml` order; `limits.new_rules_per_day` (default 2) caps rules. A topic opens once each
-topic in its `requires` has a portion started. «Ещё новые слова» in the app takes a portion past the daily limits.
+vocabulary topic in its `requires` has a portion started and each grammar topic in it is learned (every card passed the
+ladder). Inside a grammar topic the next rule waits until the earlier ones are learned. «Ещё новые слова» in the app takes
+a portion past the daily limits.
+
+Which exercise of a rung: the one shown longest ago, easy before hard while learning. From the third rung on and in reviews
+of learned cards, exercises where the learner produces the answer — typing (`fuzzy`/`exact` checks, markdown gaps) or
+listening — win over choices and chips; every fourth review keeps the full mix. So a card needs choices/chips for its first
+formats and enough typing and listening exercises for the rest (see «Minimum exercise set»).
+
+## Prerequisites: nothing before it is taught
+
+The learner never meets a word, a meaning or a construction that was not taught first. Three mechanisms keep it so:
+
+| what | how it is found | what happens |
+|---|---|---|
+| words (Rule B) | placement test + `known.yaml` + terms of introduced cards | an exercise with an unknown word is not asked until a card teaches the word |
+| grammar (Rule G) | `detect:` patterns of rule cards | an exercise using a construction is not asked until its rule card is **learned** |
+| anything else | `needs: [card-id, …]` on an exercise | not asked until those cards are introduced |
+| a whole card | `needs: [card-id, …]` at the top of card.yaml | not introduced until those cards are learned (e.g. the rules a listening clip is built on) |
+
+A rule card (or a word card that teaches a set phrase such as *in the evening*) lists regular expressions (JavaScript, case-insensitive, matched against each sentence of an exercise with its
+gaps filled by the answer — question text, options and chips) that find its construction:
+
+```yaml
+id: pc-form
+kind: grammar
+detect:
+  - "\\b(?:am|is|are|'m|'s|'re)\\s+(?!interesting\\b|boring\\b)[a-z]{2,}ing\\b"    # She's wearing…
+content: { title: …, theory: theory.md, examples: [...] }
+```
+
+Keep patterns precise: a false match only delays an exercise, but a missed one lets a construction through. An exercise
+that matches by accident (an `-ing` adjective, a quoted example of a form) lists the rule in `allow_rules: [pc-form]`.
+Card **examples** are shown on the intro screen and cannot wait: an example must use only rules taught before the card.
+Exercise fields:
+
+```yaml
+needs: [present-simple-he-she]   # wait for these cards (ids or topic/id) to be introduced
+allow: [Anna]                    # words that never lock this exercise (names, quoted foreign words)
+allow_rules: [pc-form]           # rule cards whose detect matched by mistake
+```
+
+The teaching order is computed like the scheduler does it: portions of `batch` words from the first open vocabulary topic,
+each with one rule from the first open grammar topic. `npm run lexicon -- <deck> --assume-top 1387` (in `web/`) prints it
+against both rules: unknown words, «card examples shown before their rule» (must be 0 — rewrite the example or move the
+card) and «exercises waiting for a later rule» (fine when the card still has enough exercises at each rung; otherwise move
+the rule earlier or add the card's topic a `requires:` on the grammar topic). In the app the same report is in
+«Настройки → Проверить колоду».
 
 ## Exercise difficulty
 
@@ -147,6 +194,22 @@ takes that pass a listening check (Whisper hears the words, a phoneme recogniser
 voice is written to the file named in the card (`word.mp3`), every other one next to it as `word.<voice>.mp3`.
 The app picks one voice per exercise, so a learner gets used to different speakers; decks with a single file per
 recording work as before. Loudness is levelled across voices.
+
+## Human recordings and credits
+
+A recording by a person sits next to the synthetic ones as `<name>.human.mp3` (a second speaker: `.human-2.mp3`). The app
+always plays a human take when there is one; synthetic voices only fill the gaps. `tools/human_audio.py` downloads them
+from open sources (Wikimedia Commons / Lingua Libre for words, Tatoeba for sentences), levels them to −16 LUFS when the
+licence allows changes (CC0, CC BY, CC BY-SA) and keeps no-derivatives files (Charles Kelly's Tatoeba recordings,
+CC BY-NC-ND 3.0) byte for byte. Every such file is listed in `credits.yaml`, shown in «Настройки → Авторы записей»:
+
+```yaml
+notices: ["verbatim text a licence requires"]
+files:
+  topics/basics/common/ex1.human.mp3: { author: Charles Kelly (CK), license: CC BY-NC-ND 3.0, source: https://tatoeba.org/audio/download/21102, text: "Tatoeba #294881 · CC BY 2.0 FR" }
+```
+
+A deck with non-commercial recordings must stay free and without ads.
 
 ## card.yaml
 
@@ -261,6 +324,14 @@ A markdown exercise uses one interaction kind: options, gaps, or one chips line.
 ## Minimum exercise set per word card
 
 `intro`, `meaning-choice`, `term-type`, `listen-choice` or `listen-type` (word), `build-term` (ex1), `build-meaning` (ex2), `listen-type` (a short example), `cloze-type` (an example with the word gapped). Add trap exercises (`cloze-choice`) for confusable pairs. All curated exercises get `status: ready`.
+
+Production (typing and listening) for the later formats: at least 5 per word card — `term-type`, `listen-type` of the word,
+1–2 example dictations, `cloze-type` in two sentences, and a typed sentence translation (`term-type` with a Russian sentence
+as `prompt`, difficulty 4). A rule card: at least half of its exercises typed or listened — `cloze-type`, `grammar-fix`,
+markdown gap texts, typed translations that need the rule, 2–3 dictations of its examples. Choices and chips stay for
+difficulty 1–2.
+
+A word card trains the word; an exercise that trains a rule (adjective order, tense choice, -s) belongs to the rule card.
 
 ## progress (written by the app, never by hand)
 

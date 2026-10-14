@@ -93,6 +93,7 @@ describe('ladder and due', () => {
   it('uses the nearest rung when the current one has nothing (lower one on a tie)', () => {
     const data = mkDeck([mkTopic('a', 1)]);
     const card = mature(data.topics[0].cards[0], -1, 3);
+    card.progress!.memory!.reps = 3; // a variety review: the plain ladder, no preference for typing
     expect(reviewItems(data, card)[0].exercise.id).toBe('e3');
     card.exercises = card.exercises.filter((e) => e.id !== 'e1');
     card.progress!.rung = 0;
@@ -102,10 +103,26 @@ describe('ladder and due', () => {
   it('at the top rung rotates through the upper half of the ladder', () => {
     const data = mkDeck([mkTopic('a', 1)]);
     const card = mature(data.topics[0].cards[0], -1, 4);
+    card.progress!.memory!.reps = 7;
     const first = reviewItems(data, card)[0].exercise.id;
     card.progress!.exercises[first] = { shown: 1, correct: 1, avg_ms: 1, last: NOW.toISOString() };
     const second = reviewItems(data, card)[0].exercise.id;
     expect(new Set([first, second])).toEqual(new Set(['e3', 'e5']));
+  });
+
+  it('a learned card mostly makes the learner type or listen, choices only in every fourth review', () => {
+    const data = mkDeck([mkTopic('a', 1)]);
+    const card = mature(data.topics[0].cards[0], -1, 4);
+    card.exercises.find((e) => e.id === 'e4')!.status = 'ready';
+    const picked = new Set<string>();
+    for (let i = 0; i < 6; i++) {
+      const id = reviewItems(data, card)[0].exercise.id;
+      picked.add(id);
+      card.progress!.exercises[id] = { shown: 1, correct: 1, avg_ms: 1, last: new Date(NOW.getTime() + i * 1000).toISOString() };
+    }
+    expect(picked).toEqual(new Set(['e2', 'e4']));
+    card.progress!.memory!.reps = 3;
+    expect(['e3', 'e4', 'e5']).toContain(reviewItems(data, card)[0].exercise.id);
   });
 
   it('honours a ladder from deck.yaml', () => {
@@ -236,7 +253,7 @@ recent: []
     expect(isDue(data, card, at)).toBe(true);
     const items = reviewItems(data, card);
     expect(items).toHaveLength(1);
-    expect(['e3', 'e5']).toContain(items[0].exercise.id);
+    expect(['e2', 'e3', 'e5']).toContain(items[0].exercise.id);
     expect(gateOpen(data, data.topics[0])).toBe(true);
   });
 });

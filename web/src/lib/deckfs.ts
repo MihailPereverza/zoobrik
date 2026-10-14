@@ -1,7 +1,7 @@
 import YAML from 'yaml';
 import { splitFrontmatter } from './cardyaml';
 import { deckLangs, normalizeContent, type DeckLangs } from './lang';
-import type { Card, DeckData, Exercise, KnownWords, PlacementResume, PlacementWord, TemplateSource, Topic } from './types';
+import type { Card, Credits, DeckData, Exercise, KnownWords, PlacementResume, PlacementWord, TemplateSource, Topic } from './types';
 
 export type FileMap = Map<string, string>;
 
@@ -36,7 +36,7 @@ function mdExercises(files: FileMap, cardDir: string): Exercise[] {
     .map((p) => {
       const { meta, body } = splitFrontmatter(files.get(p)!);
       const file = p.slice(cardDir.length + 1);
-      return { id: meta.id ?? file.replace(/^exercises\/|\.md$/g, ''), template: 'md', skill: meta.skill, status: meta.status ?? 'draft', difficulty: meta.difficulty, file, params: { markdown: body } };
+      return { id: meta.id ?? file.replace(/^exercises\/|\.md$/g, ''), template: 'md', skill: meta.skill, status: meta.status ?? 'draft', difficulty: meta.difficulty, needs: meta.needs, allow: meta.allow, allow_rules: meta.allow_rules, file, params: { markdown: body } };
     });
 }
 
@@ -87,6 +87,11 @@ const resumeOf = (t: any): PlacementResume => ({
   rest: (t.rest ?? []).map(String), low: Number(t.low) || 0, screens: Number(t.screens) || 0,
 });
 
+function creditsOf(raw: any): Credits | undefined {
+  if (!raw) return undefined;
+  return { notices: (raw.notices ?? []).map(String), files: raw.files ?? {} };
+}
+
 function knownWords(raw: any): KnownWords | undefined {
   if (!raw) return undefined;
   return { ...(raw.tested ? { tested: String(raw.tested) } : {}), words: (raw.words ?? []).map(String), ...(raw.unknown?.length ? { unknown: raw.unknown.map(String) } : {}), ...(raw.test?.screen ? { test: resumeOf(raw.test) } : {}) };
@@ -107,6 +112,7 @@ export function buildDeck(files: FileMap, core: CoreBundle, root = '', media: It
     glossary: parse(files.get(`${root}glossary.yaml`)) ?? {},
     placement: placementWords(parse(files.get(`${root}placement.yaml`))),
     known: knownWords(parse(files.get(`${root}known.yaml`))),
+    credits: creditsOf(parse(files.get(`${root}credits.yaml`))),
     deck,
     topics: ids.map((id) => buildTopic(files, root, langs, id)),
     templates: [...core.templates, ...templatesUnder(files, `${root}templates/`, 'deck')],

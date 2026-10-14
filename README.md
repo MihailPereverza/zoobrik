@@ -3,7 +3,8 @@
 Изучение английских слов и грамматики: интервальные повторения FSRS (как в Anki), слово тренируется
 несколькими разными заданиями за цикл, колода — папка YAML-файлов в git-репозитории.
 
-- `docs/spec.html` — спецификация, `docs/deck-format.md` — контракт формата колоды и шаблонов.
+- `docs/spec.html` — спецификация, `docs/deck-format.md` — контракт формата колоды и шаблонов,
+  `docs/authoring.md` — как добавлять свои правила, задания и типы заданий.
 - `web/` — веб-приложение (Svelte 5 + Vite). Сервер разработки читает и пишет колоду на диске.
 - `core-templates/` — встроенные шаблоны заданий (manifest.yaml + view.njk + style.css [+ logic.js]).
 - `decks/english-notebook/` — колода (отдельный git-репозиторий): 12 тем, 88 карточек, ~900 заданий, 443 аудио.
@@ -13,7 +14,7 @@
 
 ```sh
 cd web && npm install && npm run dev          # http://localhost:5173
-ZOOBRIK_DECK=/path/to/deck npm run dev        # другая колода
+ZOOBRIK_DECK=/path/to/deck-copy npm run dev:test   # другая колода: без git-синхронизации; прогресс пишется в её card.yaml
 npm run build && npm run serve                # сборка, доступ с телефона по сети: http://<ip-мака>:5180
 ```
 

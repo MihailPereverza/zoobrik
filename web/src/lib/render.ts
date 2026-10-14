@@ -1,9 +1,10 @@
 import nunjucks from 'nunjucks/browser/nunjucks.js';
-import { parseMdExercise, renderMarkdown, type MdExercise } from './md';
+import { parseMdExercise, renderInline, renderMarkdown, type MdExercise } from './md';
 import { RUNTIME } from './runtime';
 import { zubrikSvg, type Mood } from './mascot';
 import { fontFaceCss } from './fonts';
 import { deckLangs } from './lang';
+import { outsideDeck } from './lexicon';
 import type { Card, DeckData, Exercise, Mode, TemplateSource, Topic } from './types';
 
 export interface Rendered {
@@ -68,13 +69,30 @@ function environment(data: DeckData) {
     return copy;
   });
   env.addFilter('md', (s: string) => new nunjucks.runtime.SafeString(renderMarkdown(s)));
+  env.addFilter('mdi', (s: string) => new nunjucks.runtime.SafeString(renderInline(s)));
   env.addFilter('gap', (text: string, mode: string, answer?: string) => new nunjucks.runtime.SafeString(gapFilter(text, mode, answer)));
   env.addFilter('mask', (text: string, word: string) => String(text).replace(new RegExp(`\\b${word}\\b`, 'i'), '___'));
   env.addFilter('notIn', (list: string[], text: string) => (list ?? []).filter((x) => !String(text ?? '').toLowerCase().includes(String(x).toLowerCase())));
   env.addGlobal('zubrik', (mood: Mood, size = 40, crop: 'full' | 'head' = 'head') => new nunjucks.runtime.SafeString(zubrikSvg({ mood, size, crop })));
+  env.addFilter('chip', (w: string) => chipFace(data, w));
   env.addFilter('letters', (s: string) => String(s ?? '').split(''));
   envKey = data;
   return env;
+}
+
+const NEGATIVE_STEM: Record<string, string> = { ca: 'can', wo: 'will', sha: 'shall' };
+
+/**
+ * How a chip shows a word: no sentence capital and no final full stop, which would tell where the word goes.
+ * Names and I keep their capital (a word the deck does not know is taken for a name); the check ignores both anyway.
+ */
+export function chipFace(data: DeckData, word: string): string {
+  const bare = String(word ?? '').replace(/(?<=\S)[.!?]+$/, '');
+  const lower = bare.charAt(0).toLowerCase() + bare.slice(1);
+  if (bare === lower || /^I(?:['’]|$)/.test(bare)) return bare;
+  const negative = /^(.+)n['’]t$/i.exec(lower);
+  const stem = negative ? NEGATIVE_STEM[negative[1].toLowerCase()] ?? negative[1] : lower.replace(/['’](?:s|re|ve|ll|d|m)$/i, '');
+  return outsideDeck(data, stem) ? bare : lower;
 }
 
 export function topicOf(data: DeckData, card: Card): Topic {
@@ -145,7 +163,10 @@ function deckVoices(data: DeckData): string[] {
  */
 export function pickVoice(data: DeckData, card: Card, file: string, seed: number): string {
   const all = audioVariants(data, card, file);
-  const voices = deckVoices(data);
+  // A human recording (`.human.mp3`, `.human-2.mp3`) is always preferred; synthetic voices only fill the gaps.
+  const human = all.filter((f) => f !== file && voiceOf(f).startsWith('human'));
+  if (human.length) return human[seed % human.length];
+  const voices = deckVoices(data).filter((v) => !v.startsWith('human'));
   const wanted = voices[seed % voices.length];
   return all.find((f) => (f === file ? '' : voiceOf(f)) === wanted) ?? all[seed % all.length];
 }
@@ -162,12 +183,20 @@ function coreStyle(data: DeckData, id: string): string {
 
 function frame(data: DeckData, template: TemplateSource, exercise: Exercise, body: string, attrs: Record<string, string>, theme: string): string {
   const inherited = template.scope === 'core' ? '' : coreStyle(data, template.id);
-  const logic = template.logic ? template.logic.replace(/export\s+default\s+function/, 'window.__zbLogic = function').replace(/export\s+function/g, 'function') : '';
+  // logic.js is a plain script in the frame: `export default` becomes the entry point, `export function check` the custom check.
+  const logic = template.logic
+    ? template.logic
+      .replace(/export\s+function\s+check\b/, 'window.__zbCheck = function check')
+      .replace(/export\s+(?:const|let|var)\s+check\s*=/, 'window.__zbCheck =')
+      .replace(/export\s+default\s+/, 'window.__zbLogic = ')
+      .replace(/export\s+(?=function|const|let|var|class|async)/g, '')
+    : '';
+  const params = JSON.stringify(exercise.params ?? {}).replace(/</g, '\\u003c');
   const attrText = Object.entries(attrs).map(([k, v]) => `data-${k}="${escapeHtml(v)}"`).join(' ');
   return `<!doctype html><html data-theme="${theme}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 
 <style>${fontFaceCss()}\n${data.baseCss}\n${inherited}\n${template.style}\n${exercise.style ?? ''}</style></head>
-<body ${attrText}>${body}<script>${RUNTIME}</script>${logic ? `<script>${logic};window.__zbStart && window.__zbStart();</script>` : ''}</body></html>`;
+<body ${attrText}>${body}<script type="application/json" id="zb-params">${params}</script><script>${RUNTIME}</script>${logic ? `<script>${logic};window.__zbStart && window.__zbStart();</script>` : ''}</body></html>`;
 }
 
 export function render(data: DeckData, card: Card, exercise: Exercise, mode: Mode, theme: string, salt = ''): Rendered | { error: string } {

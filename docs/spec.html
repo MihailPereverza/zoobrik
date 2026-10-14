@@ -103,6 +103,7 @@ pre .k { color: var(--margin); }
 .callout strong { color: var(--ink); }
 .decision { display: inline-flex; gap: 6px; align-items: center; font: 500 0.7rem/1 var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--good); border: 1px solid currentColor; border-radius: 99px; padding: 4px 9px; margin-bottom: 10px; }
 .decision.open { color: var(--hard); }
+.ni { display: inline-block; font: 500 0.62rem/1.2 var(--font-mono); text-transform: uppercase; letter-spacing: 0.04em; color: var(--hard); border: 1px solid currentColor; border-radius: 99px; padding: 2px 6px; margin: 0 4px; white-space: nowrap; vertical-align: middle; }
 
 .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin: 16px 0 22px; }
 .tile { background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; min-width: 0; }
@@ -467,8 +468,8 @@ td code { white-space: nowrap; }
   learning_steps: [1m, 10m]
   relearning_steps: [10m]
   leech_threshold: 8
-<span class="k">templates</span>: [core, gh:someone/zoobrik-duo-style@v1]
-<span class="k">recipes</span>:                                <span class="c"># какие черновики собирать для новой карточки</span>
+<span class="k">templates</span>: [core, gh:someone/zoobrik-duo-style@v1]   <span class="c"># не реализовано: поле не читается</span>
+<span class="k">recipes</span>:   <span class="c"># не реализовано</span>                                <span class="c"># какие черновики собирать для новой карточки</span>
   word: [intro, meaning-choice, term-type, build-term, build-meaning, listen-type, listen-choice]
   grammar: [grammar-intro, grammar-choose-form, grammar-fix, grammar-transform]
 <span class="k">voice</span>: { engine: kokoro-1.0, en: bf_emma, format: mp3 }</code></pre>
@@ -552,10 +553,10 @@ td code { white-space: nowrap; }
   <div class="table-wrap"><table>
     <thead><tr><th>Способ</th><th>Как работает</th><th>Когда удобен</th></tr></thead>
     <tbody>
-      <tr><td><strong>Черновики по рецептам</strong></td><td>Кнопка «Собрать черновики» в карточке или <code>zoobrik build topics/travel-airport</code>. Для каждого шаблона из <code>deck.recipes</code> выполняется его <code>recipe</code>, получаются задания со статусом <code>draft</code>. Уже существующие не дублируются.</td><td>Основной поток: из 2 примеров получается 7–9 заданий за секунду</td></tr>
-      <tr><td><strong>Вручную через форму</strong></td><td>«+ Задание» → выбрать шаблон → форма строится по <code>params</code> из манифеста → живое превью → сохранить.</td><td>Особые задания, исправление черновика</td></tr>
+      <tr><td><strong>Черновики по рецептам</strong> <span class="ni">не реализовано</span></td><td>Кнопка «Собрать черновики» в карточке или <code>zoobrik build topics/travel-airport</code>. Для каждого шаблона из <code>deck.recipes</code> выполняется его <code>recipe</code>, получаются задания со статусом <code>draft</code>. Уже существующие не дублируются.</td><td>Основной поток: из 2 примеров получается 7–9 заданий за секунду</td></tr>
+      <tr><td><strong>Вручную через форму</strong> <span class="ni">не реализовано</span>: в приложении можно только менять статус и править <code>params</code> готового задания</td><td>«+ Задание» → выбрать шаблон → форма строится по <code>params</code> из манифеста → живое превью → сохранить.</td><td>Особые задания, исправление черновика</td></tr>
       <tr><td><strong>Прямо в YAML</strong></td><td>Дописать запись в <code>exercises</code> в редакторе кода. Схема подсказывает поля.</td><td>Тем, кому удобнее текст</td></tr>
-      <tr><td><strong>Массово из таблицы</strong></td><td>Импорт CSV в выбранный шаблон: столбцы сопоставляются с <code>params</code>, строка — карточка.</td><td>Перенос готовых материалов</td></tr>
+      <tr><td><strong>Массово из таблицы</strong> <span class="ni">не реализовано</span></td><td>Импорт CSV в выбранный шаблон: столбцы сопоставляются с <code>params</code>, строка — карточка.</td><td>Перенос готовых материалов</td></tr>
     </tbody>
   </table></div>
 
@@ -626,11 +627,11 @@ td code { white-space: nowrap; }
 
   <h3>Переопределить вёрстку на любом уровне</h3>
   <p>Шаблон ищется по каскаду, от частного к общему. Первый найденный побеждает:</p>
-  <div class="flow"><span>карточка<br><code>luggage/views/X</code></span><i>→</i><span>тема<br><code>travel-airport/views/X</code></span><i>→</i><span>колода<br><code>templates/X</code></span><i>→</i><span>подключённые пакеты</span><i>→</i><span><code>core/X</code></span></div>
+  <div class="flow"><span>карточка<br><code>luggage/views/X</code></span><i>→</i><span>тема<br><code>travel-airport/views/X</code></span><i>→</i><span>колода<br><code>templates/X</code></span><i>→</i><span>подключённые пакеты <span class="ni">не реализовано</span></span><i>→</i><span><code>core/X</code></span></div>
   <ul>
     <li><strong>Целиком</strong>: положить на нужный уровень папку с тем же id. Например, <code>travel-airport/views/meaning-choice/</code> меняет вёрстку выбора перевода только в этой теме.</li>
-    <li><strong>Частично</strong>: <code>{% extends "core/meaning-choice" %}</code> и переопределить один блок — <code>{% block prompt %}</code>, <code>{% block options %}</code>, <code>{% block feedback %}</code>. Все шаблоны <code>core</code> размечены блоками.</li>
-    <li><strong>Только стили</strong>: CSS собирается каскадом от <code>core</code> через тему колоды, <code>topic/views/style.css</code>, <code>card/views/style.css</code> до <code>style:</code> у задания. На корневом элементе есть атрибуты <code>data-template</code>, <code>data-topic</code>, <code>data-card</code>, <code>data-skill</code>, <code>data-mode</code>, так что можно писать <code>[data-topic="travel-airport"] .prompt { … }</code>.</li>
+    <li><span class="ni">не реализовано</span> <strong>Частично</strong>: <code>{% extends "core/meaning-choice" %}</code> и переопределить один блок — <code>{% block prompt %}</code>, <code>{% block options %}</code>, <code>{% block feedback %}</code>. Все шаблоны <code>core</code> размечены блоками. <em>Сейчас в шаблонах core блоков нет; переопределяйте папку целиком (см. <a href="authoring.md">docs/authoring.md</a>).</em></li>
+    <li><strong>Только стили</strong>: <em>сейчас работает так: шаблон колоды/темы/карточки с тем же id получает CSS шаблона core, плюс поле <code>style:</code> у задания; общего каскада <code>topic/views/style.css</code> и атрибута <code>data-skill</code> нет (<span class="ni">не реализовано</span>).</em> Задумано: CSS собирается каскадом от <code>core</code> через тему колоды, <code>topic/views/style.css</code>, <code>card/views/style.css</code> до <code>style:</code> у задания. На корневом элементе есть атрибуты <code>data-template</code>, <code>data-topic</code>, <code>data-card</code>, <code>data-skill</code>, <code>data-mode</code>, так что можно писать <code>[data-topic="travel-airport"] .prompt { … }</code>.</li>
     <li><strong>Для одного задания</strong>: поля <code>view:</code> и <code>style:</code> прямо в записи задания.</li>
   </ul>
 
@@ -739,29 +740,30 @@ status: ready
 <section id="templates">
   <h2><span class="num">05</span>Шаблоны: справочник автора</h2>
   <span class="decision">Согласовано</span>
+  <p class="callout"><strong>Что работает сейчас</strong> — в <a href="authoring.md">docs/authoring.md</a> (проверено на коде). Здесь помечено «не реализовано» то, что пока только задумано: рецепты, <code>extends</code> и блоки, пакеты шаблонов, каталог <code>examples.yaml</code>, хуки приложения.</p>
   <p>Шаблон — папка с манифестом, вёрсткой на <strong>Nunjucks</strong> (порт Jinja2 для JavaScript, тот же синтаксис <code>{{ }}</code> и <code>{% %}</code>), стилями и необязательной логикой. Рендерится в изолированном <code>iframe sandbox="allow-scripts"</code> без доступа к токену GitHub, сети и данным приложения. С приложением общается только через мост <code>zb</code> (<a href="#hooks">§13</a>).</p>
 <pre><code>build-term/
-├── manifest.yaml     <span class="c"># параметры, проверка, навыки, рецепт, lint</span>
+├── manifest.yaml     <span class="c"># параметры, проверка, навыки (рецепт, lint — не реализовано)</span>
 ├── view.njk          <span class="c"># вёрстка</span>
 ├── style.css
 ├── logic.js          <span class="c"># необязателен: без него работают data-zb-* атрибуты</span>
-└── examples.yaml     <span class="c"># тестовые params для превью в каталоге шаблонов</span></code></pre>
+└── examples.yaml     <span class="c"># не реализовано: тестовые params для превью в каталоге шаблонов</span></code></pre>
 
   <h3>Поля манифеста</h3>
   <div class="table-wrap"><table>
     <thead><tr><th>Поле</th><th>Назначение</th></tr></thead>
     <tbody>
-      <tr><td><code>id</code>, <code>name</code>, <code>version</code></td><td>Идентификатор (используется в <code>template:</code>), название в редакторе, версия пакета</td></tr>
+      <tr><td><code>id</code>, <code>name</code>, <code>version</code></td><td>Идентификатор (используется в <code>template:</code>; на деле id — имя папки), название в редакторе, версия пакета (<span class="ni">не реализовано</span>)</td></tr>
       <tr><td><code>trains</code></td><td>Навыки по умолчанию. Задание может сузить их полем <code>skill</code></td></tr>
       <tr><td><code>reveals</code></td><td>Что задание показывает ученику (<code>term</code>, <code>meaning</code>, <code>audio</code>). Нужно, чтобы задания одного слова в цикле не подсказывали друг другу (<a href="#hybrid">§8</a>)</td></tr>
-      <tr><td><code>params</code></td><td>Схема параметров. Типы: <code>text</code>, <code>markdown</code>, <code>word</code>, <code>list</code>, <code>choice</code>, <code>audio</code>, <code>image</code>, <code>ref</code> (ссылка на пример карточки), <code>object</code>. По схеме строится форма редактора и проверяются данные</td></tr>
+      <tr><td><code>params</code></td><td>Схема параметров. Типы: <code>text</code>, <code>markdown</code>, <code>word</code>, <code>list</code>, <code>choice</code>, <code>audio</code>, <code>image</code>, <code>ref</code> (ссылка на пример карточки), <code>object</code>. По схеме проверяются обязательные параметры (<code>tools/validate_deck.py</code>); форма редактора <span class="ni">не реализовано</span></td></tr>
       <tr><td><code>check</code></td><td>Проверка ответа: <code>exact</code>, <code>fuzzy</code> (Левенштейн, регистр, пунктуация), <code>tokens</code> (порядок слов), <code>choice</code>, <code>pairs</code>, <code>custom</code></td></tr>
-      <tr><td><code>recipe</code></td><td>Как собрать черновики из <code>content</code> карточки: <code>for_each</code>, <code>when</code>, шаблоны значений, помощники <code>suggest.*</code></td></tr>
-      <tr><td><code>lint</code></td><td>Правила проверки заданий этого типа при сохранении</td></tr>
+      <tr><td><code>recipe</code> <span class="ni">не реализовано</span></td><td>Как собрать черновики из <code>content</code> карточки: <code>for_each</code>, <code>when</code>, шаблоны значений, помощники <code>suggest.*</code></td></tr>
+      <tr><td><code>lint</code> <span class="ni">не реализовано</span></td><td>Правила проверки заданий этого типа при сохранении</td></tr>
       <tr><td><code>difficulty</code></td><td>1–5, для порядка в цикле и раундов знакомства</td></tr>
       <tr><td><code>modes</code></td><td>Где допустим: <code>intro</code>, <code>learn</code>, <code>review</code>. Например, <code>meaning-choice</code> слишком лёгок для зрелых слов и в review не попадает при S &gt; 30 дн.</td></tr>
-      <tr><td><code>extends</code></td><td>Унаследовать другой шаблон и переопределить блоки или стили</td></tr>
-      <tr><td><code>keys</code></td><td>Горячие клавиши шаблона</td></tr>
+      <tr><td><code>extends</code> <span class="ni">не реализовано</span></td><td>Унаследовать другой шаблон и переопределить блоки или стили</td></tr>
+      <tr><td><code>keys</code> <span class="ni">не реализовано</span></td><td>Горячие клавиши шаблона</td></tr>
     </tbody>
   </table></div>
 
@@ -776,7 +778,7 @@ status: ready
       <tr><td><code>topic</code>, <code>mode</code>, <code>seed</code></td><td>Тема, режим (<code>intro</code> / <code>learn</code> / <code>review</code> / <code>practice</code>), сид для перемешивания</td></tr>
       <tr><td><code>| tokens</code>, <code>| shuffle(seed)</code>, <code>| concat</code>, <code>| mask(word)</code>, <code>| letters</code>, <code>| md</code></td><td>Разбить на слова, перемешать, склеить списки, заменить слово пропуском, разбить на буквы, отрендерить markdown</td></tr>
       <tr><td><code>media(file)</code></td><td>URL файла карточки (аудио, картинка)</td></tr>
-      <tr><td><code>t('key')</code></td><td>Строки интерфейса на языке пользователя</td></tr>
+      <tr><td><code>t('key')</code> <span class="ni">не реализовано</span></td><td>Строки интерфейса на языке пользователя</td></tr>
     </tbody>
   </table></div>
   <p>Случайность в момент показа ограничена перемешиванием по <code>seed</code>. Содержание задания всегда то, что лежит в <code>params</code>.</p>
@@ -805,7 +807,7 @@ status: ready
   <span class="k">return</span> { correct: answer.tokens.join(' ') === params.answer, score: 1 };
 }</code></pre>
 
-  <h3>Распространение</h3>
+  <h3>Распространение <span class="ni">не реализовано</span></h3>
   <ul>
     <li>Пакет шаблонов — GitHub-репозиторий, подключается в <code>deck.yaml</code>: <code>templates: [core, gh:user/zoobrik-duo-style@v1]</code>.</li>
     <li>Версия фиксируется тегом. При обновлении пакета показываются дифф и превью на реальных заданиях колоды. Задания, которые не проходят новую схему, получают статус <code>stale</code>.</li>
@@ -1196,25 +1198,27 @@ stateDiagram-v2
   <p>Расширение работает на двух уровнях. <strong>Мост шаблона</strong> управляет одним заданием. <strong>Хуки приложения</strong> управляют очередью, оценкой, контентом, синхронизацией.</p>
 
   <h3>Мост шаблона: команды</h3>
+  <p class="callout">Точный список того, что есть в мосте сейчас (<code>zb.answer</code>, <code>zb.flip</code>, <code>zb.grade(1–4)</code>, <code>zb.skip</code>, <code>zb.hint</code>, <code>zb.play</code>, <code>zb.next</code>, <code>zb.params</code>, события <code>ready</code>, <code>submit</code>, <code>graded</code>), — в <a href="authoring.md">docs/authoring.md</a>.</p>
   <div class="table-wrap"><table>
     <thead><tr><th>Вызов</th><th>Действие</th></tr></thead>
     <tbody>
       <tr><td><code>zb.flip()</code></td><td>Перевернуть: показать оборот и кнопки оценки</td></tr>
       <tr><td><code>zb.answer(value)</code></td><td>Отправить ответ на проверку грейдером из манифеста</td></tr>
-      <tr><td><code>zb.grade('again'|'hard'|'good'|'easy')</code></td><td>Поставить оценку напрямую. «Принять карточку» — это <code>grade('good')</code></td></tr>
-      <tr><td><code>zb.override('correct'|'wrong')</code></td><td>«Я был прав» / «На самом деле не знал»</td></tr>
+      <tr><td><code>zb.grade('again'|'hard'|'good'|'easy')</code></td><td>Сейчас: <code>zb.grade(1–4)</code>, принимается только после проверки или переворота. Поставить оценку напрямую. «Принять карточку» — это <code>grade('good')</code></td></tr>
+      <tr><td><code>zb.override('correct'|'wrong')</code> <span class="ni">не реализовано</span></td><td>«Я был прав» / «На самом деле не знал»</td></tr>
       <tr><td><code>zb.skip(reason)</code></td><td>Пропустить: <code>'unknown'</code> = Again; <code>'no-audio'</code> или <code>'later'</code> = без оценки, задание уходит в конец цикла</td></tr>
       <tr><td><code>zb.hint(level?)</code></td><td>Подсказка: первая буква, число букв, заметка. Подсказка понижает оценку до Hard</td></tr>
       <tr><td><code>zb.play(ref?, {rate})</code></td><td>Проиграть аудио, медленно при <code>rate: 0.7</code></td></tr>
       <tr><td><code>zb.next()</code></td><td>Перейти к следующему заданию</td></tr>
-      <tr><td><code>zb.bury()</code>, <code>zb.suspend()</code>, <code>zb.edit()</code>, <code>zb.report()</code></td><td>Отложить, приостановить, открыть редактор карточки, пожаловаться на ошибку в контенте</td></tr>
-      <tr><td><code>zb.$</code>, <code>zb.$$</code>, <code>zb.on</code>, <code>zb.store</code></td><td>Работа с DOM в iframe, подписка на события, маленькое KV-хранилище шаблона</td></tr>
+      <tr><td><code>zb.bury()</code>, <code>zb.suspend()</code>, <code>zb.edit()</code>, <code>zb.report()</code> <span class="ni">не реализовано</span></td><td>Отложить, приостановить, открыть редактор карточки, пожаловаться на ошибку в контенте</td></tr>
+      <tr><td><code>zb.$</code>, <code>zb.$$</code>, <code>zb.on</code>, <code>zb.store</code> (<span class="ni">не реализовано</span> — только store)</td><td>Работа с DOM в iframe, подписка на события, маленькое KV-хранилище шаблона</td></tr>
     </tbody>
   </table></div>
   <h4>События, на которые подписывается шаблон</h4>
   <p><code>ready</code> · <code>flip</code> · <code>submit</code> · <code>graded {correct, grade, expected, diff}</code> · <code>hint</code> · <code>key</code> · <code>timeout</code> · <code>theme</code></p>
+  <p>Сейчас есть <code>ready</code>, <code>submit</code> и <code>graded {correct, typo, expected, marks}</code>; остальные <span class="ni">не реализовано</span>.</p>
 
-  <h3>Хуки приложения</h3>
+  <h3>Хуки приложения <span class="ni">не реализовано</span></h3>
   <p>Плагин — ES-модуль, выполняется в Web Worker. Он получает данные и возвращает изменённые данные, к DOM приложения доступа не имеет.</p>
 <pre><code><span class="k">export default</span> {
   id: 'llm-sentences',
@@ -1236,9 +1240,9 @@ stateDiagram-v2
 
   <h3>Кастомизация оформления</h3>
   <ul>
-    <li><strong>Тема</strong> — CSS-файл, который переопределяет токены (<code>--zb-bg</code>, <code>--zb-ink</code>, <code>--zb-accent</code>, <code>--zb-radius</code>, <code>--zb-font-*</code>). Токены пробрасываются во все iframe шаблонов.</li>
-    <li><strong>Слоты оболочки</strong>: верхняя панель, полоска прогресса, панель оценок, экран итогов. Каждый переопределяется отдельным <code>.njk</code> в <code>themes/&lt;id&gt;/slots/</code>.</li>
-    <li><strong>Переопределение шаблона</strong>: положить в колоду шаблон с тем же <code>id</code> или указать <code>extends: core/term-type</code> и поменять только <code>style.css</code>.</li>
+    <li><span class="ni">не реализовано</span> <strong>Тема</strong> — CSS-файл, который переопределяет токены (<code>--zb-bg</code>, <code>--zb-ink</code>, <code>--zb-accent</code>, <code>--zb-radius</code>, <code>--zb-font-*</code>). Токены пробрасываются во все iframe шаблонов.</li>
+    <li><span class="ni">не реализовано</span> <strong>Слоты оболочки</strong>: верхняя панель, полоска прогресса, панель оценок, экран итогов. Каждый переопределяется отдельным <code>.njk</code> в <code>themes/&lt;id&gt;/slots/</code>.</li>
+    <li><strong>Переопределение шаблона</strong>: положить в колоду шаблон с тем же <code>id</code> или указать <code>extends: core/term-type</code> (<span class="ni">не реализовано</span>) и поменять только <code>style.css</code>.</li>
   </ul>
 </section>
 

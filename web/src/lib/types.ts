@@ -73,6 +73,8 @@ export interface Exercise {
   needs?: string[];
   /** Words that never lock this exercise. */
   allow?: string[];
+  /** Rule cards (ids) whose construction this exercise may use before the rule is learned: a false match of `detect`. */
+  allow_rules?: string[];
 }
 
 export interface TemplateSource {
@@ -121,6 +123,10 @@ export interface Card {
   exercises: Exercise[];
   templates: TemplateSource[];
   progress?: Progress;
+  /** Cards (ids or topic/id) that must be learned before this card is introduced: the rules a listening clip is built on. */
+  needs?: string[];
+  /** Rule cards: regular expressions (case-insensitive) that find the rule's construction in a sentence (Rule G). */
+  detect?: string[];
 }
 
 export interface Topic {
@@ -182,6 +188,8 @@ export interface DeckData {
   known?: KnownWords;
   /** Media files of the library (full paths); used to find the other voices of a recording. */
   media?: string[];
+  /** Authors and licences of recordings taken from elsewhere (credits.yaml next to deck.yaml). */
+  credits?: Credits;
   topics: Topic[];
   templates: TemplateSource[];
   partials: Record<string, string>;
@@ -195,7 +203,12 @@ export interface Answer {
   tokens?: string[];
   mistakes?: number;
   total?: number;
+  /** Verdict of a template's own check (logic.js `export function check`), computed in the exercise frame. */
+  verdict?: CustomVerdict;
 }
+
+/** What a custom check returns: `correct`, or a `score` 0…1 (1 Good, ≥ 0.5 Hard, below Again); `expected` is shown after. */
+export interface CustomVerdict { correct?: boolean; score?: number; expected?: string; typo?: boolean; marks?: { gaps?: boolean[] }; error?: string }
 
 export interface CheckResult {
   correct: boolean;
@@ -203,6 +216,8 @@ export interface CheckResult {
   expected: string;
   suggested: Grade;
   marks?: { gaps?: boolean[] };
+  /** The exercise could not be checked (unknown check type, broken custom check): shown to the author, not a learner mistake. */
+  error?: string;
 }
 
 export interface QueueItem {
@@ -222,3 +237,7 @@ export interface KnownWords { tested?: string; words: string[]; unknown?: string
 
 /** Where an unfinished placement test stopped, so it can go on later (also on another device). */
 export interface PlacementResume { band: number; phase: 'sample' | 'rest'; screen: string[]; rest: string[]; low: number; screens: number }
+
+/** One recording's origin: who recorded it, under which licence, where it was taken from. */
+export interface Credit { author: string; license: string; source?: string; text?: string }
+export interface Credits { notices: string[]; files: Record<string, Credit> }

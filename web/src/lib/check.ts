@@ -92,10 +92,25 @@ export function check(exercise: Exercise, manifest: TemplateManifest, answer: An
     const correct = type === 'exact' ? ok.correct && !ok.typo : ok.correct;
     return result(correct, ok.typo, params.answer);
   }
+  if (type === 'custom') return customResult(answer, params);
   if (type === 'pairs') {
     const mistakes = answer.mistakes ?? 0;
     const r = result(mistakes <= 1, mistakes === 1, '');
     return mistakes === 0 ? r : { ...r, suggested: mistakes === 1 ? 2 : 1 };
   }
-  return result(true, false, '');
+  if (SELF_GRADED.has(type)) return result(true, false, '');
+  return { ...result(false, false, `неизвестный тип проверки «${type}»`), error: `unknown check type ${type}` };
+}
+
+// Flip cards and the intro are graded by the learner, not checked.
+const SELF_GRADED = new Set(['none', 'manual', 'ai']);
+
+function customResult(answer: Answer, params: Record<string, any>): CheckResult {
+  const v = answer.verdict;
+  if (!v || v.error) return { ...result(false, false, 'шаблон не проверил ответ'), error: v?.error ?? 'no verdict from logic.js check()' };
+  const score = typeof v.score === 'number' ? Math.max(0, Math.min(1, v.score)) : v.correct ? 1 : 0;
+  const correct = v.correct ?? score >= 0.5;
+  const expected = String(v.expected ?? params.answer ?? '');
+  const suggested: Grade = !correct ? 1 : v.typo || score < 1 ? 2 : 3;
+  return { correct, typo: Boolean(v.typo), expected, suggested, marks: v.marks };
 }

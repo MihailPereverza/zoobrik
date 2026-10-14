@@ -1,3 +1,4 @@
+import { teachingOrder } from './curriculum';
 import { baseForms } from './gloss';
 import type { Card, DeckData, Exercise, Topic } from './types';
 
@@ -325,13 +326,8 @@ export interface LexiconReport {
   outside: { word: string; count: number }[];
 }
 
-const ordered = (topic: Topic) => {
-  const order = topic.order ?? [];
-  return [...topic.cards].sort((a, b) => (order.indexOf(a.id) + 1 || 999) - (order.indexOf(b.id) + 1 || 999));
-};
-
-/** Cards in teaching order: deck topics in deck.yaml order, cards by the topic's `order`. */
-export const deckOrder = (data: DeckData): Card[] => data.topics.flatMap(ordered);
+/** Cards in teaching order: portions of words with a rule each, as the scheduler introduces them. */
+export const deckOrder = (data: DeckData): Card[] => teachingOrder(data);
 
 /** `base` is what the learner is assumed to know before the deck (known.yaml words, or the placement top N). */
 export function lexiconReport(data: DeckData, base: Iterable<string>): LexiconReport {

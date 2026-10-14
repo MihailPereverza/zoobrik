@@ -169,7 +169,7 @@
               {#if rendered && 'error' in rendered}<p class="err">{rendered.error}</p>
               {:else if rendered}{#key rendered.srcdoc}<ExerciseFrame bind:this={frame} srcdoc={rendered.srcdoc} {onevent} />{/key}{/if}
             </article>
-            {#if verdict}<p class="verdict" class:ok={verdict.correct}>{verdict.correct ? (verdict.typo ? 'Верно, с опечаткой' : 'Верно') : `Неверно · правильно: ${verdict.expected}`} → оценка {verdict.suggested}</p>{/if}
+            {#if verdict?.error}<p class="verdict">Ошибка проверки: {verdict.error}</p>{:else if verdict}<p class="verdict" class:ok={verdict.correct}>{verdict.correct ? (verdict.typo ? 'Верно, с опечаткой' : 'Верно') : `Неверно · правильно: ${verdict.expected}`} → оценка {verdict.suggested}</p>{/if}
             {#if editing}
               <textarea class="mono" bind:value={draft} rows="12" spellcheck="false"></textarea>
               <div class="actions"><button class="btn small" type="button" onclick={saveEdit}>Сохранить</button><button class="btn small ghost" type="button" onclick={() => (editing = false)}>Отмена</button></div>

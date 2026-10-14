@@ -2,6 +2,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { buildDeck, isTextFile, type FileMap } from '../src/lib/deckfs';
+import { grammarReport } from '../src/lib/grammar';
 import { lexiconReport } from '../src/lib/lexicon';
 
 const args = process.argv.slice(2);
@@ -40,9 +41,10 @@ if (top !== undefined) {
   source = 'nothing (no known.yaml; pass --assume-top N to use placement.yaml)';
 }
 const report = lexiconReport(data, base);
+const grammar = grammarReport(data);
 
 if (json) {
-  console.log(JSON.stringify({ deck: path.resolve(dir), assumed: source, ...report }, null, 2));
+  console.log(JSON.stringify({ deck: path.resolve(dir), assumed: source, ...report, grammar }, null, 2));
 } else {
   const pct = (x: number) => `${Math.round(x * 100)}%`;
   console.log(`Known before the deck: ${source}`);
@@ -65,4 +67,11 @@ if (json) {
     for (const c of report.listening) console.log(`  ${c.locked ? 'locked' : 'open  '} ${pct(c.coverage).padStart(4)} ${c.topic}/${c.card} (${c.counted} words) ${c.unknown.slice(0, 12).join(', ')}${c.unknown.length > 12 ? ' …' : ''}`);
   }
   if (report.outside.length) console.log(`\nWords in no card and not in placement (${report.outside.length}): ${report.outside.map((o) => `${o.word}×${o.count}`).join(', ')}`);
+  const rules = (r: { id: string; step: number }[]) => r.map((x) => `${x.id}@${Number.isFinite(x.step) ? x.step : 'never'}`).join(', ');
+  console.log(`\nGrammar (Rule G): ${grammar.rules} rules with detect, ${grammar.steps} teaching steps`);
+  console.log(`  card examples shown before their rule: ${grammar.content.length}`);
+  for (const f of grammar.content) console.log(`    @${f.step} ${f.topic}/${f.card} ${f.where}: ${rules(f.rules)}`);
+  console.log(`  exercises waiting for a later rule (locked until it is learned): ${grammar.exercises.length}`);
+  for (const f of grammar.exercises) console.log(`    @${f.step} ${f.topic}/${f.card} ${f.where}: ${rules(f.rules)}`);
+  for (const bad of grammar.invalid) console.log(`  invalid detect in ${bad.card}: ${bad.pattern}`);
 }

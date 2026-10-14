@@ -174,13 +174,38 @@ def clips_with_failures(deck_dir: Path) -> set[str]:
     return {line.split('\t')[0] for line in lines if 'failed ' in line}
 
 
-def run(*, deck_dir: Path, engines: list[str], force: bool, only: str, redo_failed: bool) -> None:
-    every_clip = collect_clips(deck_dir=deck_dir, field_name=deck_language(deck_dir))
+def texts_at(*, deck_dir: Path, ref: str, field_name: str) -> dict[str, str]:
+    """Spoken text of every clip as it was in git at `ref`, by card id and file: a card moved to another topic keeps its audio."""
+    listing = subprocess.run(['git', 'ls-tree', '-r', '--name-only', ref, '--', 'topics'], cwd=deck_dir, capture_output=True, text=True, check=True)
+    texts = {}
+    for name in listing.stdout.splitlines():
+        if not name.endswith('/card.yaml'):
+            continue
+        shown = subprocess.run(['git', 'show', f'{ref}:{name}'], cwd=deck_dir, capture_output=True, text=True, check=True)
+        content = (yaml.safe_load(shown.stdout) or {}).get('content') or {}
+        for item in [content, *(content.get('examples') or [])]:
+            if item.get('audio'):
+                texts[f'{Path(name).parent.name}/{item["audio"]}'] = spoken_text(item=item, field_name=field_name)
+    return texts
+
+
+def changed_clips(*, deck_dir: Path, clips: list[Clip], ref: str, field_name: str) -> list[Clip]:
+    """Clips whose text differs from `ref` or whose file is missing: what an edit of the deck needs voiced again."""
+    before = texts_at(deck_dir=deck_dir, ref=ref, field_name=field_name)
+    return [clip for clip in clips if not clip.target.exists() or before.get(f'{clip.target.parent.name}/{clip.target.name}') != clip.text]
+
+
+def run(*, deck_dir: Path, engines: list[str], force: bool, only: str, redo_failed: bool, changed_since: str) -> None:
+    field_name = deck_language(deck_dir)
+    every_clip = collect_clips(deck_dir=deck_dir, field_name=field_name)
     clips = [clip for clip in every_clip if only in str(clip.target)]
     done = load_done(deck_dir=deck_dir, force=force)
     if redo_failed:
         failed = clips_with_failures(deck_dir)
         done -= {str(clip.target) for clip in clips if f'{clip.target.parent.name}/{clip.target.name}' in failed}
+    if changed_since:
+        clips = changed_clips(deck_dir=deck_dir, clips=clips, ref=changed_since, field_name=field_name)
+        done -= {str(clip.target) for clip in clips}
     todo = [clip for clip in clips if str(clip.target) not in done]
     print(f'{len(todo)} of {len(clips)} clips to voice with {", ".join(engines)}', flush=True)
     speakers, judge, started = {name: build_engine(name) for name in engines}, Judge(), time.time()
@@ -203,9 +228,17 @@ def main() -> None:
     parser.add_argument('--force', action='store_true', help='start over instead of continuing the previous run')
     parser.add_argument('--only', default='', help='voice only clips whose path contains this, e.g. hair/word')
     parser.add_argument('--redo-failed', action='store_true', help='voice again the clips where some voice failed')
+    parser.add_argument('--changed-since', default='', help='voice only clips whose text changed since this git ref, e.g. main')
     args = parser.parse_args()
     engines = args.engines.split(',')
-    run(deck_dir=args.deck, engines=engines, force=args.force, only=args.only, redo_failed=args.redo_failed)
+    run(
+        deck_dir=args.deck,
+        engines=engines,
+        force=args.force,
+        only=args.only,
+        redo_failed=args.redo_failed,
+        changed_since=args.changed_since,
+    )
 
 
 if __name__ == '__main__':

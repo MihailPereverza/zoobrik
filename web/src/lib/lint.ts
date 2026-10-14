@@ -1,4 +1,5 @@
 import { check } from './check';
+import { grammarReport } from './grammar';
 import { deckOrder, lexiconReport, minCoverage, type WordFinding } from './lexicon';
 import { mediaUrl, render } from './render';
 import { backend } from './state.svelte';
@@ -40,11 +41,15 @@ function mdProblems(md: MdExercise): string | null {
   return null;
 }
 
+const KNOWN_CHECKS = new Set(['none', 'manual', 'ai', 'md', 'choice', 'tokens', 'fuzzy', 'exact', 'pairs', 'custom']);
+
 function lintExercise(data: DeckData, card: Card, exercise: Exercise): string[] {
   const out = render(data, card, exercise, exercise.template === 'intro' ? 'intro' : 'review', 'light');
   if ('error' in out) return [out.error];
   const issues: string[] = [];
   const type = exercise.check?.type ?? out.template.manifest.check?.type ?? 'none';
+  if (!KNOWN_CHECKS.has(type)) issues.push(`неизвестный тип проверки «${type}»: ответ нельзя проверить`);
+  if (type === 'custom' && !/export\s+(?:function\s+check\b|(?:const|let|var)\s+check\s*=)/.test(out.template.logic ?? '')) issues.push('check: custom, но в logic.js нет export function check');
   if (type === 'tokens') { const p = chipProblems(exercise); if (p) issues.push(p); }
   if (out.md) { const p = mdProblems(out.md); if (p) issues.push(p); }
   if (type === 'choice' && Array.isArray(exercise.params?.options) && !exercise.params.options.includes(exercise.params.answer)) issues.push('верного ответа нет среди вариантов');
@@ -85,7 +90,7 @@ export async function lintDeck(data: DeckData, onProgress: (done: number, total:
       lintExercise(data, member, exercise).forEach((message) => issues.push({ card: member, exercise, message }));
     }
   }
-  issues.push(...wordIssues(data));
+  issues.push(...wordIssues(data), ...grammarIssues(data));
   return { issues, exercises, audio };
 }
 
@@ -108,6 +113,28 @@ function wordIssues(data: DeckData): LintIssue[] {
   for (const c of report.listening.filter((l) => l.locked)) {
     const card = find(c.topic, c.card);
     if (card) out.push({ card, words: true, message: `клип понятен на ${Math.round(c.coverage * 100)}% (нужно ${Math.round(minCoverage(data) * 100)}%): ${c.unknown.slice(0, 12).join(', ')}` });
+  }
+  return out;
+}
+
+/** Rule G: card examples shown before the rule they use, and exercises that wait for a later rule. */
+function grammarIssues(data: DeckData): LintIssue[] {
+  const report = grammarReport(data);
+  const find = (topic: string, id: string) => data.topics.find((t) => t.id === topic)?.cards.find((c) => c.id === id);
+  const rules = (r: { id: string; step: number }[]) => r.map((x) => `${x.id}${Number.isFinite(x.step) ? ` (шаг ${x.step})` : ''}`).join(', ');
+  const out: LintIssue[] = [];
+  for (const f of report.content) {
+    const card = find(f.topic, f.card);
+    if (card) out.push({ card, message: `${f.where} (шаг ${f.step}) показывает грамматику раньше правила: ${rules(f.rules)}` });
+  }
+  for (const f of report.exercises) {
+    const card = find(f.topic, f.card);
+    if (card) out.push({ card, exercise: card.exercises.find((e) => e.id === f.where), message: `ждёт правило: ${rules(f.rules)}` });
+  }
+  for (const bad of report.invalid) {
+    const [topic, id] = bad.card.split('/');
+    const card = find(topic, id);
+    if (card) out.push({ card, message: `detect не компилируется: ${bad.pattern}` });
   }
   return out;
 }
