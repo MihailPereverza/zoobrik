@@ -189,6 +189,42 @@ audio word by word, lines seek on tap and words translate on tap. Exercises: mar
 gaps, `[[order: a · b · c]]` to order events), dictations, and `open-answer` (free text graded by an OpenRouter model chosen
 by the learner, or self-checked against `model_answer`). Authoring rules: `docs/listening-authoring.md`.
 
+## Movie clips (playphrase.me)
+
+`clip-type` and `clip-choice` exercises play a short scene of a film or a TV series found on
+[playphrase.me](https://www.playphrase.me). **The deck stores references only**: the clip's video URL
+(`https://www.playphrase.me/video/eng/<movie>/<id>.mp4`), its subtitle line with word timings and the film credit. The
+app streams the video from playphrase.me when the exercise is shown; no video, frame or audio of a clip is ever
+downloaded into the deck or the repository (`validate_deck.py` accepts nothing but a playphrase.me URL in `video`).
+Offline or when a clip is gone, the exercise shows «Видео недоступно» and «Пропустить».
+
+| param | |
+|---|---|
+| `video` | playphrase.me video URL |
+| `text` | the whole line as subtitled; Rule B and Rule G apply to it |
+| `words` | `[[word, start ms, end ms], …]` relative to the clip: the line lights up word by word after the answer |
+| `source` | `{ title: "Film (year)", url: <IMDb page> }`, shown small under the video |
+| `answer`, `accept[]` | `clip-type`: what to type — the gap words, or the whole line for a dictation |
+| `gap` | `clip-type`: the target words, an exact part of `text`, shown as `___` in the line; without `gap` nothing of the line is shown before the answer (dictation) |
+| `question`, `options[3–4]` | `clip-choice`: a Russian question («Что сказал герой?») and lines that differ in 1–2 words (another time phrase, another tense) |
+| `focus` | words set in bold in the line after the answer (a dictation or a choice); for `clip-type` with `gap` the gap is bold |
+| `translation`, `explanation` | shown after the answer |
+
+`video`, `words`, `source` and `focus` are not learner text and never lock an exercise; `text`, `gap`, `answer` and the
+options do (unknown words and untaught grammar wait as usual). A dictation should `accept` the line without punctuation.
+
+`tools/playphrase.py <deck> [--cards a,b] [--topics t1,t2] [--per-card N] [--dry-run]` adds them: it searches
+playphrase.me for each card (word and phrase cards: the term; grammar cards: phrases its `detect` finds in the examples,
+or `queries:` in `tools/playphrase-clips.yaml`), keeps clips that are not sensitive, 3–14 words, at most 7 s, clearly
+spoken (word scores ≥ 0.6 on average), checks each line against the words and rules known at the card's teaching step
+(`web/scripts/clips-filter.ts`: placement top 1387 plus the cards introduced by then), picks the shortest from different
+films and appends `v1, v2, …` to the card: a `clip-type` gap on the target words (difficulty 3), a dictation of a line up
+to 8 words (difficulty 4) and a `clip-choice` (difficulty 2). Existing exercises and `progress` stay as they are. The Russian
+side (translation, explanations, wrong options) is written by hand in `tools/playphrase-clips.yaml` under the clip id; a
+picked clip without notes is listed in `tools/.cache/playphrase/todo.yaml`. Searching is polite: an anonymous session
+like a browser visit (kept in memory only), one request per 2 s, at most `--max-searches` (150) per run, every answer
+cached in `tools/.cache/playphrase/` and never asked again.
+
 ## Several voices
 
 `tools/voice.py` voices every recording with several engines (default: `qwen`, `turbo`, `melo`, `piper`) and keeps only
@@ -282,6 +318,8 @@ Common optional params for every gradable template: `explanation` (markdown, sho
 | `grammar-fix` | apply | `wrong`, `answer`, `accept[]`, `translation?`, `audio?` | fuzzy |
 | `word-order` | apply / context | `instruction`, `tokens[]` (shuffled for display), `answer`, `accept[]`, `translation?`, `audio?` | tokens |
 | `match-pairs` | recognize | `pairs: [[en, ru], ...]` (4–6) — topic `exercises.yaml` only | pairs |
+| `clip-type` | listen, spell | `video`, `text`, `words`, `source`, `answer`, `accept[]`, `gap?`, `focus?`, `translation?` (see «Movie clips») | fuzzy |
+| `clip-choice` | listen | `video`, `text`, `words`, `source`, `question`, `answer`, `options[3–4]`, `focus?`, `translation?` | choice |
 | `md` | any | markdown file in `exercises/` | from markup |
 
 `audio` for `meaning-choice`, `meaning-flip` defaults to `word.mp3` when omitted.

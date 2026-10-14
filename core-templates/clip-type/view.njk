@@ -1,0 +1,10 @@
+{% import "core/_macros" as m %}{% import "core/_clip" as clip %}
+<div class="zb">
+  {{ clip.player(params) }}
+  {% if params.gap %}<div class="zb-card-q cl-q"><span class="zb-translation">Посмотри и впиши пропущенное</span><p class="zb-cloze">{{ params.text | replace(params.gap, '___') | gap('blank') | safe }}</p></div>
+  <input class="zb-input" data-zb-input autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="пропущенные слова" aria-label="Пропущенные слова">
+  {% else %}<span class="zb-instruction cl-ask">Посмотри и напиши всю реплику</span>
+  <input class="zb-input" data-zb-input autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="что услышал" aria-label="Что услышал">{% endif %}
+  <div class="zb-back cl-back" data-zb-back hidden>{{ clip.transcript(params) }}{% if params.translation %}<span class="zb-translation">{{ params.translation | mdi }}</span>{% endif %}{{ m.explanation(params) }}</div>
+</div>
+{{ clip.script() }}

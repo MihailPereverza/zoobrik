@@ -209,6 +209,7 @@ umbrella — гласный звук → **an**; doctor → **a**.
 | `meaning-flip` | recognize | `front`, `back`, `note?`, `audio?` | самооценка |
 | `match-pairs` | recognize | `pairs: [[en, ru], …]` — только в `exercises.yaml` темы | число ошибок |
 | `open-answer` | context | `question`, `model_answer`, `criteria?`, `placeholder?` | ИИ (или самопроверка по образцу) |
+| `clip-type` / `clip-choice` | listen | фрагмент фильма: `video`, `text`, `words`, `source` + ответ (см. А6) | `fuzzy` / `choice` |
 | `md` | любой | файл `exercises/*.md` | по разметке |
 
 Общие необязательные поля любого задания: `explanation` (Markdown, после ответа), `difficulty`, `from`
@@ -259,6 +260,24 @@ allow_rules: [pc-form]           # правила, чей detect сработа�
 Примеры карточки ждать не могут (их показывает экран знакомства): в примерах — только правила, введённые раньше.
 `npm run lexicon -- <deck> --assume-top 1387` печатает порядок ввода и обе проверки: «card examples shown before their
 rule» должно быть 0; «exercises waiting for a later rule» — нормально, если у карточки остаётся достаточно заданий.
+
+### А6. Фрагменты фильмов (playphrase.me)
+
+Задания `clip-type` (вписать пропуск или написать всю реплику) и `clip-choice` (выбрать, что сказал герой) показывают
+короткую сцену из фильма. **В колоде только ссылки**: адрес видео на playphrase.me, реплика с таймингом слов и название
+фильма со ссылкой на IMDb. Видео приложение берёт с playphrase.me в момент показа; скачивать клипы в колоду или в
+репозиторий нельзя. Без сети задание показывает «Видео недоступно» и «Пропустить».
+
+```sh
+tools/.venv/bin/python tools/playphrase.py <колода> --cards wear,cmp-er --per-card 2 --dry-run   # найти и выбрать
+# вписать перевод и пояснения выбранных клипов в tools/playphrase-clips.yaml (шаблон — tools/.cache/playphrase/todo.yaml)
+tools/.venv/bin/python tools/playphrase.py <колода> --cards wear,cmp-er --per-card 2             # дописать v1, v2, …
+```
+
+Инструмент берёт только реплики, все слова и правила которых ученик знает к шагу карточки (Rule B и G), и дописывает
+задания в конец `exercises` — существующие задания и `progress` не трогает. Перевод, пояснения и неверные варианты
+(реплика с другим временем или другим выражением времени, 1–2 слова разницы) пишутся вручную. Параметры и правила — в
+[`deck-format.md`](deck-format.md#movie-clips-playphraseme).
 
 ---
 
@@ -321,6 +340,8 @@ Nunjucks (синтаксис Jinja2), автоэкранирование вкл�
 
 Макросы встроенных шаблонов: `{% import "core/_macros" as m %}`, затем `m.options(list, seed)`, `m.chips(answer, extra, seed)`,
 `m.play(src)`, `m.playSlow(src)`, `m.wordCard(word, ipa, src)`, `m.explanation(params)`, `m.cardInfo(card, theory, media)`.
+Плеер фрагментов фильмов: `{% import "core/_clip" as clip %}`, затем `clip.player(params)`, `clip.transcript(params)` и
+`clip.script()`; в logic.js — `window.__zbClip(zb)`.
 
 Готовые классы оформления (`core-templates/_base.css`): `zb` (сетка задания), `zb-card-q` (карточка вопроса),
 `zb-prompt`, `zb-instruction`, `zb-translation`, `zb-option` (кнопка-вариант), `zb-input`, `zb-chip`, `zb-submit`,
@@ -345,8 +366,8 @@ Nunjucks (синтаксис Jinja2), автоэкранирование вкл�
 
 ### Б5. logic.js и своя проверка
 
-`logic.js` выполняется в той же изолированной рамке, что и вёрстка (iframe `sandbox="allow-scripts"`: нет сети,
-хранилища и доступа к приложению). Это обычный скрипт, не модуль: `import` нельзя. Работают формы
+`logic.js` выполняется в той же изолированной рамке, что и вёрстка (iframe `sandbox="allow-scripts allow-popups"`: нет
+хранилища и доступа к приложению, ссылки открываются в новой вкладке). Это обычный скрипт, не модуль: `import` нельзя. Работают формы
 `export default function (zb) { … }`, `export default (zb) => { … }`, `export default main`.
 
 Мост `zb`:

@@ -24,7 +24,12 @@ TEMPLATE_PARAMS: dict[str, set[str]] = {
     'word-order': {'instruction', 'tokens', 'answer'},
     'match-pairs': {'pairs'},
     'open-answer': {'question', 'model_answer'},
+    'clip-type': {'video', 'text', 'words', 'source', 'answer'},
+    'clip-choice': {'video', 'text', 'words', 'source', 'question', 'answer', 'options'},
 }
+CLIP_TEMPLATES = {'clip-type', 'clip-choice'}
+# A movie clip is a reference: the app streams it from playphrase.me, the deck never holds the video.
+CLIP_VIDEO = re.compile(r'^https://www\.playphrase\.me/video/[a-z]{3}/[0-9a-f]+/[0-9a-f]+\.mp4$')
 # Ids from before decks became language-neutral; the app maps them to the new templates.
 LEGACY_TEMPLATES: dict[str, str] = {
     'en-ru-choice': 'meaning-choice', 'en-ru-flip': 'meaning-flip', 'ru-en-choice': 'term-choice', 'ru-en-type': 'term-type',
@@ -157,6 +162,27 @@ def check_gap(*, where: str, template: str, params: dict[str, Any], report: Repo
         report.errors.append(f'{where}: text has no ___ gap')
 
 
+def clip_problems(params: dict[str, Any]) -> list[str]:
+    problems = []
+    if not CLIP_VIDEO.match(str(params.get('video', ''))):
+        problems.append('video must be a playphrase.me video URL (clips are never stored in the deck)')
+    words = params.get('words') or []
+    timed = all(isinstance(w, list) and len(w) == 3 and all(isinstance(t, int) for t in w[1:]) for w in words)
+    if not words or not timed:
+        problems.append('words must be [[word, start ms, end ms], ...]')
+    source = params.get('source') or {}
+    if not (isinstance(source, dict) and source.get('title') and source.get('url')):
+        problems.append('source needs title and url')
+    if params.get('gap') and str(params['gap']) not in str(params.get('text', '')):
+        problems.append('gap is not part of text')
+    return problems
+
+
+def check_clip(*, where: str, template: str, params: dict[str, Any], report: Report) -> None:
+    if template in CLIP_TEMPLATES:
+        report.errors.extend(f'{where}: {problem}' for problem in clip_problems(params))
+
+
 def check_audio(*, where: str, params: dict[str, Any], audio_files: set[str], report: Report) -> None:
     audio = params.get('audio')
     if audio and audio not in audio_files:
@@ -215,6 +241,7 @@ def check_exercise(*, where: str, exercise: dict[str, Any], audio_files: set[str
     check_extra(where=where, params=params, report=report)
     check_gap(where=where, template=template.id if template else name, params=params, report=report)
     check_audio(where=where, params=params, audio_files=audio_files, report=report)
+    check_clip(where=where, template=template.id if template else name, params=params, report=report)
 
 
 def content_audio_files(content: dict[str, Any]) -> set[str]:

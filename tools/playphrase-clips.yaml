@@ -1,0 +1,15 @@
+# Russian side of movie-clip exercises made by tools/playphrase.py (the clips themselves are references to playphrase.me).
+# queries: what to search for a card instead of its term (grammar cards: phrases that show the rule).
+# clips: notes per playphrase.me phrase id; a picked clip without notes goes to tools/.cache/playphrase/todo.yaml.
+#   translation  — natural Russian translation of the line (shown after the answer)
+#   gap          — explanation for the gap exercise (required)
+#   dictation    — explanation for the dictation of the whole line (lines of up to 8 words; optional)
+#   choice       — {question?, wrong: [2–3 lines that differ in 1–2 words], explanation} for clip-choice (optional)
+queries:
+  present-simple-he-she: [she goes, he lives, he works]
+  present-simple-negative: [doesn't like, don't know, doesn't want]
+  pc-form: [is wearing, are you doing, I'm looking]
+  pc-now: [is sleeping, it's raining, are you looking at]
+  past-irregular: [went to, I saw, bought a]
+  cmp-er: [taller than, older than, better than]
+clips: {}

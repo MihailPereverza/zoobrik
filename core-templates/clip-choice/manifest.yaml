@@ -1,0 +1,16 @@
+id: clip-choice
+name: Фрагмент фильма — выбери
+trains: [listen]
+difficulty: 2
+modes: [learn, review, practice]
+check: { type: choice }
+params:
+  video: { type: url, label: Видео (ссылка на playphrase.me, не файл колоды), required: true }
+  text: { type: text, label: Реплика целиком, required: true }
+  words: { type: list, of: timing, label: 'Слова с таймингом [слово, начало мс, конец мс]', required: true }
+  source: { type: object, label: 'Фильм {title, url}', required: true }
+  question: { type: text, label: Вопрос, required: true }
+  answer: { type: text, label: Верный вариант, required: true }
+  options: { type: list, of: text, label: Варианты (включая верный), min: 3, max: 4, required: true }
+  focus: { type: text, label: Слова, выделенные после ответа }
+  translation: { type: text, label: Перевод (после ответа) }

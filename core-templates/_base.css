@@ -183,3 +183,29 @@ textarea.zb-open { min-height: 120px; resize: vertical; text-align: left; font-f
 .zb-order { flex-direction: column; align-items: stretch; counter-reset: zb-step; }
 .zb-order .zb-chip { text-align: left; white-space: normal; height: auto; min-height: 44px; padding: 10px 14px; line-height: 1.35; }
 .zb-slot.zb-order .zb-chip::before { counter-increment: zb-step; content: counter(zb-step) ". "; font-weight: 600; }
+
+/* Movie clips (core/_clip): our own buttons over a bare 16:9 video, the line word by word after the answer */
+.cl-player { display: grid; gap: 10px; min-width: 0; }
+.cl-screen { position: relative; aspect-ratio: 16 / 9; background: #000; border-radius: 16px; overflow: hidden; cursor: pointer; }
+.cl-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; }
+.cl-big { position: absolute; left: 50%; top: 50%; width: 68px; height: 68px; margin: -34px 0 0 -34px; border: 0; border-radius: 50%; background: #FDFBF7; color: #1E1915; display: grid; place-items: center; cursor: pointer; padding: 0; transition: opacity 160ms var(--zb-ease); }
+.cl-big svg { width: 30px; height: 30px; margin-left: 4px; fill: currentColor; }
+.cl-player.playing .cl-big, .cl-player.off .cl-big { opacity: 0; pointer-events: none; }
+.cl-gone { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 12px; background: var(--zb-soft); color: var(--zb-ink-2); font-size: 15px; }
+.cl-gone[hidden] { display: none; }
+.cl-skip { min-height: 44px; }
+.cl-bar { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.cl-toggle svg { fill: currentColor; stroke: none; }
+.cl-toggle .cl-i-pause, .cl-player.playing .cl-toggle .cl-i-play { display: none; }
+.cl-player.playing .cl-toggle .cl-i-pause { display: block; }
+.cl-slow[aria-pressed="true"] { background: var(--zb-ink); color: var(--zb-bg); border-color: var(--zb-ink); box-shadow: none; }
+.zb-play:disabled { opacity: .4; cursor: default; }
+.cl-credit { margin-left: auto; min-width: 0; text-align: right; font-size: 13px; line-height: 1.3; color: var(--zb-ink-3); text-decoration: none; overflow-wrap: break-word; }
+.cl-credit:hover { text-decoration: underline; }
+.cl-q { padding: 18px 16px; }
+.cl-ask { text-align: center; }
+.cl-line { margin: 0; font: 500 19px/1.6 var(--zb-font); }
+.cl-w { font: inherit; color: var(--zb-ink); background: none; border: 0; padding: 0 1px; margin: 0; border-radius: 4px; cursor: pointer; -webkit-user-select: text; user-select: text; }
+.cl-w.key { font-weight: 700; }
+.cl-w.now { background: var(--zb-amber-soft); color: var(--zb-amber-ink); }
+.cl-back { gap: 8px; }

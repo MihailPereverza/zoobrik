@@ -50,6 +50,26 @@ describe('text extraction', () => {
   });
 });
 
+describe('movie clips', () => {
+  const clip = (params: Record<string, any>) => ex('v1', { video: 'https://www.playphrase.me/video/eng/m/1.mp4', words: [['She', 0, 200], ['goes', 220, 500]], source: { title: 'Paddington (2014)', url: 'https://www.imdb.com/title/tt1109624/' }, ...params }, { template: 'clip-type' });
+
+  it('reads the line and the gap, not the url, the timings or the film credit', () => {
+    const t = exerciseText(card('go', 'go', []), clip({ text: 'She goes home.', gap: 'goes', answer: 'goes' }));
+    const all = t.text.flatMap(tokens);
+    expect(all).toEqual(expect.arrayContaining(['She', 'goes', 'home']));
+    expect(all).not.toEqual(expect.arrayContaining(['https']));
+    expect(all).not.toEqual(expect.arrayContaining(['Paddington']));
+  });
+
+  it('locks a clip whose line has an unknown word, not one with an unknown film title', () => {
+    const c = card('go', 'go', [clip({ text: 'She goes.', answer: 'She goes.', source: { title: 'Mountain Story', url: '' } }), clip({ text: 'She goes up the mountain.', answer: 'up' })]);
+    introduce(c);
+    const d = deck([c], BASE);
+    expect(exerciseLocked(d, c, c.exercises[0])).toBe(false);
+    expect(exerciseLocked(d, c, c.exercises[1])).toBe(true);
+  });
+});
+
 describe('exerciseLocked', () => {
   it('never locks before the placement test', () => {
     const c = card('tall', 'tall', [ex('e1', { text: 'The mountain is ___.' })]);

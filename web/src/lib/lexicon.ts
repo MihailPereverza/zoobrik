@@ -19,7 +19,8 @@ const CONTRACTION = /^(.+?)(n't|'s|'re|'m|'ve|'ll|'d)$/;
 const NEGATIVE: Record<string, string> = { wo: 'will', ca: 'can', sha: 'shall', ai: 'be' };
 const FILE = /^[\w.-]+\.(mp3|m4a|wav|ogg|mp4|webm|jpe?g|png|webp|gif|svg)$/i;
 // Shown after the answer, not shown at all, or written for the grader — none of it is text the learner has to read first.
-const HIDDEN = new Set(['audio', 'accept', 'translation', 'explanation', 'hint', 'criteria', 'model_answer', 'note', 'placeholder', 'poster', 'media']);
+// A movie clip's url, word timings and film credit are references, not text (its line is `text`, which does count).
+const HIDDEN = new Set(['audio', 'accept', 'translation', 'explanation', 'hint', 'criteria', 'model_answer', 'note', 'placeholder', 'poster', 'media', 'video', 'words', 'source', 'focus']);
 const MIN_COVERAGE = 0.95;
 
 const norm = (w: string) => w.toLowerCase().replace(/’/g, "'");

@@ -3,7 +3,7 @@ import YAML from 'yaml';
 import { CORE } from './core';
 import { review } from './fsrs';
 import { applyIntro, bury, dayKey, suspend } from './progress';
-import { balanceDue, buildSession, interleave, cardSkills, exerciseRung, gateOpen, isDue, isPrimed, learnItems, limitReviews, movesSchedule, nextBatch, nextDueDate, practiceSession, queueAfter, reviewItems, spread, topicIsOpen } from './scheduler';
+import { balanceDue, buildSession, effortful, interleave, cardSkills, exerciseRung, gateOpen, isDue, isPrimed, learnItems, limitReviews, movesSchedule, nextBatch, nextDueDate, practiceSession, queueAfter, reviewItems, spread, topicIsOpen } from './scheduler';
 import { answerItem, runSession } from './sessionsim';
 import type { Card, DeckConfig, DeckData, Exercise, Grade, Progress, QueueItem, SkillState, Topic } from './types';
 
@@ -459,5 +459,18 @@ describe('priming rule', () => {
     expect(isPrimed(['term'], seen, 30, 'review')).toBe(false);
     expect(isPrimed(['term', 'audio'], seen, 5, 'review')).toBe(false);
     expect(isPrimed([], seen, 5, 'review')).toBe(false);
+  });
+});
+
+describe('production formats', () => {
+  it('counts movie clips: a typed clip by its fuzzy check, a clip choice by listening', () => {
+    const data = mkDeck([mkTopic('a', 1)]);
+    const card = data.topics[0].cards[0];
+    const media = { video: 'https://www.playphrase.me/video/eng/m/1.mp4', text: 'I see w.', words: [], source: { title: 'Film (2000)', url: '' } };
+    const typed: Exercise = { id: 'v1', template: 'clip-type', status: 'ready', params: { ...media, answer: 'w', gap: 'w' } };
+    const choice: Exercise = { id: 'v2', template: 'clip-choice', status: 'ready', params: { ...media, question: 'Что сказал герой?', answer: 'I see w.', options: ['I see w.', 'I saw w.', 'I see you.'] } };
+    expect(effortful(data, card, typed)).toBe(true);
+    expect(effortful(data, card, choice)).toBe(true);
+    expect(effortful(data, card, card.exercises[1])).toBe(false);
   });
 });

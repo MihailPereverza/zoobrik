@@ -1,0 +1,76 @@
+{# Movie clip player for clip-type and clip-choice. The video streams from its site at play time and is never stored in the deck. #}
+{% macro player(params) %}<div class="cl-player">
+  <div class="cl-screen" data-zb-tap>
+    {# #t=0.001 makes iOS Safari paint the first frame instead of a black box. #}
+    <video class="cl-video" src="{{ params.video }}#t=0.001" playsinline webkit-playsinline preload="metadata" disablepictureinpicture disableremoteplayback></video>
+    <button class="cl-big" type="button" data-cl="toggle" aria-label="Смотреть"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+    <div class="cl-gone" hidden><span>Видео недоступно</span><button class="zb-option cl-skip" type="button" data-cl="skip">Пропустить</button></div>
+  </div>
+  <div class="cl-bar">
+    <button class="zb-play cl-toggle" type="button" data-cl="toggle" aria-label="Смотреть"><svg class="cl-i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><svg class="cl-i-pause" viewBox="0 0 24 24"><path d="M7 5h3v14H7zM14 5h3v14h-3z"/></svg></button>
+    <button class="zb-play slow" type="button" data-cl="replay" aria-label="С начала"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/></svg></button>
+    <button class="zb-play slow cl-slow" type="button" data-cl="slow" aria-pressed="false" aria-label="Медленнее">0.75×</button>
+    {% if params.source and params.source.title %}<a class="cl-credit" href="{{ params.source.url }}" target="_blank" rel="noopener noreferrer">{{ params.source.title }}</a>{% endif %}
+  </div>
+</div>{% endmacro %}
+
+{# The line word by word after the answer: the word being said lights up, a tap on a word plays from it. #}
+{% macro transcript(params) %}<p class="cl-line">{% for w in params.words %}<button class="cl-w" type="button" data-at="{{ w[1] }}" data-end="{{ w[2] }}">{{ w[0] }}</button> {% endfor %}</p>{% endmacro %}
+
+{% macro script() %}<script>
+window.__zbClip = function (zb) {
+  var player = zb.$('.cl-player'), video = zb.$('.cl-video');
+  if (!player || !video) return;
+  var words = zb.$$('.cl-w'), frame = 0, played = false;
+  var bare = function (w) { return String(w).toLowerCase().replace(/[’‘]/g, "'").replace(/[^a-z0-9']+/g, ''); };
+  // The target words (the gap, or `focus`) are bold in the line once it is shown.
+  var focus = String(zb.params.gap || zb.params.focus || '').split(/\s+/).map(bare).filter(Boolean);
+  var spoken = words.map(function (w) { return bare(w.textContent); });
+  if (focus.length) for (var i = 0; i + focus.length <= spoken.length; i++) {
+    if (focus.every(function (f, j) { return spoken[i + j] === f; })) for (var j = 0; j < focus.length; j++) words[i + j].classList.add('key');
+  }
+  function light() {
+    var t = video.currentTime * 1000, now = -1;
+    // One word at a time: the last one started, while it lasts (plus a short tail for words said quickly).
+    words.forEach(function (w, i) { if (t >= +w.dataset.at) now = i; });
+    if (video.ended || (now >= 0 && t > +words[now].dataset.end + 250)) now = -1;
+    words.forEach(function (w, i) { w.classList.toggle('now', i === now); });
+    frame = video.paused ? 0 : requestAnimationFrame(light);
+  }
+  function play(from) {
+    if (from != null) video.currentTime = from;
+    played = true;
+    var p = video.play();
+    if (p && p.catch) p.catch(function (e) { zb.log('clip play failed', e && e.name); });
+  }
+  function toggle() { if (video.paused) play(video.ended ? 0 : null); else video.pause(); }
+  function gone() {
+    player.classList.add('off');
+    zb.$('.cl-gone').hidden = false;
+    zb.$$('.cl-bar button').forEach(function (b) { b.disabled = true; });
+    zb.log('clip unavailable', zb.params.video);
+  }
+  video.addEventListener('play', function () { player.classList.add('playing'); cancelAnimationFrame(frame); light(); });
+  video.addEventListener('pause', function () { player.classList.remove('playing'); light(); });
+  video.addEventListener('error', gone);
+  player.addEventListener('click', function (e) {
+    if (e.target.closest('a')) return;
+    var el = e.target.closest('[data-cl]');
+    var act = el ? el.dataset.cl : e.target.closest('.cl-screen') ? 'toggle' : '';
+    if (!act) return;
+    // Taps on the clip are ours: after the answer a tap outside buttons would turn the card over.
+    e.stopPropagation();
+    if (act === 'skip') zb.skip('clip unavailable');
+    else if (player.classList.contains('off')) return;
+    else if (act === 'toggle') toggle();
+    else if (act === 'replay') play(0);
+    else if (act === 'slow') {
+      video.playbackRate = video.playbackRate === 1 ? 0.75 : 1;
+      el.setAttribute('aria-pressed', String(video.playbackRate !== 1));
+    }
+  });
+  words.forEach(function (w) { w.addEventListener('click', function () { if (!player.classList.contains('off')) play(+w.dataset.at / 1000); }); });
+  // The answer opens the line; a learner who has already watched sees it run in sync once more.
+  zb.on('graded', function () { if (played && !player.classList.contains('off')) play(0); });
+};
+</script>{% endmacro %}

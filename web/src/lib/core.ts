@@ -14,7 +14,9 @@ function bundle(): CoreBundle {
     style: files.get(`${id}/style.css`) ?? '',
     logic: files.get(`${id}/logic.js`) ?? null,
   }));
-  return { templates, partials: { 'core/_macros': files.get('_macros.njk') ?? '' }, baseCss: files.get('_base.css') ?? '' };
+  // Shared pieces (_macros.njk, _clip.njk) are imported as core/_<name>.
+  const partials = Object.fromEntries([...files].filter(([p]) => /^_[\w-]+\.njk$/.test(p)).map(([p, src]) => [`core/${p.slice(0, -4)}`, src]));
+  return { templates, partials, baseCss: files.get('_base.css') ?? '' };
 }
 
 export const CORE: CoreBundle = bundle();

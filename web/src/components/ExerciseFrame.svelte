@@ -67,10 +67,11 @@
   });
 </script>
 
+<!-- allow-popups: a link in an exercise (the film credit of a movie clip) opens in a new tab. -->
 <iframe
   bind:this={iframe}
   {srcdoc}
-  sandbox="allow-scripts"
+  sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
   title="Задание"
   style:height="{height}px"
   class:shown

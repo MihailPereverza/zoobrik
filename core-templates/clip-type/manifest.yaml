@@ -1,0 +1,16 @@
+id: clip-type
+name: Фрагмент фильма — напиши услышанное
+trains: [listen, spell]
+difficulty: 3
+modes: [learn, review, practice]
+check: { type: fuzzy }
+params:
+  video: { type: url, label: Видео (ссылка на playphrase.me, не файл колоды), required: true }
+  text: { type: text, label: Реплика целиком, required: true }
+  words: { type: list, of: timing, label: 'Слова с таймингом [слово, начало мс, конец мс]', required: true }
+  source: { type: object, label: 'Фильм {title, url}', required: true }
+  answer: { type: text, label: Что вписать (пропуск или вся реплика), required: true }
+  accept: { type: list, of: text, label: Тоже верно }
+  gap: { type: text, label: Пропущенные слова (без него — диктант всей реплики) }
+  focus: { type: text, label: Слова, выделенные после ответа }
+  translation: { type: text, label: Перевод (после ответа) }
