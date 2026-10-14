@@ -13,8 +13,8 @@ function card(progress?: Progress): Card {
   return { id: 'luggage', kind: 'word', topic: 'travel', path: 'topics/travel/luggage', content: { term: 'luggage' }, theory: null, exercises: [exercise], templates: [], progress };
 }
 
-function answer(c: Card, grade: 1 | 2 | 3 | 4, opts: { skill?: string; rung?: number; practice?: boolean; now?: Date; ms?: number; deck?: DeckConfig } = {}) {
-  return applyAnswer({ deck: opts.deck ?? deck, card: c, exercise, skill: opts.skill ?? 'recall', rung: opts.rung, grade, practice: opts.practice ?? false, ms: opts.ms ?? 4000, now: opts.now ?? NOW, device: 'mac' });
+function answer(c: Card, grade: 1 | 2 | 3 | 4, opts: { skill?: string; rung?: number; produced?: boolean; practice?: boolean; now?: Date; ms?: number; deck?: DeckConfig } = {}) {
+  return applyAnswer({ deck: opts.deck ?? deck, card: c, exercise, skill: opts.skill ?? 'recall', rung: opts.rung, produced: opts.produced, grade, practice: opts.practice ?? false, ms: opts.ms ?? 4000, now: opts.now ?? NOW, device: 'mac' });
 }
 
 // Progress of topics/appearance-hair/hair/card.yaml from the real deck, written by the six-skill scheduler.
@@ -94,6 +94,12 @@ describe('ladder', () => {
     expect(answer(card(at(1)), 4).progress.rung).toBe(3);
     expect(answer(card(at(1)), 2).progress.rung).toBe(1);
     expect(answer(card(at(1)), 1).progress.rung).toBe(0);
+  });
+
+  it('Good on a typed or heard answer climbs two rungs; Hard and Again do not care', () => {
+    expect(answer(card(at(1)), 3, { produced: true }).progress.rung).toBe(3);
+    expect(answer(card(at(1)), 2, { produced: true }).progress.rung).toBe(1);
+    expect(answer(card(at(1)), 1, { produced: true }).progress.rung).toBe(0);
   });
 
   it('starts at the bottom and stays within the ladder', () => {

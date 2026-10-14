@@ -60,16 +60,17 @@ export function ladderStepMs(deck: DeckConfig, rung: number, grade: Grade): numb
 export interface NextState { memory: SkillState; rung: number; learned?: string }
 
 /**
- * What one graded answer does. On the ladder: Good climbs a rung, Easy two, Hard stays, Again steps down, and the card
+ * What one graded answer does. On the ladder: Good climbs a rung (two when typed or heard), Easy two, Hard stays, Again steps down, and the card
  * comes back after a short step. Passing the top rung hands the card to FSRS with its long intervals.
  */
-export function nextState(deck: DeckConfig, progress: Progress | undefined, exerciseRung: number | undefined, grade: Grade, now: Date): NextState {
+export function nextState(deck: DeckConfig, progress: Progress | undefined, exerciseRung: number | undefined, grade: Grade, now: Date, produced = false): NextState {
   const ladder = ladderOf(deck);
   const top = ladder.length - 1;
   const before = memoryOf(progress);
   const rung = rungOf(progress, ladder);
   const from = grade > 2 ? Math.max(rung, exerciseRung ?? rung) : rung;
-  const target = from + RUNG_STEP[grade];
+  // Writing or hearing the word right shows more than picking it: Good on such an exercise climbs two formats.
+  const target = from + (produced && grade === 3 ? 2 : RUNG_STEP[grade]);
   const fsrs = review(deck, before, grade, now);
   if (isLearned(progress, ladder)) return { memory: fsrs, rung: Math.max(0, Math.min(top, target)), learned: progress?.learned };
   if (target > top) {
@@ -128,6 +129,8 @@ interface ApplyInput {
   skill: string;
   /** Ladder rung of the exercise; a correct answer climbs from here when it is above the card's rung. */
   rung?: number;
+  /** The learner typed or heard the answer (not picked it): Good climbs two formats. */
+  produced?: boolean;
   grade: Grade;
   practice: boolean;
   ms: number;
@@ -161,7 +164,7 @@ export function applyAnswer(input: ApplyInput): AnswerEffect {
   const nowIso = input.now.toISOString();
   if (!input.practice) {
     const before = memoryOf(progress);
-    const next = nextState(input.deck, progress, input.rung, input.grade, input.now);
+    const next = nextState(input.deck, progress, input.rung, input.grade, input.now, input.produced);
     progress.memory = next.memory;
     progress.rung = next.rung;
     if (next.learned) progress.learned = next.learned;

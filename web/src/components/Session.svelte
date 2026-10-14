@@ -19,7 +19,7 @@
   import { applyAnswer, applyIntro, bury, previewNext, suspend } from '../lib/progress';
   import { audioVariants, mediaUrl, render, type Rendered } from '../lib/render';
   import { filterCards, queryToFilter } from '../lib/words';
-  import { balanceDue, buildSession, exerciseRung, isPrimed, learningSoon, manifestOf, movesSchedule, nextBatch, practiceSession, queueAfter } from '../lib/scheduler';
+  import { balanceDue, buildSession, effortful, exerciseRung, isPrimed, learningSoon, manifestOf, movesSchedule, nextBatch, practiceSession, queueAfter } from '../lib/scheduler';
   import type { CheckResult, Grade, QueueItem, Skill } from '../lib/types';
 
   type Phase = 'answer' | 'reveal' | 'graded' | 'flipped' | 'wait' | 'done';
@@ -248,7 +248,7 @@
     for (const card of members) {
       const skill = current.topicCards ? current.exercise.cards![card.id] : current.skills[0] ?? '-';
       const rung = current.topicCards ? undefined : exerciseRung(data, card, current.exercise) ?? undefined;
-      const effect = applyAnswer({ deck: data.deck, card, exercise: current.exercise, skill, rung, grade: g, practice: isPractice, ms: answerMs, now, device: app.device });
+      const effect = applyAnswer({ deck: data.deck, card, exercise: current.exercise, skill, rung, produced: !current.topicCards && effortful(data, card, current.exercise), grade: g, practice: isPractice, ms: answerMs, now, device: app.device });
       if (!isPractice && effect.progress.memory) effect.progress.memory = balanceDue(data, card, effect.progress.memory);
       if (effect.becameLeech) { notice = `«${card.content.term ?? card.content.title}» стало пиявкой: слишком много ошибок. Загляните в карточку — поможет своя заметка или пример.`; log('session', 'leech', card.id); }
       card.progress = effect.progress;

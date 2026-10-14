@@ -288,6 +288,18 @@ export interface SessionPlan {
   nextDue: Date | null;
 }
 
+/** New words come from the start, one new item after every `every` reviews, so a short session still brings something new. */
+export function interleave(fresh: QueueItem[], reviews: QueueItem[], every: number): QueueItem[] {
+  const out: QueueItem[] = [];
+  let r = 0;
+  for (const item of fresh) {
+    out.push(item);
+    out.push(...reviews.slice(r, r + every));
+    r += every;
+  }
+  return [...out, ...reviews.slice(r)];
+}
+
 export function buildSession(data: DeckData, now: Date, allowNew = true, aheadMs = 0, more = false): SessionPlan {
   const cycleSize = data.deck.cycle?.cards ?? 4;
   const minGap = data.deck.cycle?.min_gap ?? 2;
@@ -307,9 +319,10 @@ export function buildSession(data: DeckData, now: Date, allowNew = true, aheadMs
   const batch = allowNew ? nextBatch(data, now, due.length, more) : null;
   if (batch) {
     const fresh = batch.rule ? [...batch.cards, batch.rule.card] : batch.cards;
-    queue.push(...spread(fresh.map((c) => learnItems(data, c)), minGap, true), ...topicExerciseItems(data, batch.topic, batch.cards));
+    const learning = [...spread(fresh.map((c) => learnItems(data, c)), minGap, true), ...topicExerciseItems(data, batch.topic, batch.cards)];
+    return { queue: interleave(learning, queue, 2), dueCards: due.length, newCards: fresh.length, nextDue: nextDueDate(data, now) };
   }
-  return { queue, dueCards: due.length, newCards: (batch?.cards.length ?? 0) + (batch?.rule ? 1 : 0), nextDue: nextDueDate(data, now) };
+  return { queue, dueCards: due.length, newCards: 0, nextDue: nextDueDate(data, now) };
 }
 
 function isLearningCard(data: DeckData, card: Card, now: Date): boolean {

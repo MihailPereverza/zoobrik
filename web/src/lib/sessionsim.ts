@@ -1,5 +1,5 @@
 import { applyAnswer, applyIntro } from './progress';
-import { balanceDue, buildSession, exerciseRung, movesSchedule, queueAfter } from './scheduler';
+import { balanceDue, buildSession, effortful, exerciseRung, movesSchedule, queueAfter } from './scheduler';
 import type { Card, DeckData, Grade, QueueItem } from './types';
 
 // Headless copy of Session.svelte's grading loop, for tests and replays of a learner's journal.
@@ -11,7 +11,7 @@ export function answerItem(data: DeckData, item: QueueItem, grade: Grade, now: D
   for (const card of item.topicCards ?? [item.card]) {
     const skill = item.topicCards ? item.exercise.cards![card.id] : item.skills[0] ?? '-';
     const rung = item.topicCards ? undefined : exerciseRung(data, card, item.exercise) ?? undefined;
-    const effect = applyAnswer({ deck: data.deck, card, exercise: item.exercise, skill, rung, grade, practice, ms: 5000, now, device: 'sim' });
+    const effect = applyAnswer({ deck: data.deck, card, exercise: item.exercise, skill, rung, produced: !item.topicCards && effortful(data, card, item.exercise), grade, practice, ms: 5000, now, device: 'sim' });
     if (!practice && effect.progress.memory) effect.progress.memory = balanceDue(data, card, effect.progress.memory);
     card.progress = effect.progress;
   }

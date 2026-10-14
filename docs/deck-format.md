@@ -111,7 +111,8 @@ vocabulary, except listening cards.
 
 Each card has one FSRS memory (`progress.memory`) and a step on the ladder (`progress.rung`). A due card gets one
 exercise from its step; an exercise sits on the lowest ladder skill it trains (`spell` counts as `recall`).
-A new word stays on the ladder until it passes every format: Good climbs a step, Easy two, Hard stays, Again goes a step
+A new word stays on the ladder until it passes every format: Good climbs a step (two when the learner typed or heard the
+answer rather than picked it), Easy two, Hard stays, Again goes a step
 down, and the word comes back after a short wait (`fsrs.ladder_steps`, default 5m, 10m, 30m, 1h; 5m after Again).
 Passing the top step sets `progress.learned` and hands the card to FSRS with intervals of a day and more; only then
 `cycle.max_per_day` limits its reviews. Old per-skill `progress.skills` are read once as the card's weakest skill.
@@ -119,7 +120,8 @@ Passing the top step sets `progress.learned` and hands the card to FSRS with int
 New cards come as a portion of words from the first open vocabulary topic plus one rule from the first open grammar
 topic (`kind: grammar`), in `deck.yaml` order; `limits.new_rules_per_day` (default 2) caps rules. A topic opens once each
 vocabulary topic in its `requires` has a portion started and each grammar topic in it is learned (every card passed the
-ladder). Inside a grammar topic the next rule waits until the earlier ones are learned. «Ещё новые слова» in the app takes
+ladder). Inside a grammar topic the next rule waits until the earlier ones are learned. A session brings its new portion from the start, one new item after every two reviews, so a short session still teaches
+something new. «Ещё новые слова» in the app takes
 a portion past the daily limits.
 
 Which exercise of a rung: the one shown longest ago, easy before hard while learning. From the third rung on and in reviews

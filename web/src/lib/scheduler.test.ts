@@ -3,7 +3,7 @@ import YAML from 'yaml';
 import { CORE } from './core';
 import { review } from './fsrs';
 import { applyIntro, bury, dayKey, suspend } from './progress';
-import { balanceDue, buildSession, cardSkills, exerciseRung, gateOpen, isDue, isPrimed, learnItems, limitReviews, movesSchedule, nextBatch, nextDueDate, practiceSession, queueAfter, reviewItems, spread, topicIsOpen } from './scheduler';
+import { balanceDue, buildSession, interleave, cardSkills, exerciseRung, gateOpen, isDue, isPrimed, learnItems, limitReviews, movesSchedule, nextBatch, nextDueDate, practiceSession, queueAfter, reviewItems, spread, topicIsOpen } from './scheduler';
 import { answerItem, runSession } from './sessionsim';
 import type { Card, DeckConfig, DeckData, Exercise, Grade, Progress, QueueItem, SkillState, Topic } from './types';
 
@@ -139,10 +139,10 @@ describe('learning a word: the whole ladder in short steps', () => {
   it('climbs every format with short waits and only then goes to days-long intervals', () => {
     const data = mkDeck([mkTopic('a', 1)]);
     const card = data.topics[0].cards[0];
-    // The fixture has no listening exercise, so rung 3 is asked from the nearest rung below.
+    // Typing the word (recall) climbs two formats; the fixture has no listening exercise, so rung 3 is asked from below.
     const { answers } = runSession(data, NOW, always(3), { aheadMs: PULL });
     const own = answers.filter((a) => a.card === card);
-    expect(own.map((a) => a.item.skills[0])).toEqual(['recognize', 'recall', 'context', 'context', 'apply']);
+    expect(own.map((a) => a.item.skills[0])).toEqual(['recognize', 'recall', 'context', 'apply']);
     expect(card.progress!.learned).toBeTruthy();
     expect(card.progress!.memory!.state).toBe('review');
     expect(new Date(card.progress!.memory!.due).getTime() - own.at(-1)!.at.getTime()).toBeGreaterThanOrEqual(DAY);
@@ -408,6 +408,13 @@ describe('load balancer', () => {
     const state: SkillState = { state: 'review', s: 20, d: 5, due: new Date(NOW.getTime() + 20 * DAY).toISOString(), last: NOW.toISOString(), reps: 5, lapses: 0, step: 0 };
     const days = Math.round((Date.parse(balanceDue(data, data.topics[0].cards[0], state).due) - NOW.getTime()) / DAY);
     expect(days).toBe(20);
+  });
+});
+
+describe('interleave', () => {
+  it('puts a new item after every two reviews, from the start', () => {
+    const items = (p: string, n: number) => Array.from({ length: n }, (_, i) => ({ key: `${p}${i}` }) as unknown as QueueItem);
+    expect(interleave(items('n', 2), items('r', 5), 2).map((q) => q.key)).toEqual(['n0', 'r0', 'r1', 'n1', 'r2', 'r3', 'r4']);
   });
 });
 
