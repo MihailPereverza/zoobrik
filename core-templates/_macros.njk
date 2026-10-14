@@ -16,7 +16,7 @@
 <div class="zb-card{% if big %} big{% endif %}">
   {% if card.content.image %}<div class="ci-media"><img src="{{ media(card.content.image) }}" alt=""></div>{% endif %}
   {% if card.kind == 'grammar' %}
-    <div class="ci-head"><div><div class="ci-word">{{ card.content.title }}</div>{% if card.content.formula %}<div class="ci-formula">{{ card.content.formula }}</div>{% endif %}</div></div>
+    <div class="ci-head"><div><div class="ci-word">{{ card.content.title | mdi }}</div>{% if card.content.formula %}<div class="ci-formula">{{ card.content.formula | mdi }}</div>{% endif %}</div></div>
   {% else %}
     <div class="ci-head">
       <div>

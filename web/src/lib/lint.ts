@@ -1,5 +1,6 @@
 import { check } from './check';
 import { grammarReport } from './grammar';
+import { markupIssues } from './markup';
 import { deckOrder, lexiconReport, minCoverage, type WordFinding } from './lexicon';
 import { mediaUrl, render } from './render';
 import { backend } from './state.svelte';
@@ -90,7 +91,7 @@ export async function lintDeck(data: DeckData, onProgress: (done: number, total:
       lintExercise(data, member, exercise).forEach((message) => issues.push({ card: member, exercise, message }));
     }
   }
-  issues.push(...wordIssues(data), ...grammarIssues(data));
+  issues.push(...wordIssues(data), ...grammarIssues(data), ...markupIssues(data));
   return { issues, exercises, audio };
 }
 
@@ -138,3 +139,4 @@ function grammarIssues(data: DeckData): LintIssue[] {
   }
   return out;
 }
+

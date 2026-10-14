@@ -159,3 +159,14 @@ describe('typo letters', () => {
     expect(typoLetters('Gate', 'gate').every((l) => !l.fix)).toBe(true);
   });
 });
+
+import { brokenMarkup } from './md';
+describe('markup check', () => {
+  it('finds markdown that leaves stars on screen and passes clean markup', () => {
+    expect(brokenMarkup('*My brother is tall**er than** me.*')).toBe(true);
+    expect(brokenMarkup("*He**'s always losing** his keys!*")).toBe(true);
+    expect(brokenMarkup('<i>My brother is tall**er than** me.</i>')).toBe(false);
+    expect(brokenMarkup("He<b>'s always losing</b> his keys")).toBe(false);
+    expect(brokenMarkup('She ___ to work. **often** — *часто*')).toBe(false);
+  });
+});

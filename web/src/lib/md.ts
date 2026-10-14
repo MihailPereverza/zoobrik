@@ -22,6 +22,13 @@ export function renderMarkdown(text: string): string {
   return marked.parse(String(text ?? ''), { async: false, breaks: false }) as string;
 }
 
+/** True when markdown leaves its own markers in the visible text (nested *…**…**…*, a bold glued to a word): broken layout. */
+export function brokenMarkup(text: string, inline = true): boolean {
+  const source = String(text ?? '').replace(/_{3,}/g, 'X').replace(/\[\[[^\]]*\]\]/g, 'X');
+  const html = inline ? renderInline(source) : renderMarkdown(source);
+  return /\*|~~/.test(html.replace(/<code>[\s\S]*?<\/code>/g, '').replace(/<[^>]+>/g, ''));
+}
+
 /** One line of markdown (bold, italics, code) without a wrapping paragraph: hints, translations, instructions. */
 export function renderInline(text: string): string {
   return marked.parseInline(String(text ?? ''), { async: false }) as string;

@@ -4,6 +4,7 @@ import path from 'node:path';
 import { buildDeck, isTextFile, type FileMap } from '../src/lib/deckfs';
 import { grammarReport } from '../src/lib/grammar';
 import { lexiconReport } from '../src/lib/lexicon';
+import { markupIssues } from '../src/lib/markup';
 
 const args = process.argv.slice(2);
 const flag = (name: string) => { const i = args.indexOf(name); return i < 0 ? undefined : args.splice(i, 2)[1] ?? ''; };
@@ -74,4 +75,7 @@ if (json) {
   console.log(`  exercises waiting for a later rule (locked until it is learned): ${grammar.exercises.length}`);
   for (const f of grammar.exercises) console.log(`    @${f.step} ${f.topic}/${f.card} ${f.where}: ${rules(f.rules)}`);
   for (const bad of grammar.invalid) console.log(`  invalid detect in ${bad.card}: ${bad.pattern}`);
+  const markup = markupIssues(data);
+  console.log(`\nMarkup that shows raw stars: ${markup.length}`);
+  for (const m of markup) console.log(`  ${m.card.topic}/${m.card.id}${m.exercise ? ` ${m.exercise.id}` : ''}: ${m.message}`);
 }
