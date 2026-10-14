@@ -26,6 +26,14 @@ describe('normalize and distance', () => {
     expect(matchText('', ['bad'])).toEqual({ correct: false, typo: false });
   });
 
+  it('never takes a grammatical ending or another word for a typo', () => {
+    expect(matchText('She work every day', ['She works every day'])).toEqual({ correct: false, typo: false });
+    expect(matchText('He is taller then me', ['He is taller than me'])).toEqual({ correct: false, typo: false });
+    expect(matchText('My brother study at home', ['My brother studies at home'])).toEqual({ correct: false, typo: false });
+    expect(matchText('They are plaing football', ['They are playing football'])).toEqual({ correct: true, typo: true });
+    expect(matchText('They play football', ['They played football'])).toEqual({ correct: false, typo: false });
+  });
+
   it('allows two typos in long answers', () => {
     expect(matchText('of avarage heigt', ['of average height']).correct).toBe(true);
   });

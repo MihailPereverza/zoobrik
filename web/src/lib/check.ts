@@ -42,6 +42,19 @@ function allowedTypos(expected: string): number {
   return expected.length >= 5 ? 1 : 0;
 }
 
+// Endings that change the grammar, not the spelling: works/work, played/play, taller/tall, studies/study.
+const ENDINGS = /(?:ies|es|s|ied|ed|d|ing|ier|er|iest|est|n't)$/;
+const stem = (w: string) => w.replace(ENDINGS, '').replace(/(?:e|y|i)$/, '');
+const ending = (w: string) => ENDINGS.exec(w)?.[0] ?? '';
+const inflected = (a: string, b: string) => stem(a) === stem(b) && ending(a) !== ending(b);
+
+/** True when the answer differs from the expected one by a whole word or a grammatical ending: a mistake, never a typo. */
+export function otherForm(given: string, expected: string): boolean {
+  const a = given.split(' '), b = expected.split(' ');
+  if (a.length !== b.length) return true;
+  return a.some((w, i) => w !== b[i] && (inflected(w, b[i]) || Math.max(w.length, b[i].length) <= 4 || levenshtein(w, b[i]) > Math.ceil(b[i].length / 4)));
+}
+
 interface TextMatch { correct: boolean; typo: boolean }
 
 export function matchText(given: string, variants: string[]): TextMatch {
@@ -49,7 +62,7 @@ export function matchText(given: string, variants: string[]): TextMatch {
   if (!g) return { correct: false, typo: false };
   const normalized = variants.filter(Boolean).map(normalize);
   if (normalized.includes(g)) return { correct: true, typo: false };
-  const close = normalized.some((v) => levenshtein(g, v) <= allowedTypos(v));
+  const close = normalized.some((v) => levenshtein(g, v) <= allowedTypos(v) && !otherForm(g, v));
   return { correct: close, typo: close };
 }
 
