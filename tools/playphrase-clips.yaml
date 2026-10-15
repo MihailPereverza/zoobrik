@@ -2521,3 +2521,192 @@ clips:
     skip: go to bed with — сексуальный подтекст, не «ложиться спать»
   6681afe81a266d06dff333ce:
     skip: go to bed with — сексуальный подтекст, не «ложиться спать»
+  6709a971768542691926f027:
+    translation: Ну, лёжа никто не выглядит толстым.
+    gap: '**fat** — толстый. *look fat* — выглядеть толстым. О людях звучит грубо; вежливее — *overweight*.'
+    choice:
+      wrong:
+      - Well, nobody looks thin when they're laying down.
+      - Well, nobody feels fat when they're laying down.
+      explanation: Герой говорит, что лёжа никто не **выглядит толстым** — *looks fat*, а не «худым» (*thin*) и не «чувствует
+        себя» (*feels*). Разговорное *laying down* здесь вместо правильного *lying down*.
+  6669c1e6ab721a61ab98f64f:
+    translation: Но ты же теперь лысый, Кев.
+    gap: '**bald** — лысый. Читается [bɔːld], как *ball* + d. Облысеть — *go bald*.'
+    dictation: '**you''re** звучит коротко [jɔː], почти как *your*. **bald** — [bɔːld], долгое «о», не [bald]. **Kev** — имя
+      (Кевин).'
+    choice:
+      wrong:
+      - But you're old now, Kev.
+      - But you're bald too, Kev.
+      explanation: Герой говорит, что Кев **теперь лысый** — *bald now*. Не *old* (старый) и не *too* (тоже).
+  672b3488b6f4922387422eca:
+    skip: tie him up — «связать» человека, другое значение; карточка про tie «галстук»
+  666fb51fab721a61ab9fd867:
+    skip: tie up — «привязать» (к кровати), другое значение и сексуальный подтекст
+  673384fb619490728386e0dd:
+    translation: Что, тебя научить завязывать галстук?
+    gap: '**tie a tie** — завязывать галстук: первое *tie* — глагол «завязывать», второе — сам галстук.'
+    choice:
+      wrong:
+      - Yeah, you need me to teach you to wear a tie?
+      - Yeah, you need me to help you to tie a tie?
+      explanation: Герой предлагает **научить** (*teach*) **завязывать** галстук — *tie a tie*, а не «носить» (*wear*) и не
+        «помочь» (*help*).
+  665b84b5e7d77a68b543f526:
+    skip: непонятно без контекста (что одежда «делает» на человеке — do that on you)
+  666e8147ab721a61ab9f1432:
+    skip: обрывок фразы с иронией (not much shirt — «маловато рубашки»), трудно понять
+  6766b97943cc673af1e54665:
+    skip: британская идиома (all fur coat and …) и марка машины Austin Seven — не «шуба» в прямом смысле
+  6718e793dc719f340faed7f1:
+    translation: К тому же у меня есть дождевик, а у тебя нет.
+    gap: '**raincoat** — дождевик, плащ от дождя: *rain* (дождь) + *coat* (пальто).'
+    dictation: '**and you don''t** — *and* слабое [ən], *don''t* в конце почти без *t*. **Besides** [bɪˈsaɪdz] — «к тому же».'
+    choice:
+      wrong:
+      - Besides, I have a raincoat and you do.
+      - Besides, I have a coat and you don't.
+      explanation: У героя есть **дождевик** (*raincoat*, не просто *coat*), а у собеседника **нет** — *and you don't*.
+  67218ded98aa7b2bcb27c610:
+    translation: Там, откуда я родом, мужчины носят женщин на руках.
+    gap: '**carry** — нести, носить на руках. Здесь *carry … about* (британское) — носить с собой туда-сюда.'
+    choice:
+      wrong:
+      - Where I come from, the women carry the men about.
+      - Where I come from, the men take the women about.
+      explanation: Там, откуда герой, **мужчины носят женщин** на руках — *the men carry the women*, а не наоборот и не «водят»
+        (*take*).
+  674822e650f5f56297f818aa:
+    translation: Пожалуйста, мне нужно одеться.
+    gap: '**get dressed** — одеться (весь процесс). Не *dress* с объектом: *I have to get dressed*.'
+    dictation: '**have to** звучит [hæftə]: *v* оглушается в [f]. **get dressed** — *t* почти пропадает: [ɡeˈdrest].'
+    choice:
+      wrong:
+      - Please, I have to get ready.
+      - Please, I want to get dressed.
+      explanation: Героине **нужно** (*have to*) именно **одеться** — *get dressed*, а не «собраться» (*get ready*) и не просто
+        «хочу» (*want to*).
+  6766e40b587e9a1ab929b1e3:
+    skip: Present Perfect (have always been) и мрачный смысл (дал женщине умереть)
+  670d00ee5b56d878b9d99920:
+    translation: Мы редко видим его в этом доме.
+    gap: '**rarely** — редко (≈ 10 %). Стоит **перед глаголом** и уже значит «не часто» — без *don''t*: *We rarely see him*.'
+    dictation: '**rarely** [ˈreəli] — два слога, *r* в начале и *l* в конце. **see him** сливается: *h* выпадает — [ˈsiːɪm].'
+    choice:
+      wrong:
+      - We often see him in this house.
+      - We rarely see her in this house.
+      explanation: Его **редко** видят — *rarely*, не «часто» (*often*). И речь о нём — *him*, а не о ней (*her*).
+  67076bc400b72b5b5484efe7:
+    translation: Мачеха всегда и везде опаздывает.
+    gap: 'С **to be** наречие частоты стоит **после** глагола: *is always late*, не ~~always is late~~.'
+    dictation: '**is always** сливаются: [ɪzˈɔːlweɪz]. **Stepmother** — мачеха, в фильме без артикля, как имя.'
+    choice:
+      wrong:
+      - Stepmother is never late for anything.
+      - Stepmother is often late for everything.
+      explanation: Мачеха опаздывает **всегда** — *is always late*, не «никогда» (*never*) и не «часто» (*often*).
+  665e15f3877ad250fbbb0d1e:
+    translation: Я всегда всё помню, что бы ни было.
+    gap: 'С обычным глаголом наречие частоты стоит **между подлежащим и глаголом**: **I always** remember.'
+    dictation: '**I always** сливаются в [aɪˈɔːlweɪz]. **no matter what** — «что бы ни было», *matter* с мягким [d]: [ˈmædər].'
+    choice:
+      wrong:
+      - I never remember anything, no matter what.
+      - I always forget everything, no matter what.
+      explanation: Героиня **всегда всё помнит** — *always remember*, а не «никогда не помнит» (*never*) и не «забывает» (*forget*).
+  671a8d66de4b973cebbaf025:
+    translation: Как часто вы ходите в церковь?
+    gap: '**How often do you** + глагол? — вопрос «как часто?». Нужен **do**: не ~~How often you attend~~.'
+    dictation: '**do you** сливается в [dʒə] или [djə]. **attend** [əˈtend] — посещать, первое *a* слабое.'
+    choice:
+      wrong:
+      - How often does he attend church?
+      - How long do you attend church?
+      explanation: Спрашивают **вас** — *do you*, не «его» (*does he*). И **как часто** — *how often*, а не «как долго» (*how
+        long*).
+  670750730ea8974796ae1a88:
+    skip: вторая половина — сокращённый Present Perfect (than I have in a very long time), ещё не пройден
+  6752be0f577fe15785ec8900:
+    skip: to be + always + there — не «always + -ing» с раздражением, правило карточки не видно
+  67633fcae5cf881c82ec8ff7:
+    skip: разговорные слова-паразиты (She's like, kind of like), непонятно без контекста
+  667e1f9885f37b1f9f4d0f17:
+    translation: Карлос, думаю, пора закапать глазные капли.
+    gap: '**I think** = «я считаю» (мнение) — это состояние, поэтому **Simple**. *I''m thinking* — «обдумываю», другой смысл.'
+    choice:
+      wrong:
+      - Carlos, I'm thinking it's time to put your eye drops in.
+      - Carlos, I don't think it's time to put your eye drops in.
+      explanation: Это **мнение** — *I think* (Simple), не процесс *I'm thinking*. И мысль утвердительная — пора закапать,
+        без *don't*.
+  6750587ba9e09c213cf1ca10:
+    translation: На ней кольцо моей бабушки.
+    gap: '**is wearing** — *is* + глагол-**ing**: она в кольце прямо сейчас. Present Continuous: am / is / are + -ing.'
+    dictation: '**is wearing** — *is* слабое [ɪz]. **grandmother''s** — *d* почти не слышно: [ˈɡrænmʌðəz].'
+    choice:
+      wrong:
+      - She is wearing my grandmother's dress.
+      - She is wearing my mother's ring.
+      explanation: На ней **кольцо** (*ring*), а не платье (*dress*), и оно **бабушкино** — *grandmother's*, не мамино (*mother's*).
+  670d06f8c2acf21e7b80d5be:
+    translation: И на плёнке все улыбаются.
+    gap: 'Что люди делают на фото или видео — **Present Continuous**: *everyone **is smiling***. *Everyone* — с *is*.'
+    dictation: '**everyone is** сливаются: [ˈevriwʌnɪz]. **on the film** — «на плёнке», *the* слабое [ðə].'
+    choice:
+      wrong:
+      - And on the film, everyone is crying.
+      - And on the film, everyone smiles.
+      explanation: На плёнке все **улыбаются** — *smiling*, не плачут (*crying*). Описание кадра — Continuous **is smiling**,
+        а не *smiles*.
+  6720ef8180c1bd22cee0dd12:
+    translation: Что ты видишь в этой коробке?
+    gap: 'Вопрос в Present Simple: вопросительное слово + **do** + подлежащее + глагол: *What **do you** see?*'
+    dictation: '**do you** сливается в [dʒə]: «What-d''ya see». **this box** — *s* и *b* не сливаются, но звучат быстро.'
+    choice:
+      wrong:
+      - What do you see in that box
+      - What do you see in this bag
+      explanation: Спрашивают про **коробку** — *box*, не сумку (*bag*). Коробка рядом — **this** box, не *that*.
+  67079db10b10211aa993534c:
+    skip: прошедшее время, разовое действие (I drank too much) — не временная привычка из карточки
+  67121e62b7b0fd393b897b99:
+    translation: Я всё ещё люблю эту жизнь.
+    gap: '**still** часто с Continuous, но **love** — глагол состояния: только **Simple**, *I still love*, не ~~I''m still
+      loving~~.'
+    dictation: '**still love** — две *l* подряд сливаются в одну долгую [stɪlʌv]. **the life** — *the* слабое [ðə].'
+    choice:
+      wrong:
+      - I still hate the life.
+      - I'm still loving the life.
+      explanation: Герой **любит** (*love*), а не ненавидит (*hate*). *Love* — состояние, поэтому **Simple** — *I still love*,
+        без -ing.
+  6709569f3b21f421b1015069:
+    translation: Ну, знаешь, ты не то чтобы душа компании.
+    gap: '**the life and soul of the party** — душа компании, весёлый общительный человек. *not exactly* — «не то чтобы».'
+    choice:
+      wrong:
+      - Oh, you're not exactly the life and soul of the family, you know.
+      - Oh, you're always the life and soul of the party, you know.
+      explanation: Идиома — **of the party**, не *of the family*. И сказано с иронией — **not exactly** — «не то чтобы» душа
+        компании.
+  674ad7cb7b65b5307a5b2fcf:
+    translation: Это чтобы поблагодарить тебя за то, что ты был так добр к Джули.
+    gap: 'Добрый **к** кому-то — **kind to** somebody, не *for* и не *with*: *so kind to Julie*.'
+    choice:
+      wrong:
+      - It's to thank you for being so kind of Julie.
+      - It's to thank you for being so nice with Julie.
+      explanation: Добр **к** Джули — **kind to Julie**. *kind of somebody* — «мило со стороны кого-то», а *nice with* так
+        не говорят.
+  6722c2e52f2ebf1d686cbc15:
+    skip: пассив в Continuous (are being woken up) — грамматика сильно сложнее шага карточки
+  6672eb31ab721a61aba21bdc:
+    skip: реплика выглядит оборванной (quite a bit — чего?), смысл неясен
+  6709186cafdac43db60dbec6:
+    skip: get up — «встать с земли», не «встать с постели» из карточки; ещё идиома teach him a lesson (проучить, драка)
+  670d20b7c2acf21e7b8169f5:
+    skip: непонятно без контекста (go to bed for a week — наказание?), не «ложиться спать» вечером
+  66f3f22930407f347b080353:
+    skip: субтитр выглядит неверным (who you get on Friday…), смысл неясен
