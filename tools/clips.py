@@ -4,6 +4,7 @@ Usage:
   clips.py search <deck> --card <topic/card> --phrase "in the morning" [--max 6] [--out candidates.yaml]
   clips.py fetch <deck> <candidates.yaml> [--ids <id> …] [--audio-phrase]
   clips.py localize <deck> [--cards <id> …]
+  clips.py check <deck> [--cards <id> …] [--reject]
 
 `search` asks playphrase.me (one request per 1.5 s, at most three pages per phrase, every answer cached under
 tools/.cache/playphrase/) and writes the clean, clearly spoken lines from different films to a candidates file.
@@ -14,6 +15,9 @@ file only when Whisper hears the phrase in it.
 `localize` turns the clip-type / clip-choice exercises that link a playphrase.me video into local ones: the whole clip
 (not trimmed, so the `words` timings stay valid) is encoded the same way into <card>/clips/pp-<id>.mp4 and the exercise's
 `video:` line is rewritten to that file; nothing else in card.yaml changes. Running it again does nothing new.
+`check` lists the local clips whose line is cut short at the edges (tools/clip_edges.py: playphrase.me cuts at the
+subtitle, speech often runs past it). With --reject each such clip gets `skip:` in tools/playphrase-clips.yaml, its
+exercises leave the card and its file is deleted; tools/playphrase.py then fills the card with the next clean clip.
 
 The fragments are copyrighted films: personal study only.
 """
@@ -31,10 +35,12 @@ from typing import Any
 
 import yaml
 
+import clip_edges
 from human_audio import LIMIT_MARGIN_DB, TARGET_LUFS, TRUE_PEAK_DB
 from playphrase_client import PlayPhraseClient, PlayPhraseError
 
 CACHE_DIR = Path(__file__).resolve().parent / '.cache' / 'playphrase'
+NOTES = Path(__file__).resolve().parent / 'playphrase-clips.yaml'
 RAW_DIR = CACHE_DIR / 'raw'
 LICENSE = '© rights holders · fragment via playphrase.me · personal study only'
 NOTICE = ('Movie fragments are copyrighted by their rights holders and come via playphrase.me: '
@@ -530,6 +536,83 @@ def localize(*, deck_dir: Path, wanted: list[str]) -> None:
     print(f'{len(files)} local clips, {size / 1024:.0f} KB in all')
 
 
+@dataclass
+class CutClip:
+    """A local clip of a card whose line is cut short."""
+
+    path: Path
+    """card.yaml."""
+    video: str
+    """clips/pp-<id>.mp4 as the exercises name it."""
+    text: str
+    """The line."""
+    cut: str
+    """What is cut off (Russian)."""
+
+
+def cut_clips(path: Path) -> list[CutClip]:
+    card = yaml.safe_load(path.read_text(encoding='utf-8')) or {}
+    lines = {}
+    for exercise in card.get('exercises') or []:
+        params = exercise.get('params') or {}
+        if exercise.get('template') in CLIP_TEMPLATES and LOCAL_VIDEO.match(str(params.get('video') or '')):
+            lines.setdefault(params['video'], params['text'])
+    found = []
+    for video, text in lines.items():
+        cut = clip_edges.check(video=path.parent / video, text=text).cut
+        if cut:
+            found.append(CutClip(path=path, video=video, text=text, cut=cut))
+    return found
+
+
+def exercise_items(lines: list[str]) -> list[tuple[int, int]]:
+    """[start, end) line ranges of the items of the card's top-level exercises list."""
+    start = next(i for i, line in enumerate(lines) if line.startswith('exercises:'))
+    end = next((i for i in range(start + 1, len(lines)) if re.match(r'^[A-Za-z_]', lines[i])), len(lines))
+    first = next(line for line in lines[start + 1:end] if line.lstrip().startswith('- '))
+    marker = first[:len(first) - len(first.lstrip())] + '- '
+    heads = [i for i in range(start + 1, end) if lines[i].startswith(marker)]
+    return list(zip(heads, [*heads[1:], end]))
+
+
+def drop_clip(*, path: Path, video: str) -> None:
+    """Removes the exercises of one clip from card.yaml line by line (every other line, progress too, stays)."""
+    text = path.read_text(encoding='utf-8')
+    lines = text.splitlines()
+    pattern = re.compile(rf'^\s*video:[ \t]*([\'"]?){re.escape(video)}\1[ \t]*$')
+    drop = {i for a, b in exercise_items(lines) if any(pattern.match(line) for line in lines[a:b]) for i in range(a, b)}
+    kept = '\n'.join(line for i, line in enumerate(lines) if i not in drop) + '\n'
+    before, after = yaml.safe_load(text), yaml.safe_load(kept)
+    expected = [e for e in before['exercises'] if (e.get('params') or {}).get('video') != video]
+    if after['exercises'] != expected or {**before, 'exercises': []} != {**after, 'exercises': []}:
+        raise SystemExit(f'{path}: removing {video} would change more than its exercises; card left as it was')
+    path.write_text(kept, encoding='utf-8')
+    (path.parent / video).unlink(missing_ok=True)
+
+
+def skip_note(*, clip_id: str, reason: str) -> None:
+    """`skip:` for the clip in the notes, under its entry or as a new one at the end of `clips:`."""
+    lines = NOTES.read_text(encoding='utf-8').splitlines()
+    head = next((i for i, line in enumerate(lines) if line == f'  {clip_id}:'), None)
+    if head is None:
+        lines += [f'  {clip_id}:', f'    skip: {json.dumps(reason, ensure_ascii=False)}']
+    elif not any(line.startswith('    skip:') for line in lines[head + 1:head + 2]):
+        lines.insert(head + 1, f'    skip: {json.dumps(reason, ensure_ascii=False)}')
+    NOTES.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+
+
+def check_cards(*, deck_dir: Path, wanted: list[str], reject: bool) -> None:
+    wanted = [w.strip() for item in wanted for w in item.split(',') if w.strip()]
+    found = [cut for path in deck_cards(deck_dir=deck_dir, wanted=wanted) for cut in cut_clips(path)]
+    for cut in found:
+        print(f'  {cut.path.parent.parent.name}/{cut.path.parent.name}: «{cut.text}» — {cut.cut}')
+        if reject:
+            clip_id = cut.video.removeprefix('clips/pp-').removesuffix('.mp4')
+            skip_note(clip_id=clip_id, reason=f'реплика обрезана ({cut.cut})')
+            drop_clip(path=cut.path, video=cut.video)
+    print(f'{len(found)} clips cut short' + (', rejected' if reject and found else ''))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description='Short movie fragments from playphrase.me for a card.')
     commands = parser.add_subparsers(dest='command', required=True)
@@ -548,6 +631,11 @@ def main() -> None:
     local = commands.add_parser('localize', help='copy linked clip exercises into <card>/clips/ and point them there')
     local.add_argument('deck', type=Path, help='deck folder with deck.yaml')
     local.add_argument('--cards', nargs='+', default=[], help='card ids or topic/id (default: every card)')
+    check = commands.add_parser('check', help='list local clips whose line is cut short at the edges')
+    check.add_argument('deck', type=Path, help='deck folder with deck.yaml')
+    check.add_argument('--cards', nargs='+', default=[], help='card ids or topic/id (default: every card)')
+    check.add_argument('--reject', action='store_true',
+                       help='skip such clips in the notes and take their exercises and files out of the cards')
     args = parser.parse_args()
     print(NOTICE)
     try:
@@ -555,6 +643,8 @@ def main() -> None:
             run_search(args)
         elif args.command == 'fetch':
             run_fetch(args)
+        elif args.command == 'check':
+            check_cards(deck_dir=args.deck, wanted=args.cards, reject=args.reject)
         else:
             localize(deck_dir=args.deck, wanted=args.cards)
     except PlayPhraseError as error:

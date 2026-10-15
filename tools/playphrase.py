@@ -18,7 +18,7 @@ import subprocess
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import yaml
 
@@ -285,14 +285,36 @@ def prerequisites(*, deck_dir: Path, items: list[dict[str, Any]], assume_top: in
     return {row['key']: row for row in json.loads(done.stdout)}
 
 
-def best(*, clips: list[tuple[Clip, str]], count: int) -> list[tuple[Clip, str]]:
-    """Shortest and clearest first, one clip per film."""
+def best(*, clips: list[tuple[Clip, str]], count: int,
+         clean: Callable[[Clip], bool] = lambda clip: True) -> list[tuple[Clip, str]]:
+    """Shortest and clearest first, one clip per film; a clip that is not clean gives way to the next."""
     ranked = sorted(clips, key=lambda item: (len(item[0].words), -item[0].score))
     chosen: list[tuple[Clip, str]] = []
     for clip, focus in ranked:
-        if len(chosen) < count and all(clip.movie != other.movie for other, _ in chosen):
+        if len(chosen) < count and all(clip.movie != other.movie for other, _ in chosen) and clean(clip):
             chosen.append((clip, focus))
     return chosen
+
+
+@dataclass
+class EdgeCheck:
+    """Downloads a candidate (cached) and asks tools/clip_edges.py whether its line is cut short."""
+
+    site: Any = None
+    """clips.Site, opened on the first clip not downloaded yet."""
+
+    def __call__(self, clip: Clip) -> bool:
+        # Imported here: the check needs ffmpeg and Whisper, which searching does not.
+        import clip_edges
+        import clips
+
+        if self.site is None:
+            self.site = clips.Site()
+        raw = clips.raw_video(site=self.site, clip_id=clip.id, url=clip.video)
+        cut = clip_edges.check(video=raw, text=clip.text).cut
+        if cut:
+            print(f'  drop «{clip.text}» — {cut}')
+        return not cut
 
 
 def bare(text: str) -> str:
@@ -384,7 +406,9 @@ def append_exercises(*, path: Path, exercises: list[dict[str, Any]]) -> None:
 
 
 def next_index(card: CardRef) -> int:
+    """Past every v<n> the card has or had: a removed clip's stats stay in progress under its id."""
     ids = [str(e.get('id')) for e in card.data.get('exercises') or []]
+    ids += [str(i) for i in ((card.data.get('progress') or {}).get('exercises') or {})]
     used = [int(m.group(1)) for i in ids if (m := re.fullmatch(r'v(\d+)', i))]
     return max(used, default=0) + 1
 
@@ -457,7 +481,7 @@ def rejected(*, note: dict[str, Any] | None, card: str) -> bool:
 
 
 def plan(*, chosen: dict[str, list[tuple[Clip, str]]], cards: dict[str, CardRef], notes: dict[str, Any],
-         per_card: int) -> tuple[list[tuple[Pick, list[dict[str, Any]]]], list[dict[str, Any]]]:
+         per_card: int, clean: Callable[[Clip], bool]) -> tuple[list[tuple[Pick, list[dict[str, Any]]]], list[dict[str, Any]]]:
     clip_notes = notes.get('clips') or {}
     plans, todo = [], []
     for key, clips in chosen.items():
@@ -467,7 +491,7 @@ def plan(*, chosen: dict[str, list[tuple[Clip, str]]], cards: dict[str, CardRef]
         have = ' '.join(clip_videos(card))
         # A clip the card already has (as a link or as clips/pp-<id>.mp4) is never added twice.
         usable = [(clip, focus) for clip, focus in clips if clip.id not in have and not rejected(note=clip_notes.get(clip.id), card=key)]
-        for clip, focus in best(clips=usable, count=room(card=card, per_card=per_card)):
+        for clip, focus in best(clips=usable, count=room(card=card, per_card=per_card), clean=clean):
             pick = Pick(card=card, clip=clip, focus=focus)
             note = clip_notes.get(clip.id)
             if not note_ready(note):
@@ -480,14 +504,15 @@ def plan(*, chosen: dict[str, list[tuple[Clip, str]]], cards: dict[str, CardRef]
 
 
 def run(*, deck_dir: Path, targets: list[CardRef], per_card: int, budget: int, assume_top: int, dry_run: bool,
-        localize: bool) -> None:
+        localize: bool, edges: bool) -> None:
     notes = yaml.safe_load(NOTES.read_text(encoding='utf-8')) if NOTES.exists() else {}
     searcher = Searcher(budget=budget)
     cards = {c.key: c for c in targets}
     found = {c.key: picks_for(card=c, searcher=searcher, notes=notes or {}, per_card=per_card) for c in targets}
     print(f'{searcher.sent} searches sent, {sum(map(len, found.values()))} usable clips for {len(targets)} cards')
     chosen = screen(deck_dir=deck_dir, found={k: v for k, v in found.items() if v}, assume_top=assume_top)
-    plans, todo = plan(chosen=chosen, cards=cards, notes=notes or {}, per_card=per_card)
+    clean = EdgeCheck() if edges else (lambda clip: True)
+    plans, todo = plan(chosen=chosen, cards=cards, notes=notes or {}, per_card=per_card, clean=clean)
     check_choices(deck_dir=deck_dir, plans=plans, assume_top=assume_top)
     if todo:
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -543,12 +568,14 @@ def main() -> None:
     parser.add_argument('--dry-run', action='store_true', help='search and pick, but do not write card.yaml')
     parser.add_argument('--localize', action='store_true',
                         help='store the new clips compressed in <card>/clips/ instead of linking playphrase.me')
+    parser.add_argument('--no-edge-check', action='store_true',
+                        help='take clips without checking that their line is not cut short (tools/clip_edges.py)')
     args = parser.parse_args()
     if not (args.deck / 'deck.yaml').exists():
         raise SystemExit(f'{args.deck}: no deck.yaml')
     targets = choose_cards(cards=load_cards(args.deck), ids=comma_list(args.cards), topics=comma_list(args.topics))
     run(deck_dir=args.deck, targets=targets, per_card=args.per_card, budget=args.max_searches,
-        assume_top=args.assume_top, dry_run=args.dry_run, localize=args.localize)
+        assume_top=args.assume_top, dry_run=args.dry_run, localize=args.localize, edges=not args.no_edge_check)
 
 
 if __name__ == '__main__':

@@ -283,6 +283,16 @@ tools/.venv-voice/bin/python tools/playphrase.py <колода> --cards wear,cmp
 (реплика с другим временем или другим выражением времени, 1–2 слова разницы) пишутся вручную. Параметры и правила — в
 [`deck-format.md`](deck-format.md#movie-clips-playphraseme).
 
+playphrase.me режет клип по краям субтитра, и речь часто выходит за них: обрывается «Friday», пропадает «I can-».
+Такие клипы не берутся: перед тем как взять кандидата, `playphrase.py` даёт Whisper послушать его (`tools/clip_edges.py`)
+и сравнивает слова с субтитром. Клипы, уже лежащие в колоде, проверяет `clips.py check`:
+
+```sh
+tools/.venv-voice/bin/python tools/clips.py check <колода>            # список обрезанных
+tools/.venv-voice/bin/python tools/clips.py check <колода> --reject   # skip: в заметках, задания и файл — из карточки
+tools/.venv-voice/bin/python tools/playphrase.py <колода> --cards … --localize   # взять следующие чистые клипы
+```
+
 ### А7. Видео-фрагменты из фильмов (playphrase)
 
 Клипы лежат в колоде сжатой копией: `<карточка>/clips/pp-<id>.mp4`. **Фрагменты защищены авторским правом: только для

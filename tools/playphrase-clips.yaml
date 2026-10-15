@@ -507,6 +507,7 @@ clips:
   6703595087031268d491773d:
     skip: down to Earth здесь буквально «спустился на Землю», а не «простой, без пафоса»; ещё прошедшее lit
   6747e17c30546c7c72bebfb4:
+    skip: "реплика обрезана (конец обрезан, не слышно «party is.»)"
     translation: Мы знаем, где душа компании.
     gap: '**the life and soul of the party** — душа компании: человек, с которым всем весело. Всегда с **the**.'
     choice:
@@ -578,6 +579,7 @@ clips:
   676c04546c599736905df95d:
     skip: про расу (make fun of the black race) и другое значение fun
   665b63e5e7d77a68b54320a3:
+    skip: "реплика обрезана (начало обрезано, не слышно «Oh,»)"
     translation: О, это смешно.
     gap: '**funny** — смешной, вызывает смех. Не путай с **fun** — весёлый, приятный: *It''s fun* — «это весело».'
     dictation: '**that''s** — [ðæts], *t* и *s* сливаются. В *funny* — двойное *n*, ударение на первый слог.'
@@ -884,6 +886,7 @@ clips:
       - Jasmine on the evening.
       explanation: Звучит **in the evening** — «вечером», с предлогом **in**.
   681a3384b994ff64a7ff3158:
+    skip: "реплика обрезана (последнее слово обрезано, «Friday.»)"
     translation: Через два дня, в пятницу.
     gap: '**on** + день недели: *on Friday* — в пятницу. С днями всегда **on**.'
     dictation: '**In two days** — «через два дня». **on Friday** — *on* слабое, ударение на *Fri*.'
@@ -951,6 +954,7 @@ clips:
       - So, who wants to try this ring?
       explanation: Серьги рядом — **these**, и их предлагают **примерить** — *try*, а не купить.
   665b5d8de7d77a68b5430007:
+    skip: "реплика обрезана (начало обрезано, не слышно «Aw,»)"
     translation: Ой, спасибо за мои красивые серьги!
     gap: '**earrings** — серьги, всегда во множественном числе: *my beautiful earrings*.'
     dictation: '*thank you for* — *for* слабое [fə]. *my beautiful earrings* — *-ful* звучит коротко [fəl].'
@@ -986,6 +990,7 @@ clips:
       - I'll add a hat to this.
       explanation: Решение принято прямо сейчас — **I'll** (*will*), добавляет **перчатки** к *this* — к этому наряду.
   66f4a462c5114b74c5fa973e:
+    skip: "реплика обрезана (начало обрезано, не слышно «Do»)"
     translation: Никогда не трогай мою шляпу.
     gap: '**hat** — шляпа, шапка. *my hat* — моя шляпа.'
     dictation: '*Do not* сказано полностью, не *don''t* — для сильного запрета. *touch my hat* — *t* в *hat* почти не слышно.'
@@ -1039,6 +1044,7 @@ clips:
       - My bracelet is gone.
       explanation: '**Моё** (*My*) **ожерелье** пропало — *is gone*.'
   672922d740118047622d2094:
+    skip: "реплика обрезана (начало обрезано, не слышно «and»)"
     translation: …и положите кольцо мне в руки.
     gap: '**ring** — кольцо. *the ring* — то самое, о котором идёт речь.'
     dictation: '*put the* сливается, *t* почти не слышно: [pʊðə]. *in my hands* — *in* короткое.'
@@ -1392,6 +1398,7 @@ clips:
       - Wash your face and put on your dress.
       explanation: Действие — **надеть** (*put on*) **платье**; а с лицом — *fix* (поправить).
   6709a971768542691926f01d:
+    skip: "реплика обрезана (начало обрезано, не слышно «I»)"
     translation: Я не могу это носить.
     gap: '**wear** — носить (быть одетым во что-то). *these* — эти вещи.'
     dictation: '*cannot* — одно слово, ударение на *can*. *wear these* — [weəðiːz].'
@@ -1482,6 +1489,7 @@ clips:
     translation: Я знаю, ты не хочешь обидеть родителей, но иногда они забывают.
     gap: '**sometimes** — иногда; в начале части предложения — для акцента: *but **sometimes** they forget*.'
   6717eb9c2ddee743134f7cce:
+    skip: "реплика обрезана (начало обрезано, не слышно «Once»)"
     translation: Раз в неделю.
     gap: '**once a week** — раз в неделю: *once* (один раз) + *a week* (в неделю, артикль *a*, без предлога).'
     dictation: '*Once* — [wʌns], начинается с [w]. *a week* сливается: [əwiːk].'
@@ -1517,9 +1525,11 @@ clips:
     translation: Простите, я нервничаю перед камерой.
     gap: '**in front of** — перед чем-то, лицом к нему: *in front of the camera*. Противоположное — *behind*.'
   665afc34e7d77a68b540c813:
+    skip: "реплика обрезана (последнее слово обрезано, «or»)"
     translation: Но вообще-то я не плачу при людях, или…
     gap: '**in front of** — перед кем-то: *in front of people* — при людях, у всех на глазах.'
   671b0eba24859c1869f57d0e:
+    skip: "реплика обрезана (начало обрезано, не слышно «In»)"
     translation: Посреди ночи.
     gap: '**in the middle of** — посередине, посреди; бывает и о времени: *in the middle of the night* — посреди ночи.'
     dictation: '*In the middle of the* — *of* слабое [əv], *the* [ðə]: [ɪnðəˈmɪdləvðə]. *middle* — [ˈmɪdl].'
@@ -1535,6 +1545,7 @@ clips:
   6701f211ea2a2d2de0f750b8:
     skip: сложная конструкция (have you both living so near)
   665b5dfce7d77a68b5430231:
+    skip: "реплика обрезана (начало обрезано, не слышно «But don't you...»)"
     translation: Но разве ты не… Мне надо просто радоваться, что я рядом с тобой.
     gap: '**near** — рядом, близко: *near you* — рядом с тобой. Без *to*.'
   665b4499e7d77a68b5427b4e:
@@ -1591,6 +1602,7 @@ clips:
       - Can I move your chair under the tree?
       explanation: Стул — **ваш** (*your*), и передвинуть его **под** (*under*) зонтик.
   671179b214e7a06655d7ef7f:
+    skip: "реплика обрезана (начало обрезано, не слышно «Show»)"
     translation: Покажи нам эти большие голубые глаза.
     gap: '**Порядок прилагательных**: сначала размер (**big**), потом цвет (**blue**), затем существительное — **big blue
       eyes**.'
@@ -2245,6 +2257,7 @@ clips:
       explanation: Речь о плане на сегодня — **What time are you coming home?** (Continuous). *do you come home* — обычно,
         каждый день; *going* — «уходишь домой» (говорящий не дома); *did* — прошлое.
   6764ba5b1bb2992d08d4ee24:
+    skip: "реплика обрезана (начало обрезано, не слышно «And»)"
     translation: А во что ты сейчас одет?
     gap: 'Вопрос про **сейчас**: что на человеке в эту минуту — **are you wearing** (Continuous). *Do you wear…?* — что носишь
       вообще.'
@@ -2522,6 +2535,7 @@ clips:
   6681afe81a266d06dff333ce:
     skip: go to bed with — сексуальный подтекст, не «ложиться спать»
   6709a971768542691926f027:
+    skip: "реплика обрезана (начало обрезано, не слышно «Well,»)"
     translation: Ну, лёжа никто не выглядит толстым.
     gap: '**fat** — толстый. *look fat* — выглядеть толстым. О людях звучит грубо; вежливее — *overweight*.'
     choice:
@@ -2545,6 +2559,7 @@ clips:
   666fb51fab721a61ab9fd867:
     skip: tie up — «привязать» (к кровати), другое значение и сексуальный подтекст
   673384fb619490728386e0dd:
+    skip: "реплика обрезана (конец обрезан, не слышно «tie?»)"
     translation: Что, тебя научить завязывать галстук?
     gap: '**tie a tie** — завязывать галстук: первое *tie* — глагол «завязывать», второе — сам галстук.'
     choice:
@@ -2683,6 +2698,7 @@ clips:
       explanation: Герой **любит** (*love*), а не ненавидит (*hate*). *Love* — состояние, поэтому **Simple** — *I still love*,
         без -ing.
   6709569f3b21f421b1015069:
+    skip: "реплика обрезана (начало обрезано, не слышно «Oh,»)"
     translation: Ну, знаешь, ты не то чтобы душа компании.
     gap: '**the life and soul of the party** — душа компании, весёлый общительный человек. *not exactly* — «не то чтобы».'
     choice:
@@ -2710,3 +2726,48 @@ clips:
     skip: непонятно без контекста (go to bed for a week — наказание?), не «ложиться спать» вечером
   66f3f22930407f347b080353:
     skip: субтитр выглядит неверным (who you get on Friday…), смысл неясен
+  6725c56f7d80151ffe3fc7e6:
+    translation: И у меня до сих пор остались серьги, которые я надевала в тот вечер.
+    gap: '**earrings** — серьги: *ear* (ухо) + *rings* (кольца). Почти всегда во множественном числе: *the earrings*.'
+    dictation: '*I still have* — «у меня до сих пор есть». **wore** — прошедшее от *wear*: «носила, надевала». *that night* — «в тот вечер».'
+    choice:
+      wrong:
+      - And I still have the rings that I wore that night.
+      - And I still have the earrings that I bought that night.
+      explanation: Героиня говорит про **серьги** — *earrings*, которые она **надевала** (*wore*) в тот вечер, а не про кольца
+        и не про покупку.
+  6719ac5cdc719f340fb20c1c:
+    translation: Он раз в неделю катается верхом в парке «Золотые Ворота».
+    gap: '**once a week** — раз в неделю. *Once* — один раз, *twice* — два, дальше *three times a week*.'
+    choice:
+      wrong:
+      - He goes riding twice a week in Golden Gate Park.
+      - He goes riding once a month in Golden Gate Park.
+      explanation: Звучит **once a week** — «раз в неделю», не *twice* (два раза) и не *a month* (в месяц).
+  66f4ba7641c0387b72dc5590:
+    translation: То есть что на тебе надето?
+    gap: '**What are you wearing?** — что на тебе сейчас надето: *wear* в Present Continuous, речь о моменте, а не о привычке.'
+    dictation: '*I mean* — «то есть, в смысле». **are you** звучит слитно и слабо, ударение на *wearing*.'
+    choice:
+      wrong:
+      - I mean, what do you wear?
+      - I mean, what were you wearing?
+      explanation: Спрашивают про **сейчас** — *what are you wearing*. *What do you wear* — что ты носишь обычно, *were* — в
+        прошлом.
+  67079f1000b72b5b54863542:
+    translation: Почему это смешно?
+    gap: '**funny** — смешной, забавный. *Why is this funny?* — «что тут смешного?»'
+    dictation: 'Вопрос с *be*: **Why is this** + прилагательное. Ударение на *funny*.'
+    choice:
+      wrong:
+      - Why is this fun?
+      - Why isn't this funny?
+      explanation: Звучит **funny** — «смешной». *Fun* — «весёлый, приятный», а *isn't* дало бы «почему не смешно».
+  666e8421ab721a61ab9f18e9:
+    translation: Давай не будем выяснять это при посторонних, ладно?
+    gap: '**in front of** — перед, при ком-то: *in front of other people* — при других людях, на людях.'
+    choice:
+      wrong:
+      - Let's not get into it in front of the other kids, okay?
+      - Let's not get into it behind other people, okay?
+      explanation: Звучит **in front of other people** — «при других людях». *Get into it* здесь — «затевать спор».

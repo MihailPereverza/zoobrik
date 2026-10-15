@@ -222,7 +222,7 @@ playphrase.me for each card (word and phrase cards: the term; grammar cards: phr
 or `queries:` in `tools/playphrase-clips.yaml`), keeps clips that are not sensitive, 3–14 words, at most 7 s, clearly
 spoken (word scores ≥ 0.6 on average), checks each line against the words and rules known at the card's teaching step
 (`web/scripts/clips-filter.ts`: placement top 1387 plus the cards introduced by then), picks the shortest from different
-films and appends `v1, v2, …` to the card: a `clip-type` gap on the target words (difficulty 3), a dictation of a line up
+films whose line is not cut short (below) and appends `v1, v2, …` to the card: a `clip-type` gap on the target words (difficulty 3), a dictation of a line up
 to 8 words (difficulty 4) and a `clip-choice` (difficulty 2). Existing exercises and `progress` stay as they are. The Russian
 side (translation, explanations, wrong options) is written by hand in `tools/playphrase-clips.yaml` under the clip id; a
 picked clip without notes is listed in `tools/.cache/playphrase/todo.yaml`. With `--localize` the new clips are
@@ -235,6 +235,16 @@ playphrase.me URL is downloaded once (raw files cached in `tools/.cache/playphra
 `clips/` and the exercise's `video:` line rewritten to the file; the rest of card.yaml, `progress` included, stays byte
 for byte, and exercises sharing a clip share one file. A second run changes nothing; it prints the total size. Both
 tools need ffmpeg and `tools/.venv-voice`.
+
+playphrase.me cuts a clip at its subtitle's edges and speech often runs past them: the end of «on Friday», the «I can-»
+of «I cannot wear these». Nothing beyond the cut can be fetched, so such clips are not used. `tools/clip_edges.py`
+lets Whisper hear the clip twice (with and without half a second of silence before it) and lines its words up with the
+subtitle: subtitle words missing before the first or after the last heard word, or a last word said within 0.12 s of
+the cut and heard with confidence under 0.85, mean the line is cut short. `playphrase.py` runs it on each candidate it
+is about to take (`--no-edge-check` turns it off); `tools/clips.py check <deck> [--cards id …] [--reject]` runs it on
+the clips already in the deck, and with `--reject` gives each cut clip `skip:` in the notes, takes its exercises out of
+the card (progress stays) and deletes its file, so the next `playphrase.py` run fills the card with a clean clip. New
+exercise ids continue past every id the card's `progress` remembers.
 
 ## Several voices
 
