@@ -5,7 +5,7 @@ difficulty: 3
 modes: [learn, review, practice]
 check: { type: fuzzy }
 params:
-  video: { type: url, label: Видео (ссылка на playphrase.me, не файл колоды), required: true }
+  video: { type: text, label: 'Видео: файл колоды clips/pp-<id>.mp4 (сжатая копия) или ссылка на playphrase.me', required: true }
   text: { type: text, label: Реплика целиком, required: true }
   words: { type: list, of: timing, label: 'Слова с таймингом [слово, начало мс, конец мс]', required: true }
   source: { type: object, label: 'Фильм {title, url}', required: true }

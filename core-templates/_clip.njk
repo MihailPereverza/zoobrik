@@ -1,8 +1,10 @@
-{# Movie clip player for clip-type and clip-choice. The video streams from its site at play time and is never stored in the deck. #}
-{% macro player(params) %}<div class="cl-player">
+{# Movie clip player for clip-type and clip-choice: a compressed copy in the deck (clips/), or a link streamed at play time. #}
+{% macro player(params, media) %}<div class="cl-player">
   <div class="cl-screen" data-zb-tap>
     {# #t=0.001 makes iOS Safari paint the first frame instead of a black box. #}
-    <video class="cl-video" src="{{ params.video }}#t=0.001" playsinline webkit-playsinline preload="metadata" disablepictureinpicture disableremoteplayback></video>
+    {# A clip in the deck (clips/pp-….mp4) reaches the sandboxed frame from the app like audio does; a link streams. #}
+    {% if params.video.indexOf('http') == 0 %}<video class="cl-video" src="{{ params.video }}#t=0.001" playsinline webkit-playsinline preload="metadata" disablepictureinpicture disableremoteplayback></video>
+    {% else %}<video class="cl-video" data-zb-video="{{ media(params.video) }}" playsinline webkit-playsinline preload="auto" disablepictureinpicture disableremoteplayback></video>{% endif %}
     <button class="cl-big" type="button" data-cl="toggle" aria-label="Смотреть"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
     <div class="cl-gone" hidden><span>Видео недоступно</span><button class="zb-option cl-skip" type="button" data-cl="skip">Пропустить</button></div>
   </div>

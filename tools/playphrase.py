@@ -1,10 +1,11 @@
-"""zoobrik-playphrase: listening exercises on short movie clips from playphrase.me, stored as references only.
+"""zoobrik-playphrase: listening exercises on short movie clips from playphrase.me.
 
-The deck keeps the clip's video URL, its subtitle line with word timings and the film credit; the app streams the video
-from playphrase.me when the exercise is shown. Nothing of the video is downloaded or copied.
+The deck keeps the clip's subtitle line with word timings and the film credit, and the video itself: with --localize
+(or later `tools/clips.py localize`) a compressed, loudness-levelled copy in <card>/clips/pp-<id>.mp4, otherwise the
+playphrase.me URL the app streams. The copies are for personal study only and never leave the deck.
 
-Searches go through an anonymous session opened like a browser visit (the home page gives a cookie and a CSRF token,
-kept in memory only), at most one every two seconds; every response is cached under tools/.cache/playphrase/ and a
+Searches go through tools/playphrase_client.py (an anonymous session opened like a browser visit, kept in memory
+only), at most one every two seconds; every response is cached under tools/.cache/playphrase/ and a
 cached query is never sent again. The Russian side (translations, explanations, wrong options) is authored by hand in
 tools/playphrase-clips.yaml; a clip without notes is listed in tools/.cache/playphrase/todo.yaml and skipped.
 """
@@ -15,9 +16,6 @@ import json
 import re
 import subprocess
 import time
-import urllib.error
-import urllib.parse
-import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -27,11 +25,10 @@ import yaml
 WEB_DIR = Path(__file__).resolve().parent.parent / 'web'
 CACHE_DIR = Path(__file__).resolve().parent / '.cache' / 'playphrase'
 NOTES = Path(__file__).resolve().parent / 'playphrase-clips.yaml'
-SITE = 'https://www.playphrase.me/'
-SEARCH = 'https://www.playphrase.me/api/v1/phrases/search'
 VIDEO_URL = re.compile(r'^https://www\.playphrase\.me/video/[a-z]{3}/[0-9a-f]+/[0-9a-f]+\.mp4$')
-USER_AGENT = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) '
-              'Version/18.0 Safari/605.1.15')
+# The API may hand out the storage bucket's address; the deck keeps the site's own path to the same file.
+STORAGE_URL = re.compile(r'^https://s3\.[a-z0-9-]+\.wasabisys\.com/video-[a-z]+\.playphrase\.me/english-storage/'
+                         r'([0-9a-f]+/[0-9a-f]+\.mp4)$')
 SEARCH_GAP_SECONDS = 2.0
 MIN_WORDS = 3
 MAX_WORDS = 14
@@ -44,17 +41,7 @@ QUESTION = 'Что сказал герой?'
 
 
 class SessionClosed(Exception):
-    """playphrase.me refused the session ("Old page, reload") even after a fresh one."""
-
-
-@dataclass
-class Session:
-    """An anonymous playphrase.me session; never written anywhere."""
-
-    cookie: str
-    """Value of the ring-session cookie."""
-    csrf: str
-    """CSRF token from the home page."""
+    """playphrase.me refused the search (e.g. "Old page, reload" even after a fresh session)."""
 
 
 @dataclass
@@ -63,8 +50,8 @@ class Searcher:
 
     budget: int
     """How many requests this run may still send."""
-    session: Session | None = None
-    """Opened on the first request that is not cached."""
+    client: Any = None
+    """playphrase_client.PlayPhraseClient, opened on the first request that is not cached."""
     last: float = 0.0
     """Monotonic time of the last request."""
     sent: int = 0
@@ -82,7 +69,7 @@ class Clip:
     movie: str
     """playphrase.me movie id."""
     video: str
-    """Video URL on playphrase.me, streamed by the app."""
+    """Video URL on playphrase.me (downloaded and encoded by --localize)."""
     text: str
     """The line as subtitled."""
     words: list[list[Any]]
@@ -121,32 +108,6 @@ class Pick:
     """Why other candidates were dropped (for the report)."""
 
 
-def open_session() -> Session:
-    request = urllib.request.Request(SITE, headers={'User-Agent': USER_AGENT, 'Accept': 'text/html'})
-    with urllib.request.urlopen(request, timeout=30) as response:
-        html = response.read().decode('utf-8', 'replace')
-        cookies = response.headers.get_all('Set-Cookie') or []
-    cookie = next((c.split(';')[0].split('=', 1)[1] for c in cookies if c.startswith('ring-session=')), '')
-    token = re.search(r'csrfToken\s*=\s*"([^"]+)"', html)
-    if not cookie or not token:
-        raise SessionClosed('the home page gave no session cookie or CSRF token')
-    return Session(cookie=cookie, csrf=token.group(1))
-
-
-def search_url(query: str) -> str:
-    params = {'q': query, 'limit': 20, 'language': 'en', 'platform': 'desktop safari', 'skip': 0}
-    return f'{SEARCH}?{urllib.parse.urlencode(params, quote_via=urllib.parse.quote)}'
-
-
-def request_search(*, session: Session, query: str) -> dict[str, Any]:
-    headers = {
-        'accept': 'json', 'content-type': 'json', 'authorization': 'Token', 'referer': SITE,
-        'user-agent': USER_AGENT, 'x-csrf-token': session.csrf, 'cookie': f'ring-session={session.cookie}',
-    }
-    with urllib.request.urlopen(urllib.request.Request(search_url(query), headers=headers), timeout=30) as response:
-        return json.loads(response.read())
-
-
 def cache_path(query: str) -> Path:
     slug = re.sub(r'[^a-z0-9]+', '-', query.lower()).strip('-')[:40]
     return CACHE_DIR / f'{slug}-{hashlib.sha1(query.encode()).hexdigest()[:8]}.json'
@@ -161,18 +122,19 @@ def wait_turn(searcher: Searcher) -> None:
 
 
 def send(*, searcher: Searcher, query: str) -> dict[str, Any]:
-    """One search; a refused session is reopened once and the query retried once."""
-    for attempt in range(2):
-        if searcher.session is None:
-            searcher.session = open_session()
-        wait_turn(searcher)
-        try:
-            return request_search(session=searcher.session, query=query)
-        except urllib.error.HTTPError as error:
-            if error.code != 403:
-                raise
-            searcher.session = None
-    raise SessionClosed('playphrase.me answered 403 "Old page, reload" to a fresh session')
+    """One search through tools/playphrase_client.py (it reopens a stale session once by itself)."""
+    # Imported here: the client needs requests, and runs on cached answers alone do not.
+    from requests import RequestException
+
+    from playphrase_client import PlayPhraseClient, PlayPhraseError
+
+    if searcher.client is None:
+        searcher.client = PlayPhraseClient()
+    wait_turn(searcher)
+    try:
+        return searcher.client.search(query=query, limit=20)
+    except (PlayPhraseError, RequestException) as error:
+        raise SessionClosed(str(error)[:300]) from error
 
 
 def search(*, searcher: Searcher, query: str) -> dict[str, Any] | None:
@@ -197,12 +159,17 @@ def credit(info: str) -> str:
     return re.sub(r'\s*\[[\d:]+\]\s*$', '', info).strip()
 
 
+def site_url(url: str) -> str:
+    storage = STORAGE_URL.match(url)
+    return f'https://www.playphrase.me/video/eng/{storage.group(1)}' if storage else url
+
+
 def to_clip(phrase: dict[str, Any]) -> Clip:
     words = [[w['text'], int(w['start']), int(w['end'])] for w in phrase.get('words') or []]
     scores = [float(w.get('score') or 0) for w in phrase.get('words') or []]
     info = phrase.get('video-info') or {}
     return Clip(
-        id=phrase['id'], movie=phrase.get('movie', ''), video=phrase.get('video-url', ''),
+        id=phrase['id'], movie=phrase.get('movie', ''), video=site_url(phrase.get('video-url', '')),
         text=phrase.get('text', '').strip(),
         words=words, title=credit(info.get('info', '')), url=info.get('source-url', ''),
         score=sum(scores) / len(scores) if scores else 0.0,
@@ -259,7 +226,11 @@ def rule_phrases(card: CardRef) -> list[str]:
     for example in (card.data.get('content') or {}).get('examples') or []:
         text = str(example.get('en') or example.get('term') or '').rstrip('.!?')
         for pattern in card.data.get('detect') or []:
-            match = re.search(pattern, text, re.IGNORECASE)
+            try:
+                match = re.search(pattern, text, re.IGNORECASE)
+            except re.error:
+                # A JavaScript pattern Python cannot run (a look-behind of varying width): `queries:` cover the card.
+                continue
             if not match:
                 continue
             phrase = match.group(0).strip()
@@ -480,6 +451,11 @@ def check_choices(*, deck_dir: Path, plans: list[tuple[Pick, list[dict[str, Any]
                 exercises.remove(exercise)
 
 
+def rejected(*, note: dict[str, Any] | None, card: str) -> bool:
+    """True when the clip's note rejects it outright or for this card (the same line can mean another thing there)."""
+    return bool(note and (note.get('skip') or card in (note.get('skip_cards') or [])))
+
+
 def plan(*, chosen: dict[str, list[tuple[Clip, str]]], cards: dict[str, CardRef], notes: dict[str, Any],
          per_card: int) -> tuple[list[tuple[Pick, list[dict[str, Any]]]], list[dict[str, Any]]]:
     clip_notes = notes.get('clips') or {}
@@ -487,7 +463,9 @@ def plan(*, chosen: dict[str, list[tuple[Clip, str]]], cards: dict[str, CardRef]
     for key, clips in chosen.items():
         card = cards[key]
         index = next_index(card)
-        for clip, focus in best(clips=clips, count=room(card=card, per_card=per_card)):
+        # A clip its note rejects (offensive, another meaning, too hard) gives way to the next best one.
+        usable = [(clip, focus) for clip, focus in clips if not rejected(note=clip_notes.get(clip.id), card=key)]
+        for clip, focus in best(clips=usable, count=room(card=card, per_card=per_card)):
             pick = Pick(card=card, clip=clip, focus=focus)
             note = clip_notes.get(clip.id)
             if not note_ready(note):
@@ -499,7 +477,8 @@ def plan(*, chosen: dict[str, list[tuple[Clip, str]]], cards: dict[str, CardRef]
     return plans, todo
 
 
-def run(*, deck_dir: Path, targets: list[CardRef], per_card: int, budget: int, assume_top: int, dry_run: bool) -> None:
+def run(*, deck_dir: Path, targets: list[CardRef], per_card: int, budget: int, assume_top: int, dry_run: bool,
+        localize: bool) -> None:
     notes = yaml.safe_load(NOTES.read_text(encoding='utf-8')) if NOTES.exists() else {}
     searcher = Searcher(budget=budget)
     cards = {c.key: c for c in targets}
@@ -513,11 +492,27 @@ def run(*, deck_dir: Path, targets: list[CardRef], per_card: int, budget: int, a
         listing = yaml.safe_dump(todo, allow_unicode=True, sort_keys=False, width=120)
         (CACHE_DIR / 'todo.yaml').write_text(listing, encoding='utf-8')
         print(f'{len(todo)} clips need notes in {NOTES.name}: see {CACHE_DIR / "todo.yaml"}')
-    report(plans=plans, cards=targets, dry_run=dry_run)
+    written = report(plans=plans, cards=targets, dry_run=dry_run)
+    if localize and written:
+        localize_cards(written)
 
 
-def report(*, plans: list[tuple[Pick, list[dict[str, Any]]]], cards: list[CardRef], dry_run: bool) -> None:
+def localize_cards(paths: list[Path]) -> None:
+    """The clips just written are downloaded, encoded into <card>/clips/ and linked there (tools/clips.py localize)."""
+    # Imported here: clips.py needs requests and ffmpeg, which searching does not.
+    import clips
+
+    site, files = clips.Site(), set()
+    print(clips.NOTICE)
+    for path in paths:
+        files |= set(clips.localize_card(site=site, path=path))
+    print(f'{len(files)} local clips, {sum(f.stat().st_size for f in files) / 1024:.0f} KB')
+
+
+def report(*, plans: list[tuple[Pick, list[dict[str, Any]]]], cards: list[CardRef], dry_run: bool) -> list[Path]:
+    """Prints the picks per card and, unless dry_run, appends them; returns the card files written."""
     by_card: dict[str, list[tuple[Pick, list[dict[str, Any]]]]] = {}
+    written = []
     for pick, exercises in plans:
         by_card.setdefault(pick.card.key, []).append((pick, exercises))
     for card in cards:
@@ -527,6 +522,8 @@ def report(*, plans: list[tuple[Pick, list[dict[str, Any]]]], cards: list[CardRe
             print(f'    «{pick.clip.text}» — {pick.clip.title}: {", ".join(e["id"] for e in exercises)}')
         if done and not dry_run:
             append_exercises(path=card.path, exercises=[e for _, exercises in done for e in exercises])
+            written.append(card.path)
+    return written
 
 
 def comma_list(value: str) -> list[str]:
@@ -542,12 +539,14 @@ def main() -> None:
     parser.add_argument('--max-searches', type=int, default=150, help='search requests this run may send (default 150)')
     parser.add_argument('--assume-top', type=int, default=1387, help='placement words known before the deck')
     parser.add_argument('--dry-run', action='store_true', help='search and pick, but do not write card.yaml')
+    parser.add_argument('--localize', action='store_true',
+                        help='store the new clips compressed in <card>/clips/ instead of linking playphrase.me')
     args = parser.parse_args()
     if not (args.deck / 'deck.yaml').exists():
         raise SystemExit(f'{args.deck}: no deck.yaml')
     targets = choose_cards(cards=load_cards(args.deck), ids=comma_list(args.cards), topics=comma_list(args.topics))
     run(deck_dir=args.deck, targets=targets, per_card=args.per_card, budget=args.max_searches,
-        assume_top=args.assume_top, dry_run=args.dry_run)
+        assume_top=args.assume_top, dry_run=args.dry_run, localize=args.localize)
 
 
 if __name__ == '__main__':

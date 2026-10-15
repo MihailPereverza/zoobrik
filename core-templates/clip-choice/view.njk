@@ -1,6 +1,6 @@
 {% import "core/_macros" as m %}{% import "core/_clip" as clip %}
 <div class="zb">
-  {{ clip.player(params) }}
+  {{ clip.player(params, media) }}
   <span class="zb-instruction cl-ask">{{ params.question | mdi }}</span>
   {{ m.options(params.options, seed) }}
   <div class="zb-back cl-back" data-zb-back hidden>{{ clip.transcript(params) }}{% if params.translation %}<span class="zb-translation">{{ params.translation | mdi }}</span>{% endif %}{{ m.explanation(params) }}</div>

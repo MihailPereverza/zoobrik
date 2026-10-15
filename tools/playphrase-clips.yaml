@@ -1,15 +1,2484 @@
-# Russian side of movie-clip exercises made by tools/playphrase.py (the clips themselves are references to playphrase.me).
+# Russian side of movie-clip exercises made by tools/playphrase.py (the videos: compressed copies in each card's clips/, tools/clips.py).
 # queries: what to search for a card instead of its term (grammar cards: phrases that show the rule).
 # clips: notes per playphrase.me phrase id; a picked clip without notes goes to tools/.cache/playphrase/todo.yaml.
 #   translation  — natural Russian translation of the line (shown after the answer)
 #   gap          — explanation for the gap exercise (required)
 #   dictation    — explanation for the dictation of the whole line (lines of up to 8 words; optional)
+#   skip_cards   — cards (topic/id) this clip must not be used for, when the line fits only one of them
+#   skip         — why the clip is rejected (offensive, another meaning, too hard): the next best clip is taken instead
 #   choice       — {question?, wrong: [2–3 lines that differ in 1–2 words], explanation} for clip-choice (optional)
 queries:
-  present-simple-he-she: [she goes, he lives, he works]
-  present-simple-negative: [doesn't like, don't know, doesn't want]
-  pc-form: [is wearing, are you doing, I'm looking]
-  pc-now: [is sleeping, it's raining, are you looking at]
-  past-irregular: [went to, I saw, bought a]
-  cmp-er: [taller than, older than, better than]
-clips: {}
+  present-simple-he-she:
+  - she goes
+  - he lives
+  - he works
+  present-simple-negative:
+  - doesn't like
+  - don't know
+  - doesn't want
+  pc-form:
+  - is wearing
+  - are you doing
+  - I'm looking
+  pc-now:
+  - is sleeping
+  - it's raining
+  - are you looking at
+  past-irregular:
+  - went to
+  - I saw
+  - bought a
+  cmp-er:
+  - taller than
+  - older than
+  - better than
+  at-time:
+  - at seven
+  - at nine
+  - at half past
+  on-day:
+  - on Monday
+  - on Sunday
+  - on Friday
+  times-a-week:
+  - twice a week
+  - once a week
+  - three times a day
+  how-often:
+  - how often do you
+  - how often
+  plural-clothes:
+  - my jeans
+  - these shoes are
+  - a pair of
+  adjective-order:
+  - long black hair
+  - a nice little
+  - big blue eyes
+  adverb-position-be:
+  - is always late
+  - are never
+  - is usually
+  adverb-position-verb:
+  - I always
+  - I never
+  - she usually
+  cmp-spelling:
+  - bigger than
+  - happier
+  - easier than
+  past-regular:
+  - I wanted to
+  - we talked
+  - I watched
+  pc-always:
+  - you're always
+  - he's always
+  - she's always
+  pc-around-now:
+  - at the moment
+  - it's getting
+  - these days
+  pc-dual-verbs:
+  - I'm thinking about
+  - having dinner
+  - I think it's
+  pc-future:
+  - are you doing tonight
+  - I'm leaving tomorrow
+  - we're going to the
+  pc-photos:
+  - is wearing a
+  - is holding
+  - is smiling
+  pc-spelling:
+  - I'm getting
+  - are you lying
+  - is running
+  pc-stative:
+  - I know
+  - I need
+  - what does it mean
+  pc-temporary:
+  - I'm staying at
+  - I'm living with
+  - I'm working on
+  questions-wh:
+  - where do you live
+  - what do you do
+  - how old are you
+  questions-to-be:
+  - are you ready
+  - is he here
+  - are you sure
+  there-is:
+  - there is a
+  - are there any
+  - is there a
+  ps-pc-clothes:
+  - what are you wearing
+  - she wears
+  - put on your
+  ps-pc-dialogues:
+  - what are you doing here
+  - I'm taking
+  - you usually
+  ps-pc-future:
+  - the train leaves
+  - what time does
+  - what time are you
+  ps-pc-habit-now:
+  - every morning
+  - are you wearing
+  - I usually
+  ps-pc-more-states:
+  - I'm feeling
+  - are you enjoying
+  - it sounds
+  ps-pc-negatives:
+  - I don't understand
+  - he doesn't
+  - it isn't working
+  ps-pc-new-habits:
+  - these days
+  - this week
+  - too much coffee
+  ps-pc-permanent-temporary:
+  - I live in
+  - where are you staying
+  - I'm working
+  ps-pc-questions:
+  - do you work here
+  - are you working
+  - how are you feeling
+  ps-pc-signal-words:
+  - are you still
+  - I still love
+  - whenever
+  ps-pc-state-action:
+  - I want a
+  - I'm making
+  - it fits
+  ps-pc-stories:
+  - here comes the
+  - first you
+  - here comes
+  ps-pc-traps:
+  - what do you do
+  - what are you doing
+  - I'm sleeping
+  place-traps:
+  - on the bus
+  - at work
+  - in the picture
+clips:
+  671a2eb13461df05f7264d35:
+    translation: Берегись, внизу!
+    gap: '**below** — внизу, ниже по месту: так кричат сверху тем, кто стоит внизу. Противоположное — **above**.'
+    dictation: '**Look out** сливается в одно: [lʊkaʊt] — *k* переходит прямо в *out*. Восклицание: «Берегись!»'
+    choice:
+      question: Что крикнул герой?
+      wrong:
+      - Look out above!
+      - Look down below!
+      explanation: Герой кричит тем, кто **внизу**, — *below*. *Look out* — «берегись», а не «посмотри вниз».
+  674fd652a9e09c213cee1086:
+    skip: мрачный контекст (травма, паралич) и сложная форма to be feeling для шага 17
+  6709a971768542691926f01f:
+    translation: Я в них выгляжу толстой.
+    gap: '**fat** — толстый (прямо и не очень вежливо). *look fat* — выглядеть толстым; вежливее сказать *big* или *overweight*.'
+    dictation: '**make me** звучит слитно, *They* — слабое [ðeɪ]. В конце чётко: **look fat**.'
+    choice:
+      wrong:
+      - They make me look thin.
+      - They make me feel fat.
+      explanation: Героиня жалуется, что в этой одежде она **выглядит толстой** — *look fat*, а не «чувствует себя» (*feel*)
+        и не «худой» (*thin*).
+  665bcc24e7d77a68b5457eb2:
+    skip: реплика оборвана на полуслове (Too fat, too thin, too)
+  670e4f0a59a55f4c9b7a630a:
+    skip: fit in — «поместиться», другое значение; карточка про fit «в хорошей форме»; ещё going to
+  6729b06d4c81a01be2b3b73d:
+    skip: height в переносном, высокопарном смысле (rise above the height of your fathers), непонятно без контекста
+  6747981430546c7c72bd3e22:
+    skip: high school — «старшая школа», устойчивое сочетание, не «высокий» из карточки
+  672b870df7bb6f4bbe043592:
+    skip: high school — «старшая школа», устойчивое сочетание, не «высокий» из карточки
+  6733ab82619490728388182d:
+    translation: Думаю, для своего возраста я среднего роста, Виджай.
+    gap: '**of average height** — среднего роста. Предлог **of** обязателен: *I''m of average height*, не ~~I''m average height~~
+      в книжной речи.'
+    choice:
+      wrong:
+      - I believe I'm below average height for my age, Vijay.
+      - I believe I'm above average height for my age, Vijay.
+      explanation: Герой говорит, что он **среднего** роста — *of average height*, не ниже (*below*) и не выше (*above*) среднего.
+  6721900498aa7b2bcb27d3fa:
+    skip: шутливое прозвище (Mr. … author of Average Height), реплика обрывается — значение карточки не видно
+  66f408d5c5114b74c5f4bbe2:
+    skip: Slim — имя персонажа, а не «стройный»
+  672517dc7358581b08c9aaf7:
+    skip: Slim — имя персонажа, а не «стройный»
+  667d01f285f37b1f9f4c3b36:
+    skip: непонятно без контекста (The tall, fallen one)
+  6750892601a3015ccfdbd569:
+    translation: Так, а Чез Хантер — он реально высокий или просто довольно высокий?
+    gap: '**tall** — высокий (о человеке). Гора или цена — *high*, а человек — всегда **tall**.'
+    choice:
+      wrong:
+      - Okay, so is Chaz Hunter, like, really tall or just kind of short?
+      - Okay, so is Chaz Hunter, like, really thin or just kind of thin?
+      explanation: 'Вопрос о том, **насколько** Чез высокий: *really tall* или *kind of tall* — оба раза **tall**. *like*
+        здесь — разговорное «типа», *kind of* — «довольно, вроде».'
+  672b3751b6f4922387424ebf:
+    translation: Ты такая худая.
+    gap: '**thin** — худой, нейтральное слово. Комплимент — *slim*, грубо — *skinny*.'
+    dictation: '**look so** — ударение на *so*, оно тянется. В *thin* — межзубный [θ], не [s] и не [f].'
+    choice:
+      wrong:
+      - You look too thin.
+      - You're so thin.
+      explanation: 'Звучит **look so thin**: *so* — «такая», а не *too* — «слишком». И глагол *look* — «выглядишь», а не *you''re*.'
+  665fee62877ad250fbbcab69:
+    translation: Как она ест такое и остаётся такой худой?
+    gap: '**thin** — худой. *stay thin* — оставаться худым, *so thin* — такой худой.'
+    choice:
+      wrong:
+      - How does she eat like that and stay so slim?
+      - How does she eat like this and stay so thin?
+      explanation: Героиня говорит **thin** (худая, нейтрально), а не *slim* (стройная, комплимент), и **like that** — «так,
+        такое».
+  670974217685426919258c01:
+    translation: Нет, я лысый.
+    gap: '**bald** [bɔːld] — лысый, совсем без волос. Начинает лысеть — *balding*.'
+    dictation: '**bald** читается [bɔːld] — как *ball* + d, а не «балд». *I''m* — одним слогом.'
+    choice:
+      wrong:
+      - No, I'm blond.
+      - No, I'm not bald.
+      explanation: 'Герой говорит прямо: **I''m bald** — «я лысый», без *not*; и не *blond* — «светловолосый».'
+  6747401b30546c7c72bb0dd3:
+    skip: Bald — имя или прозвище персонажа
+  675048e0a9e09c213cf15806:
+    skip: Balding — фамилия (Miss Balding), а не «лысеющий»
+  67070e49e9f32b69bba3d4f2:
+    translation: Они все блондины.
+    gap: '**blond** — светловолосый, блондин. Можно о человеке (*He''s blond*) и о волосах (*blond hair*).'
+    dictation: '**They''re** звучит как [ðeə] — так же, как *there*. *all* и *blond* связаны: [ɔːl blɒnd].'
+    choice:
+      wrong:
+      - They're all old.
+      - They're not blond.
+      explanation: Про всех сказано **all blond** — «все светловолосые», не *old* (старые) и без отрицания.
+  67069c918f3c7334d6a76381:
+    skip: перечисление без контекста, a thing о человеке — пренебрежительно и непонятно
+  670c05e49236b6777d44d3ec:
+    skip: 'red curly hair нарушает порядок прилагательных из карточки adjective-order (форма → цвет: curly red hair)'
+  670c85923c3b8f1ce8f0eb9b:
+    translation: Бойтесь усов и бороды!
+    gap: '**facial hair** — растительность на лице: усы, борода, щетина. *facial* — от *face* (лицо).'
+    dictation: '**facial** читается [ˈfeɪʃl] — с *ш* в середине, а не «фейсиал». *hair* — [heə].'
+  6717dbcd28eba13fc741d41c:
+    skip: fair в значении «справедливо», а карточка — «светлый (о волосах)»
+  6751d93ba7ca3e777e5584e2:
+    skip: сленг (give fair second on the first date), fair в другом значении
+  6718400e1ce73f35c5f096e7:
+    skip: Ginger — имя, а не «рыжий»
+  674e9a5f38e69c6623949221:
+    skip: Ginger — имя (Fred and Ginger), а не «рыжий»
+  6711ad8c14e7a06655d8fa68:
+    skip: идиома keep it out of my hair — «не мешай мне», не про волосы
+  67291da840118047622ceaaa:
+    skip: непонятно без контекста (зажги спичку и подержи мне волосы — сцена с рвотой)
+  67196857c52fca34229319c7:
+    translation: Как он выглядит?
+    gap: '**look like** — быть похожим. **What does he look like?** — вопрос о внешности: «Как он выглядит?» Ответ: *He''s
+      tall, with dark hair.*'
+    dictation: '**does he** сливается в [dʌzi] — *h* почти не слышно. *like* — короткое, без ударения.'
+    choice:
+      wrong:
+      - What does he like?
+      - What does she look like?
+      explanation: Спрашивают про внешность — **look like**. *What does he like?* — «Что ему нравится?», совсем другой вопрос.
+  6702c4d993ac784a3631b61b:
+    skip: Moustache — прозвище, плюс пассив is known as, которого ещё нет
+  67214fce8bdb3513f30eec2b:
+    translation: У неё красивые рыжие волосы.
+    gap: '**red hair** — рыжие волосы (не «красные»). *hair* без *-s*: *She has red hair.*'
+    dictation: '**has** — слабое [həz], *pretty* — с мягким *t*, почти [ˈprɪdi]. *red hair* — два ударения.'
+    choice:
+      wrong:
+      - She has pretty fair hair.
+      - He has pretty red hair.
+      explanation: Речь о **рыжих** волосах — *red hair*, не о светлых (*fair*). И это **she** — она.
+  666aa7d3ab721a61ab99c2a8:
+    translation: Кто такой Иан — тот, рыжий?
+    gap: '**red hair** — рыжие волосы. *the one with the red hair* — «тот, что с рыжими волосами»: так показывают на человека
+      по внешности.'
+    dictation: '**Who''s** = *who is*, одним слогом [huːz]. *with the* сливается: [wɪðə].'
+    choice:
+      wrong:
+      - Who's Ian, the one with the fair hair?
+      - Who's Ian, the one with the long hair?
+      explanation: Иана узнают по **рыжим** волосам — *red hair*, а не по светлым (*fair*) или длинным (*long*).
+  672cff245af2d169ae22282e:
+    skip: субтитр выглядит неверным и бессмысленным (track you straight in my teeth)
+  67503425a9e09c213cf0c03e:
+    translation: С Богом не поспоришь.
+    gap: '**argue with** somebody — спорить с кем-то. Предлог **with**: *argue with God*, не ~~argue to~~.'
+    dictation: '**cannot** — одно слово, ударение на *can*. *argue with* сливается: [ˈɑːgjuː wɪð].'
+    choice:
+      wrong:
+      - You can argue with God.
+      - You cannot argue with Dad.
+      explanation: Звучит **cannot** — «нельзя, не получится», и спорить нельзя именно **с Богом** — *God*.
+  6718636fae9fb1315a8200db:
+    translation: Он сказал с тобой не спорить.
+    gap: '**argue** — спорить. *not to argue with you* — «не спорить с тобой»: *not* стоит перед *to*.'
+    dictation: '**not to** — два *t* подряд сливаются в одно. *argue with you* — [ˈɑːgjuː wɪðjuː].'
+    choice:
+      wrong:
+      - He said not to argue with me.
+      - He says not to argue with you.
+      explanation: Он **сказал** (*said*, прошедшее) не спорить **с тобой** — *with you*.
+  67549ab73a1deb32aa615f3d:
+    translation: Мой кузен с тобой поссорится.
+    gap: '**fall out with** somebody — поссориться с кем-то. Нужны оба слова: *out* и **with**.'
+    dictation: '**fall out** сливается в [fɔːlaʊt]. *will* — короткое, почти незаметное.'
+    choice:
+      wrong:
+      - My cousin won't fall out with you.
+      - My cousin will fall out with me.
+      explanation: Кузен **поссорится** (*will*, без отрицания) **с тобой** — *with you*.
+  675052baa9e09c213cf19d82:
+    translation: Я ссорюсь с людьми направо и налево.
+    gap: '**fall out with** — поссориться с кем-то. Здесь настоящее простое: так бывает **всегда**, это привычка героя.'
+    dictation: '**fall out with** — одно целое: [fɔːlaʊt wɪð]. *left and right* — *and* слабое [ən].'
+    choice:
+      wrong:
+      - I fell out with people left and right.
+      - I fall out with them left and right.
+      explanation: Герой говорит о привычке — **fall** (настоящее), не *fell* (прошедшее). И с **людьми** — *people*.
+  666e6421ab721a61ab9ecdd2:
+    skip: make up — «придумать», а карточка — «помириться»
+  6659bb00e7d77a68b539648d:
+    skip: make up for — «загладить, возместить», другое значение
+  67291d624c81a01be2b0ce6a:
+    translation: Будьте как дома.
+    gap: '**at home** — дома, без артикля. *Make yourself at home* — «будь как дома»: так встречают гостей.'
+    dictation: '**yourselves** — множественное число (гостей много), окончание [-selvz]. *at home* — *t* почти не слышно.'
+    choice:
+      wrong:
+      - Make yourself at home.
+      - Make yourselves a home.
+      explanation: Гостей несколько — **yourselves**. И **at home** — «дома», а не *a home* — «дом».
+  6752b33c577fe15785ec46fc:
+    skip: реплика обрывается, at work and play — устойчивое сочетание, gap захватывает лишнее and
+  6721a61298aa7b2bcb28662c:
+    translation: У нас нет ничего общего.
+    gap: '**have something in common** — иметь что-то общее. *nothing in common* — ничего общего.'
+    dictation: '**nothing in** сливается: [ˈnʌθɪŋɪn]. Ударение на *nothing* и *common*.'
+    choice:
+      wrong:
+      - We have something in common.
+      - We have a lot in common.
+      explanation: Герой говорит, что общего **нет** — *nothing*, а не *something* или *a lot*.
+  665a748ee7d77a68b53dc15b:
+    translation: Всё дело в уважении и в том, чтобы иметь что-то общее.
+    gap: '**in common** — общее. *have things in common* — иметь общее (интересы, взгляды).'
+    dictation: '**It''s about** сливается: [ɪtsəˈbaʊt]. *having things in* — *in* слабое, почти [ən].'
+    choice:
+      wrong:
+      - It's about respect and having nothing in common.
+      - It's not about respect and having things in common.
+      explanation: Речь о том, что **важно** иметь общее — *having things in common*, без *nothing* и без *not*.
+  669cfdc9c3b09f59ba6be235:
+    translation: Нет, я понимаю, просто в целом.
+    gap: '**in general** — в целом, вообще. Не путай с *in total* — «всего, итого» (о количестве).'
+    dictation: '**I know** — *k* не читается. **in general** сливается: [ɪnˈdʒenrəl], *e* в середине почти выпадает.'
+    choice:
+      wrong:
+      - No, I know, just in total.
+      - No, I don't know, just in general.
+      explanation: Герой говорит **in general** — «в целом», и **I know** — «понимаю», без *don't*.
+  665b253de7d77a68b541bc47:
+    skip: реплика обрывается; kind of здесь «довольно», а у basics/kind-of и personality/kind другие значения
+  665a0e3ce7d77a68b53b509a:
+    translation: Ксандер, послушай меня.
+    gap: '**listen to** somebody — слушать кого-то. Без **to** нельзя: *listen to me*, не ~~listen me~~.'
+    dictation: '**listen** — *t* не читается: [ˈlɪsn]. *to me* — слабое [tə].'
+    choice:
+      wrong:
+      - Xander, listen to him.
+      - Xander, look at me.
+      explanation: Героиня просит послушать **её** — *listen to me*.
+  665a87efe7d77a68b53e2b88:
+    translation: Так, слушай меня.
+    gap: '**listen to** — слушать (кого-то). Повелительное с *you*: **you listen to me** звучит строже, с нажимом.'
+    dictation: '**listen** — без *t*: [ˈlɪsn]. *to* слабое [tə], *you* перед глаголом — для нажима.'
+    choice:
+      wrong:
+      - Okay, you listen to him.
+      - Okay, you listen to them.
+      explanation: Говорящий требует слушать **его самого** — *listen to me*.
+  6721b8d3242a991cc3cccf8e:
+    skip: rough в переносном смысле («тяжело, туго»), карточка — физическое «шершавый, бурный»; may be getting — грамматика
+      не по шагу
+  671aa0f8cb403c43d441db53:
+    translation: Не груби.
+    gap: '**rude** — грубый, невежливый (о поведении). *Don''t be rude* — «не груби». Шершавый на ощупь — *rough*.'
+    dictation: '**Don''t be** — *t* почти не слышно: [dəʊm bi]. *so* тянется, *rude* — долгое [ruːd].'
+    choice:
+      wrong:
+      - Don't be rude.
+      - Don't be so loud.
+      explanation: 'Звучит **so rude** — «такой грубый»: *so* слышно. *loud* — громкий, другое слово.'
+  667cbf0e85f37b1f9f4bbaa8:
+    translation: Так, не хочу показаться грубым, но ты здесь по какой-то причине?
+    gap: '**rude** — невежливый. **not to be rude, but…** — «не хочу грубить, но…»: так смягчают неудобный вопрос.'
+    choice:
+      wrong:
+      - Okay, not to be rude, but is there a reason you're there?
+      - Okay, not to be rude, but is there a reason you're late?
+      explanation: 'Вопрос — почему человек **здесь**: *you''re here*.'
+  670d1f275b56d878b9dab9f7:
+    skip: subject здесь «объект, тема (съёмки)», а не «подлежащее» или «школьный предмет»
+  674feec3a9e09c213ceec6b9:
+    skip: subject здесь «тема (исследования)», а не «подлежащее» или «школьный предмет»
+  670e49aa22e19043455f51bf:
+    translation: Я очень устал.
+    gap: '**tired** — усталый. *I''m tired* — «я устал»: по-английски это прилагательное с *am*, а не глагол.'
+    dictation: '**I''m really** — *really* [ˈrɪəli], ударение на первом слоге. В *tired* — один слог: [taɪəd].'
+    choice:
+      wrong:
+      - I'm very tired.
+      - I'm not tired.
+      explanation: 'Звучит **really tired** — «очень (правда) устал»: *really*, не *very*, и без *not*.'
+  6659ada7e7d77a68b5391532:
+    translation: Я и сам, типа, устал.
+    gap: '**tired** — усталый: *I''m tired*. *kind of* перед ним смягчает — «вроде, немного»; *myself* — «и сам».'
+    dictation: '**kind of** сливается в [ˈkaɪndə] — *of* почти пропадает. *tired* — один слог [taɪəd].'
+    choice:
+      wrong:
+      - I'm kind of tired today.
+      - I'm not tired myself.
+      explanation: Герой говорит, что **и сам** устал — *myself*, без *not*.
+  670687ce596d0f54a4c4f048:
+    translation: Он та ещё болтушка.
+    gap: '**a chatterbox** — болтун, болтушка (по-доброму). *quite a chatterbox* — «тот ещё болтун».'
+    dictation: '**He''s really quite** — *quite* [kwaɪt], не *quiet*. **a chatterbox** — *a* слабое, *tt* звучит мягко, почти
+      [d].'
+    choice:
+      wrong:
+      - She's really quite a chatterbox.
+      - He's really not a chatterbox.
+      explanation: 'Говорят про **него** — *he''s* — и что он **тот ещё** болтун: *quite a chatterbox*.'
+  6750217a62a2153cc8ba812c:
+    translation: Чувствую себя болтушкой.
+    gap: '**a chatterbox** — болтун, болтушка. С артиклем **a**: *I''m a chatterbox*, *I feel like a chatterbox*.'
+    dictation: '**feel like a** сливается: [fiːlaɪkə]. *chatterbox* — ударение на первом слоге.'
+    choice:
+      wrong:
+      - I feel like a couch potato.
+      - I look like a chatterbox.
+      explanation: 'Героиня говорит, что **чувствует себя** (*feel like*) болтушкой: наверное, слишком много говорит.'
+  6752fcf3a41dbb7f52da3e6a:
+    skip: идиома в идиоме (after my own heart) — не разобрать на этом уровне
+  6747525450f5f56297f0940d:
+    skip: present perfect (I've always been) ещё не изучен
+  671abc78de4b973cebbccc75:
+    translation: У него золотое сердце.
+    gap: '**a heart of gold** — золотое сердце: очень добрый человек. *He''s got* = *He has*.'
+    dictation: '**He''s got** = *He has got*: *''s* здесь — *has*, а не *is*. *heart of* сливается: [hɑːtəv].'
+    choice:
+      wrong:
+      - She's got a heart of gold.
+      - He has a heart of gold.
+      explanation: Звучит сокращение **He's got** — не полное *He has*. И это **he** — он, не *she*.
+  670d00cec2acf21e7b80afc6:
+    translation: Там, внутри, — золотое сердце.
+    gap: '**a heart of gold** — золотое сердце, большая доброта. *In there is…* — «там внутри есть…».'
+    dictation: '**In there is a** сливается в одну волну: [ɪnˈðeərɪzə]. Главное — **heart of gold**.'
+    choice:
+      wrong:
+      - In here is a heart of gold.
+      - In there was a heart of gold.
+      explanation: Показывают на другого человека — **in there** («там»), и сердце есть **сейчас** — *is*, не *was*.
+  6703595087031268d491773d:
+    skip: down to Earth здесь буквально «спустился на Землю», а не «простой, без пафоса»; ещё прошедшее lit
+  6747e17c30546c7c72bebfb4:
+    translation: Мы знаем, где душа компании.
+    gap: '**the life and soul of the party** — душа компании: человек, с которым всем весело. Всегда с **the**.'
+    choice:
+      wrong:
+      - We know who the life and soul of the party is.
+      - We know where the life and soul of the party was.
+      explanation: Звучит **where** — «где» (душа компании сейчас), и **is** — настоящее.
+  672b3f72b6f492238742a16e:
+    skip: must have been — модальный перфект, ещё не изучен
+  6726e9dc572cff2ebf4c77dc:
+    translation: Я вылитый Роб Зомби.
+    gap: '**the spitting image of** somebody — вылитый кто-то, очень похож. Всегда **the** и **of**.'
+    dictation: '**spitting image of** — *tt* мягкое, почти [d]; *image of* сливается: [ˈɪmɪdʒəv].'
+    choice:
+      wrong:
+      - You're the spitting image of Rob Zombie.
+      - I'm not the spitting image of Rob Zombie.
+      explanation: Герой говорит о **себе** — *I'm*, и без отрицания.
+  67213c138bdb3513f30e2e87:
+    translation: Боже мой, да вы вылитый…
+    gap: '**the spitting image of** — вылитый, точная копия кого-то. Здесь героя перебивают, имя не прозвучало.'
+    dictation: '**you''re the** — [jɔːðə]. *spitting image of* — *image of* сливается: [ˈɪmɪdʒəv].'
+    choice:
+      wrong:
+      - Good Lord, he's the spitting image of…
+      - Good Lord, I'm the spitting image of…
+      explanation: Говорят прямо собеседнику — **you're**, «вы вылитый…».
+  6704060a671be44f3fba944c:
+    skip: смысл реплики неясен (go out with you not tight-fisted), трудный диалект
+  666056a7877ad250fbbcf9c8:
+    skip: would say и придаточное — грамматика не по шагу; реплика обрывается
+  67478ca450f5f56297f2b47d:
+    translation: Умная женщина заставляет мужа делать то, что хочет она.
+    gap: '**clever** — умный, сообразительный, хитрый в хорошем смысле. *a clever woman* — умная женщина.'
+    choice:
+      wrong:
+      - A clever woman makes her husband do as he likes.
+      - A clever woman lets her husband do as she likes.
+      explanation: Умная жена **заставляет** (*makes*) мужа делать то, что нравится **ей** — *she likes*.
+  6708f61fafdac43db60d0fee:
+    translation: 'Знаешь, сразу видно: она экстраверт.'
+    gap: '**an extrovert** — экстраверт: открытый, общительный. Начинается с гласной — артикль **an**.'
+    dictation: '**she''s an** сливается: [ʃiːzən]. *right away* — [raɪtəˈweɪ], *t* почти не слышно.'
+    choice:
+      wrong:
+      - You know, right away, she's an introvert.
+      - You know, right away, he's an extrovert.
+      explanation: 'Про **неё** — *she''s* — и она **экстраверт**: *extrovert*, не *introvert*.'
+  6752a7e6577fe15785ec1069:
+    translation: Доктор Талбот говорит, что ты экстраверт, а я интроверт.
+    gap: '**extrovert** — экстраверт, общительный; ↔ **introvert** — интроверт, замкнутый. Здесь они противопоставлены через
+      **and**.'
+    choice:
+      wrong:
+      - Dr. Talbot says that you're an introvert and I'm an extrovert.
+      - Dr. Talbot thinks that you're an extrovert and I'm an introvert.
+      explanation: Экстраверт — **ты** (*you're an extrovert*), интроверт — **я**. И доктор **говорит** — *says*, а не *thinks*.
+  665a1017e7d77a68b53b5dfe:
+    translation: Они вроде довольно дружелюбные.
+    gap: '**friendly** — дружелюбный. Это прилагательное, хоть и на *-ly*: *They''re friendly*.'
+    dictation: '**seem pretty** — *pretty* здесь «довольно», *tt* мягкое [ˈprɪdi]. *friendly* — *d* почти не слышно.'
+    choice:
+      wrong:
+      - They seem pretty unfriendly.
+      - They seem very friendly.
+      explanation: Звучит **pretty friendly** — «довольно дружелюбные», без *un-*.
+  67056bfbd8952c5abc68139b:
+    skip: make fun of — «смеяться над», не «весёлый» из карточки; реплика рваная
+  676c04546c599736905df95d:
+    skip: про расу (make fun of the black race) и другое значение fun
+  665b63e5e7d77a68b54320a3:
+    translation: О, это смешно.
+    gap: '**funny** — смешной, вызывает смех. Не путай с **fun** — весёлый, приятный: *It''s fun* — «это весело».'
+    dictation: '**that''s** — [ðæts], *t* и *s* сливаются. В *funny* — двойное *n*, ударение на первый слог.'
+    choice:
+      wrong:
+      - Oh, that's fun.
+      - Oh, it's funny.
+      explanation: Звучит **funny** — «смешно», с окончанием *-y*. И *that's*, не *it's*.
+  6750587ba9e09c213cf1ca00:
+    translation: Очень смешно, Фил.
+    gap: '**funny** — смешной. **Very funny** часто говорят с иронией: «Ну очень смешно» — то есть совсем не смешно.'
+    dictation: '**Very funny** — оба слова с ударением на первом слоге: [ˈveri ˈfʌni].'
+    choice:
+      wrong:
+      - Not funny, Phil.
+      - Very funny, Bill.
+      explanation: Звучит **Very funny** — «очень смешно» с иронией, и обращаются к **Филу**.
+  6712787314e7a06655db98fb:
+    translation: Очень щедро с вашей стороны.
+    gap: '**generous of you** — щедро с вашей стороны. После прилагательного — **of you**, как *kind of you*.'
+    dictation: '**generous of** сливается: [ˈdʒenərəsəv]. *of you* звучит как [əvjuː].'
+    choice:
+      wrong:
+      - Very kind of you.
+      - Very generous of them.
+      explanation: Хвалят именно **щедрость** — *generous*, и того, с кем говорят, — *of you*.
+  671a8d6ede4b973cebbaf792:
+    translation: Как щедро с его стороны.
+    gap: '**generous of** somebody — щедро с чьей-то стороны. *So generous of him* — «как щедро с его стороны».'
+    dictation: '**of him** — *h* выпадает: [əvɪm]. *generous* — три слога, ударение на первом.'
+    choice:
+      wrong:
+      - So generous of you.
+      - So kind of him.
+      explanation: 'Говорят о **нём** — *of him* — и о **щедрости**: *generous*.'
+  66f4a83d41c0387b72dbe150:
+    translation: Знаешь, ты умная, красивая, толковая женщина.
+    gap: '**intelligent** — умный, с развитым интеллектом. Ударение на второй слог: [ɪnˈtelɪdʒənt].'
+    dictation: '**you''re an** сливается: [jɔːrən]. *intelligent* — ударение на *tel*. Прилагательные идут через паузы.'
+    choice:
+      wrong:
+      - You know, you're an intelligent, beautiful, kind woman.
+      - You know, you're an intelligent, beautiful, smart girl.
+      explanation: В конце звучит **smart woman** — «толковая женщина».
+  6718273b59fb40749c3b6df0:
+    translation: Нам нужна только какая-нибудь красивая, умная девушка на роль жены.
+    gap: '**intelligent** — умный, образованный. *a beautiful, intelligent girl* — мнение и описание через запятую.'
+    choice:
+      wrong:
+      - All we need is some beautiful, interesting girl to play the wife.
+      - All we need is some beautiful, intelligent girl to play the mother.
+      explanation: 'Ищут **умную** девушку — *intelligent* — на роль **жены**: *the wife*.'
+  670e5e6695ea2d48d1f71d71:
+    translation: Для интроверта очень даже неплохо.
+    gap: '**an introvert** — интроверт: тихий, замкнутый, любит быть один. Перед гласной — **an**.'
+    dictation: '**for an** сливается: [fərən]. *pretty good* — *pretty* [ˈprɪdi].'
+    choice:
+      wrong:
+      - It's pretty good for an extrovert.
+      - It's very good for an introvert.
+      explanation: Звучит **pretty good** — «вполне неплохо» — и **introvert**.
+  6747763c50f5f56297f1e9e3:
+    translation: 'Для тех, кто меня не знает: я интроверт.'
+    gap: '**introvert** — интроверт, человек, которому спокойнее одному. ↔ **extrovert**.'
+    choice:
+      wrong:
+      - For those of you that don't know me, I am an extrovert.
+      - For those of you that know me, I am an introvert.
+      explanation: Говорящая представляется тем, кто её **не знает**, и называет себя **интровертом**.
+  6703165745cfb3109ff40c14:
+    translation: Мило, что ты так говоришь, Фредди.
+    gap: '**It''s kind of you** — любезно с твоей стороны. *It''s kind of you to say so* — «спасибо за добрые слова».'
+    dictation: '**kind of you** сливается: [ˈkaɪndəvjuː]. *say so* — оба слова с долгим звуком.'
+    choice:
+      wrong:
+      - It's nice of you to say so, Freddie.
+      - It's kind of him to say so, Freddie.
+      explanation: 'Звучит **kind of you** — «любезно с твоей стороны»: благодарят самого Фредди.'
+  672615477d80151ffe415dd6:
+    translation: Как мило, что ты об этом подумал.
+    gap: '**It''s kind of you** + *to* + глагол — «любезно с твоей стороны (что-то сделать)».'
+    dictation: '**kind of you** — [ˈkaɪndəvjuː]. *think of that* — *of* слабое [əv].'
+    choice:
+      wrong:
+      - It's nice of you to think of that.
+      - It's kind of you to think about that.
+      explanation: Звучит **kind of you** и **think of** — «подумать о».
+  672d05858d27cd7d44608179:
+    skip: present perfect (You've been) ещё не изучен на шаге 18
+  670d1b46fe4ef3706a3429c8:
+    translation: С машиной надо обращаться бережно.
+    gap: '**kind to** somebody / something — добрый к кому-то. Предлог **to**: *be kind to the car* — «бережно с машиной».'
+    dictation: '**have to** — [ˈhæftə], *v* звучит как *f*. *kind to the* — *to* слабое [tə].'
+    choice:
+      wrong:
+      - You have to be kind to the cat.
+      - You have to be kind with the car.
+      explanation: 'Речь о **машине** — *the car*, и предлог **to**: *kind to*.'
+  6733e8f639b76a1d532fff5a:
+    translation: Иногда немного ленивый.
+    gap: '**lazy** — ленивый. *somewhat lazy* — «немного, отчасти ленивый».'
+    dictation: '**somewhat** — [ˈsʌmwɒt], ударение на первом слоге. *lazy* — [ˈleɪzi].'
+    choice:
+      wrong:
+      - Somewhat lazy, always.
+      - Somewhat busy, sometimes.
+      explanation: Звучит **lazy** — «ленивый», и **sometimes** — «иногда», не «всегда».
+  665a3614e7d77a68b53c51c6:
+    translation: Вообще-то, скорее для ленивых родителей.
+    gap: '**lazy** — ленивый. *lazy parents* — ленивые родители: прилагательное перед существительным не меняется.'
+    dictation: '**Actually** — [ˈæktʃuəli], *t* звучит как [tʃ]. *more for* — *for* слабое [fə].'
+    choice:
+      wrong:
+      - Actually, more for lazy people.
+      - Actually, more for busy parents.
+      explanation: Звучит **lazy parents** — «ленивые родители».
+  672a0bd64011804762363a91:
+    skip: I mean — «то есть, в смысле», а карточка — «жадный»
+  665b449fe7d77a68b5427e16:
+    skip: I mean — «то есть, в смысле», а карточка — «жадный»
+  666e31caab721a61ab9e547f:
+    translation: Мой новый начальник со мной такой вредный.
+    gap: '**mean to** somebody — вредный, злой к кому-то. Без **to** *mean* — «жадный».'
+    dictation: '**so mean to me** — *to* слабое [tə]. *boss is* сливается: [bɒsɪz].'
+    choice:
+      wrong:
+      - My new boss is so kind to me.
+      - My new boss is so mean to you.
+      explanation: 'Герой жалуется: начальник **вредный** (*mean*) — **с ним** (*to me*).'
+  675069ec01a3015ccfdb453f:
+    skip: mean to здесь глагол «значить для», а не «вредный к»
+  666007fb877ad250fbbcbe31:
+    skip: quiet down — глагол «утихомириться», а карточка — прилагательное «тихий»
+  6711ae80b7b0fd393b878bd1:
+    translation: Нет, я серьёзно.
+    gap: '**serious** — серьёзный. *I''m serious* — «я серьёзно»: после *am* — прилагательное, не *seriously*.'
+    dictation: '**I''m serious** — [aɪm ˈsɪəriəs], ударение на первом слоге. Не путай с *Seriously?*'
+    choice:
+      wrong:
+      - No, I'm not serious.
+      - No, you're serious.
+      explanation: 'Герой настаивает: **I''m serious** — «я серьёзно», без *not*.'
+  6719886fc1401c4d23d65552:
+    translation: Если ты серьёзно, я в таких штуках вроде как неплох.
+    gap: '**serious** — серьёзный. *If you''re serious* — «если ты серьёзно»: прилагательное после *are*.'
+    choice:
+      wrong:
+      - If you're serious, I'm kind of bad at that stuff.
+      - If you're not serious, I'm kind of good at that stuff.
+      explanation: Звучит **If you're serious** — без *not* — и **good at** — «хорош в».
+  672184e3c1c40d46daa54cf4:
+    translation: Некогда стесняться.
+    gap: '**shy** — застенчивый. *to be shy* — стесняться. *No time to be shy* — «не время стесняться».'
+    dictation: '**No time to** — *t* на стыке сливается: [nəʊ taɪmtə]. *shy* — [ʃaɪ].'
+    choice:
+      wrong:
+      - No time to be quiet.
+      - No time to be sad.
+      explanation: Звучит **shy** — «стесняться».
+  67117009ea43c55f02870f45:
+    translation: Она всё ещё немного стесняется всего этого.
+    gap: '**shy** — застенчивый. *a little shy about something* — немного стесняется чего-то.'
+    dictation: '**She''s still a** сливается. *a little* — [əˈlɪtl], *tt* мягкое. *about all this* — [əˈbaʊtɔːlðɪs].'
+    choice:
+      wrong:
+      - She's still a little shy about all that.
+      - She's not a little shy about all this.
+      explanation: Звучит **still** — «всё ещё», и **all this** — «всё это».
+  6720f5c6168165059e95f989:
+    translation: Знаю, он такой умный.
+    gap: '**smart** — умный, сообразительный (чаще в американском). *so smart* — такой умный.'
+    dictation: '**he''s so** — [hiːz səʊ]. *smart* — долгое [ɑː]: [smɑːt].'
+    choice:
+      wrong:
+      - I know, she's so smart.
+      - I know, he's not smart.
+      explanation: 'Говорят про **него** — *he''s* — и хвалят: **so smart**.'
+  666a97e6ab721a61ab99b5e2:
+    translation: Дебби, ты умная девочка.
+    gap: '**smart** — умный. *a smart girl* — умная девочка (девушка).'
+    dictation: '**you''re a** сливается: [jɔːrə]. *smart girl* — два ударения подряд.'
+    choice:
+      wrong:
+      - Debbie, you're a sweet girl.
+      - Debbie, you're not a smart girl.
+      explanation: Звучит **smart** — «умная».
+  6729e851401180476234c826:
+    skip: конструкция Why don't you… здесь восклицание, а не совет — сбивает; значение look smart неоднозначно
+  672136b7a14d421d9cca7d81:
+    translation: Знаю, иногда я веду себя глупо и говорю глупости,
+    gap: '**stupid** — глупый. *act stupid* — вести себя глупо, *stupid things* — глупости. ↔ **clever**.'
+    choice:
+      wrong:
+      - I know sometimes I act stupid and I do stupid things,
+      - I know sometimes I act funny and I say stupid things,
+      explanation: Звучит **act stupid** и **say stupid things** — «веду себя глупо и **говорю** глупости».
+  6729bf674011804762333715:
+    translation: Том, любому, кто тебя знает, ясно, что ты разговорчивый.
+    gap: '**talkative** — разговорчивый, любит поговорить. ↔ **quiet**. Ударение на первый слог: [ˈtɔːkətɪv].'
+    choice:
+      wrong:
+      - Tom, it is clear to anyone who meets you that you're quiet.
+      - Tom, it is clear to anyone who meets you that you're not talkative.
+      explanation: Звучит **you're talkative** — «ты разговорчивый», без *not*.
+  6707f776f1626400985fb146:
+    translation: Я не недружелюбный.
+    gap: '**unfriendly** — недружелюбный. Приставка **un-** даёт противоположное: *friendly* → *unfriendly*.'
+    dictation: '**I''m not** — *t* почти не слышно. *unfriendly* — ударение на *friend*.'
+    choice:
+      wrong:
+      - I'm not friendly.
+      - I'm so unfriendly.
+      explanation: 'Герой **спорит**: *I''m not unfriendly* — «я вовсе не недружелюбный», то есть нормальный.'
+  67115976ea43c55f02868bb6:
+    translation: Почему такая неприветливая, мисс Лина?
+    gap: '**unfriendly** — недружелюбный, неприветливый. *Why so unfriendly?* — короткий вопрос без глагола.'
+    dictation: '**Why so** — [waɪ səʊ]. *unfriendly* — ударение на *friend*; *Miss Lena* — имя.'
+    choice:
+      wrong:
+      - Why so friendly, Miss Lena?
+      - Why so sad, Miss Lena?
+      explanation: Звучит **unfriendly** — с приставкой *un-*.
+  6721212933a9b13a1d752075:
+    translation: Вальдо, это так жестоко.
+    gap: '**unkind** — недобрый, жестокий. Приставка **un-**: *kind* → *unkind*.'
+    dictation: '**that is so** — без сокращения, слова отдельно. *unkind* — ударение на *kind*.'
+    choice:
+      wrong:
+      - Valda, that is so kind.
+      - Valda, that is not unkind.
+      explanation: Звучит **so unkind** — «так жестоко», с *un-*.
+  6707fe4f0b10211aa994eb18:
+    translation: Пожалуйста, не считайте меня недобрым или недружелюбным.
+    gap: '**unkind** — недобрый. *think me unkind* — книжное «считать меня недобрым».'
+    dictation: '**don''t think me** — *t* в *don''t* почти пропадает. *unkind or* сливается: [ʌnˈkaɪndɔː].'
+    choice:
+      wrong:
+      - Please don't think me kind or unfriendly.
+      - Please don't think me unkind or friendly.
+      explanation: 'Звучат **оба** слова с *un-*: **unkind or unfriendly**.'
+  670d293cc2acf21e7b819b91:
+    skip: обрывок ответа, непонятен без контекста (Long enough to…)
+  67116326b7b0fd393b852eca:
+    skip: we'd (would) — условное, ещё не изучено на шаге 6
+  670926c07e212d61d0da82b6:
+    translation: Позвони мне на выходных, и тогда расскажешь мне всё.
+    gap: '**at the weekend** — на выходных (британское). В американском — *on the weekend*.'
+    choice:
+      wrong:
+      - Call me on the weekend and then you can tell me all about it.
+      - Call me at the weekend and then you can tell him all about it.
+      explanation: Звучит **at the weekend** — британский вариант, и **tell me** — «расскажешь мне».
+  670cf9ff5b56d878b9d953bc:
+    translation: Они приезжают в половине.
+    gap: '**at** + время: *at half past* (seven) — в половине (восьмого). Час понятен из разговора.'
+    dictation: '**arrive at** сливается: [əˈraɪvət]. *half* — *l* не читается: [hɑːf].'
+    choice:
+      wrong:
+      - They arrive at half past two.
+      - They arrive in half an hour.
+      explanation: 'Звучит **at half past** — «в половине», без числа: время все и так знают.'
+  674e78ba38e69c662393e556:
+    translation: Я заканчиваю работу в семь.
+    gap: '**at** + время: *at seven* — в семь. С часами всегда **at**.'
+    dictation: '**get off work** — *get off* сливается: [geˈtɒf]. *at seven* — *at* слабое [ət].'
+    choice:
+      wrong:
+      - I get off work at eleven.
+      - I get to work at seven.
+      explanation: Звучит **get off work** — «заканчиваю работу» — и **at seven**.
+  6709e1bc3b21f421b1040bc9:
+    skip: драка (Get up and fight); get up здесь «подняться с земли», а не «вставать с постели»
+  67519dbbca9f4f53c0c84591:
+    translation: Ладно, вставай, Пэн.
+    gap: '**get up** — вставать. *Get up!* — «Вставай!»: так поднимают с кровати или с земли.'
+    dictation: '**get up** сливается: [geˈtʌp], *t* между гласными мягкое. *All right* — [ɔːˈraɪt].'
+    choice:
+      wrong:
+      - All right, wake up, Pang.
+      - All right, get out, Pang.
+      explanation: Звучит **get up** — «вставай». *wake up* — «проснись», *get out* — «выходи».
+  6750314ba9e09c213cf0ad7e:
+    skip: go to bed with — сексуальный смысл
+  672a5f7dc3d34760ffe06e49:
+    skip: go to bed with — сексуальный смысл
+  672a041d401180476235e7af:
+    translation: Мама, сейчас два часа дня.
+    gap: '**in the afternoon** — днём, после полудня. *two o''clock in the afternoon* — два часа дня.'
+    dictation: '**it''s two o''clock** — *o''clock* [əˈklɒk]. *in the afternoon* — ударение в конце: [ɑːftəˈnuːn].'
+    choice:
+      wrong:
+      - Mother, it's two o'clock in the morning.
+      - Mother, it's ten o'clock in the afternoon.
+      explanation: Звучит **two** и **in the afternoon** — «два часа дня».
+  672b91a0bedbe27c9690585b:
+    skip: love in the afternoon — романтический намёк, двусмысленно
+  67115e23ea43c55f0286a52a:
+    translation: Жасмин по вечерам.
+    gap: '**in the evening** — вечером. С частями дня — **in the**: *in the morning*, *in the evening*.'
+    dictation: '**Jasmine** — [ˈdʒæzmɪn]. *in the evening* сливается: [ɪnðiˈiːvnɪŋ], *the* перед гласной — [ði].'
+    choice:
+      wrong:
+      - Jasmine in the morning.
+      - Jasmine on the evening.
+      explanation: Звучит **in the evening** — «вечером», с предлогом **in**.
+  681a3384b994ff64a7ff3158:
+    translation: Через два дня, в пятницу.
+    gap: '**on** + день недели: *on Friday* — в пятницу. С днями всегда **on**.'
+    dictation: '**In two days** — «через два дня». **on Friday** — *on* слабое, ударение на *Fri*.'
+    choice:
+      wrong:
+      - In two days on Monday.
+      - In two days, Friday.
+      explanation: Звучит **on Friday** — «в пятницу», с предлогом **on**.
+  6723b0032f2ebf1d6875cb97:
+    skip: look forward to reading — конструкция не по шагу 6
+  67099f2e9982174de4c00b05:
+    translation: А что у неё с аксессуарами?
+    gap: '**accessories** — аксессуары: сумки, ремни, украшения к одежде. Обычно во множественном числе.'
+    dictation: '*How are her* сливается в одно: [hauəhə] — *her* звучит слабо, почти без *h*. *accessories* — ударение на
+      второй слог: ak-**SES**-o-riz.'
+    choice:
+      question: Что сказала героиня?
+      wrong:
+      - How are his accessories?
+      - Where are her accessories?
+      - How are her dresses?
+      explanation: Спрашивают про аксессуары **её** (*her*) и **какие** они (*How are…?*), а не где они.
+  672b3751b6f4922387424e8a:
+    translation: А какие аксессуары на апрель?
+    gap: '**accessories** — аксессуары к одежде; здесь обсуждают, что подобрать к образам для апрельского номера журнала.'
+    dictation: '*What about* сливается: [wɒtəbaʊt], *t* звучит мягко. *for* — слабая форма [fə].'
+    choice:
+      question: Что сказала героиня?
+      wrong:
+      - What about accessories for August?
+      - What about dresses for April?
+      - What about accessories in April?
+      explanation: '*What about…?* — «а как насчёт…?»: речь об **аксессуарах** на **апрель** — *for April*.'
+  67112f2614e7a06655d5fa42:
+    translation: Это ты подарил Брук этот браслет?
+    gap: '**bracelet** — браслет. *give someone a bracelet* — подарить кому-то браслет.'
+    dictation: '*Did you* сливается в [dɪdʒu]. *bracelet* — ударение на первый слог: **BRACE**-let.'
+    choice:
+      question: Что спросил герой?
+      wrong:
+      - Do you give Brooke this bracelet?
+      - Did you give Brooke that bracelet?
+      - Did you buy Brooke this bracelet?
+      explanation: 'Вопрос о прошлом — **Did** you **give**…: «ты подарил?». И браслет рядом — *this*, а не *that*.'
+  667e1eda85f37b1f9f4d0e4a:
+    translation: Вижу, ты всё-таки получила свой браслет.
+    gap: '**bracelet** — браслет. *your bracelet* — твой браслет.'
+    dictation: '*got your* сливается в [gɒtʃə]. *after all* — «всё-таки», звучит слитно: [ɑːftərɔːl].'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - I see you got her bracelet after all.
+      - I see you get your bracelet after all.
+      - I see you got your bracelet back.
+      explanation: Браслет **твой** — *your*, действие уже случилось — *got*, а в конце — *after all* («всё-таки»).
+  667e280985f37b1f9f4d2280:
+    translation: Ну, кто хочет примерить эти серьги?
+    gap: '**earrings** — серьги: *ear* (ухо) + *rings* (кольца). Обычно во множественном числе — серёг две.'
+    dictation: '*wants to* звучит как [wɒntsə]. *these earrings* сливаются: [ðiːzɪərɪŋz].'
+    choice:
+      question: Что сказала героиня?
+      wrong:
+      - So, who wants to try those earrings?
+      - So, who wants to buy these earrings?
+      - So, who wants to try this ring?
+      explanation: Серьги рядом — **these**, и их предлагают **примерить** — *try*, а не купить.
+  665b5d8de7d77a68b5430007:
+    translation: Ой, спасибо за мои красивые серьги!
+    gap: '**earrings** — серьги, всегда во множественном числе: *my beautiful earrings*.'
+    dictation: '*thank you for* — *for* слабое [fə]. *my beautiful earrings* — *-ful* звучит коротко [fəl].'
+    choice:
+      question: Что сказала героиня?
+      wrong:
+      - Aw, thank you for your beautiful earrings.
+      - Aw, thank you for my beautiful rings.
+      - Aw, thank you for my beautiful necklace.
+      explanation: Она благодарит за подарок — за **мои** (*my*) красивые **серьги** — *earrings*.
+  6712a88814e7a06655dc1876:
+    skip: субтитр явно искажён («coat balls»)
+  67283a359663f07be056fd1d:
+    translation: Дай мне перчатки.
+    gap: '**gloves** — перчатки, во множественном числе: их пара.'
+    dictation: '*Give me* сливается в [gɪmi]. *gloves* — [glʌvz], на конце звонкое [z].'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - Give me the glasses.
+      - Give him the gloves.
+      - Give me your gloves.
+      explanation: Просит дать **мне** (*me*) именно **перчатки** — *the gloves*.
+  666dfd20ab721a61ab9dda5f:
+    translation: Я добавлю к этому перчатки.
+    gap: '**gloves** — перчатки. *some gloves* — какие-нибудь перчатки к образу.'
+    dictation: '*I''ll* — короткое [aɪl], не *I will*. *add some* сливается: [ædsəm]; *to this* — *to* слабое [tə].'
+    choice:
+      question: Что сказала героиня?
+      wrong:
+      - I'll add some gloves to these.
+      - I add some gloves to this.
+      - I'll add a hat to this.
+      explanation: Решение принято прямо сейчас — **I'll** (*will*), добавляет **перчатки** к *this* — к этому наряду.
+  66f4a462c5114b74c5fa973e:
+    translation: Никогда не трогай мою шляпу.
+    gap: '**hat** — шляпа, шапка. *my hat* — моя шляпа.'
+    dictation: '*Do not* сказано полностью, не *don''t* — для сильного запрета. *touch my hat* — *t* в *hat* почти не слышно.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - Do not ever touch my cat.
+      - Do not ever touch his hat.
+      - Don't ever touch my hand.
+      explanation: Запрещает трогать **мою шляпу** — *my hat*, и говорит полное *Do not*.
+  6707cfb100b72b5b5487748f:
+    skip: Present Perfect (I've ever seen) ещё не пройден
+  67264adb7d80151ffe42539a:
+    skip: обрывок, непонятен без контекста
+  6751fec3443d220d38ad6737:
+    translation: Его отец снова занимается ювелирным делом.
+    gap: '**jewellery** — украшения; *the jewellery business* — ювелирный бизнес. Британское написание (*jewelry* — американское).'
+    dictation: '*father''s back* — это *father is back*, «отец снова». *jewellery* — [ˈdʒuːəlri], три слога.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - Her father's back in the jewellery business.
+      - His father's in the jewellery business.
+      - His brother's back in the jewellery business.
+      explanation: Речь о **его** отце (*His father*), который **вернулся** (*back*) в ювелирное дело.
+  6720f93933a9b13a1d7427e6:
+    skip: в «Паттоне» leggings — военные гетры/краги, а не леггинсы
+  66f85b942ba4cf32018ff2aa:
+    translation: Смотри, как хорошо этот топ сочетается с леггинсами.
+    gap: '**leggings** — леггинсы, во множественном числе. *goes with* — «сочетается с».'
+  670e57e1b77c3e7541a9b8aa:
+    translation: Это моё ожерелье.
+    gap: '**necklace** — ожерелье, цепочка на шею: *neck* (шея) + *lace*.'
+    dictation: '*That''s* — [ðæts]. *necklace* — ударение на первый слог, второй слог слабый: [ˈnekləs].'
+    choice:
+      question: Что сказала героиня?
+      wrong:
+      - That's her necklace.
+      - That's your necklace.
+      - That's not my necklace.
+      explanation: Она утверждает — **это моё** (*my*) ожерелье, без отрицания.
+  6718ca1cd63a3d78fd91c54b:
+    translation: Моё ожерелье пропало!
+    gap: '**necklace** — ожерелье. *is gone* — пропало, его нет.'
+    dictation: '*necklace is* сливается: [ˈnekləsɪz]. *gone* — [gɒn].'
+    choice:
+      question: Что сказала героиня?
+      wrong:
+      - My necklace is here.
+      - Your necklace is gone.
+      - My bracelet is gone.
+      explanation: '**Моё** (*My*) **ожерелье** пропало — *is gone*.'
+  672922d740118047622d2094:
+    translation: …и положите кольцо мне в руки.
+    gap: '**ring** — кольцо. *the ring* — то самое, о котором идёт речь.'
+    dictation: '*put the* сливается, *t* почти не слышно: [pʊðə]. *in my hands* — *in* короткое.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - and put the ring in his hands.
+      - and put the ring on my hand.
+      - and put the rings in my hands.
+      explanation: Кольцо одно — *the ring*, и положить его нужно **в мои руки** — *in my hands*.
+  66f46e8e30407f347b0b47a3:
+    translation: Я снова надел носки.
+    gap: '**socks** — носки, во множественном числе. *put … back on* — снова надеть.'
+    dictation: '*put my* — *t* почти не слышно. *socks back on* сливаются: [sɒksbækɒn].'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - I put my shoes back on.
+      - I put my socks on.
+      - I took my socks off.
+      explanation: Он **снова надел** — *put … back on* — именно **носки**, *socks*.
+  670e71b1b77c3e7541aab03c:
+    translation: Я постирал носки и высушил их на телевизоре.
+    gap: '**socks** — носки, во множественном числе; поэтому дальше *them* — их.'
+  670cddf89236b6777d49aaeb:
+    skip: tie здесь глагол «связать», а карточка — про галстук; двусмысленный контекст
+  674728cd50f5f56297ef09c2:
+    skip: tie здесь глагол «связать» (насилие), а карточка — про галстук
+  670726c3e9f32b69bba4c036:
+    skip: идиома «and how» (ещё как) с неверным знаком вопроса в субтитре
+  6764c52b1bb2992d08d55a5f:
+    translation: Ты ведь умеешь завязывать галстук?
+    gap: '**tie a tie** — завязывать галстук: *tie* — и глагол «завязывать», и существительное «галстук». *know how to* —
+      уметь.'
+    dictation: '*how to* — *to* слабое [tə]. *tie a tie* звучит как [taɪətaɪ]. *right?* в конце — «ведь так?».'
+    choice:
+      question: Что спросил герой?
+      wrong:
+      - You know how to tie a scarf, right?
+      - You know how to wear a tie, right?
+      - You know how to buy a tie, right?
+      explanation: Спрашивают, умеет ли он **завязывать** — *tie* — именно **галстук** — *a tie*.
+  672b3c30debb743e125ce6a6:
+    translation: Ты носишь колготки?
+    gap: '**tights** — колготки, во множественном числе. *wear* — носить.'
+    dictation: Вопрос без *Do* — только интонацией. *tights* — [taɪts], на конце [ts].
+    choice:
+      question: Что спросил герой?
+      wrong:
+      - You wear a tie?
+      - You wear a hat?
+      - You wear trousers?
+      explanation: Удивлённый вопрос (интонация вверх) — и речь именно о **колготках**, *tights*.
+  6723d1a22f2ebf1d68770c9b:
+    translation: 'Слушай, Лерой, я же тебе сказала: нет колготок — не танцуешь.'
+    gap: '**tights** — колготки (у танцоров — трико). Всегда во множественном числе: *don''t have tights*.'
+  674c675c448f6322dc055471:
+    skip: appearance здесь «выступление/появление», а карточка — про внешность
+  67059c2fd8952c5abc68ed6d:
+    translation: Я просто смотрела этот кардиган.
+    gap: '**cardigan** — кардиган, вязаная кофта на пуговицах.'
+    dictation: '*I was just* — *was* слабое [wəz]. *looking at* сливается: [lʊkɪŋət].'
+    choice:
+      question: Что сказала героиня?
+      wrong:
+      - I was just looking at that cardigan.
+      - I'm just looking at this cardigan.
+      - I was just looking for this cardigan.
+      explanation: Прошлое длительное — *was looking*, *at* — смотрела **на** него, и кардиган рядом — *this*.
+  670a3d10768542691927f553:
+    translation: Нет, это кардиган, но спасибо, что заметил.
+    gap: '**cardigan** — кардиган: вязаная кофта на пуговицах, не свитер.'
+    dictation: '*it''s a* сливается: [ɪtsə]. *thanks for noticing* — *for* слабое [fə].'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - No, it's a sweater, but thanks for noticing.
+      - No, it's my cardigan, but thanks for noticing.
+      - Yes, it's a cardigan, but thanks for noticing.
+      explanation: Он поправляет собеседника — **No**, это **кардиган** (*a cardigan*), не что-то другое.
+  674f4caba9e09c213cea5d07:
+    translation: Меган, оденься.
+    gap: '**clothes** — одежда, только во множественном числе. *put some clothes on* — надень что-нибудь.'
+    dictation: '*clothes* звучит почти как [kləʊz]: *th* обычно проглатывают. *put some* — *t* почти не слышно.'
+    choice:
+      question: Что сказали Меган?
+      wrong:
+      - Megan, take some clothes off.
+      - Megan, put your clothes on.
+      - Megan, put some shoes on.
+      explanation: Её просят **надеть** (*put … on*) **какую-нибудь одежду** — *some clothes*.
+  674ad02a7b65b5307a5b1664:
+    skip: сексуальный подтекст сцены (остаться в одежде)
+  670743fa0ea8974796adaa73:
+    skip: идиома «Says the guy…» (кто бы говорил) непонятна на этом уровне
+  672d118b8d27cd7d4460fdb3:
+    skip: сленг sporting (= носить) непонятен ученику
+  665bd6bde7d77a68b545c5b5:
+    translation: Но я надеваю старое платье Марисы.
+    gap: '**dress** — платье. *Marissa''s old dress* — старое платье Марисы (*''s* — чьё).'
+    dictation: '*I''m using* — [aɪmjuːzɪŋ]. *Marissa''s old* сливается: [məˈrɪsəzəʊld].'
+    choice:
+      question: Что сказала героиня?
+      wrong:
+      - But I'm using Marissa's new dress.
+      - But I'm using Marissa's old shirt.
+      - But I'm wearing Marissa's old dress.
+      explanation: Платье — **старое** (*old*) и именно **платье** — *dress*; глагол — *using*.
+    skip_cards:
+    - clothes-verbs/dress-verb
+  67012981ea2a2d2de0f6fb85:
+    skip: сложная конструкция (the dress that this goes under) — непонятно без контекста
+  671aa0ffde4b973cebbbb5dc:
+    skip: в «Смертельном оружии» jumper — самоубийца-прыгун, а не джемпер
+  6702f699be6e581709543b09:
+    translation: Мне тоже стоит надеть мини-юбку.
+    gap: '**miniskirt** — мини-юбка: *mini* + *skirt*. *a miniskirt* — одна юбка, с артиклем.'
+    dictation: '*should* — слабое [ʃəd], *l* не читается. *wear a* сливается: [weərə].'
+    choice:
+      question: Что сказала героиня?
+      wrong:
+      - I should wear a skirt too.
+      - I should buy a miniskirt too.
+      - I shouldn't wear a miniskirt too.
+      explanation: Она говорит, что ей **стоит** (*should*) **надеть** (*wear*) именно **мини-юбку**.
+  670d257f5b56d878b9daf3d0:
+    skip: двусмысленная сцена (снять с него штаны)
+  6701297fea2a2d2de0f6fa35:
+    skip: в британском фильме (килт) pants — трусы, а карточка учит «брюки»
+  6729a3784011804762321d70:
+    translation: Не надевай рубашку.
+    gap: '**shirt** — рубашка. **put on** — надеть (действие); *Don''t put on your shirt* — запрет: не надевай.'
+    dictation: '*Don''t put on* — *t* в *don''t* и *put* почти не слышно: [dəʊnpʊtɒn]. *your* — слабое [jə].'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - Don't take off your shirt.
+      - Put on your shirt.
+      - Don't put on your shoes.
+      explanation: Запрет — **Don't**, действие — **put on** (надеть), вещь — **рубашка**, *shirt*.
+  67523989577fe15785e9e1a1:
+    skip: ошибка в субтитре (ring вместо wring)
+  67636f4827f4ac2e7659dccf:
+    translation: Тебе юбка тоже идёт.
+    gap: '**skirt** — юбка. *look good in a skirt* — хорошо выглядеть в юбке.'
+    dictation: '*look good in a* сливается: [lʊkgʊdɪnə]. *skirt* — [skɜːt], *r* не произносится.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - You look good in a shirt too.
+      - You look good in a dress too.
+      - You look bad in a skirt too.
+      explanation: '*skirt* [skɜːt] и *shirt* [ʃɜːt] похожи, но здесь [sk] — **юбка**; и выглядит она **хорошо** — *good*.'
+  66714704ab721a61aba0ceee:
+    translation: Я не взял костюм.
+    gap: '**suit** — костюм (пиджак и брюки). *bring a suit* — взять с собой костюм.'
+    dictation: '*didn''t* — *t* на конце почти не слышно. *bring a suit* сливается: [brɪŋəsuːt].'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - I didn't buy a suit.
+      - I don't bring a suit.
+      - I didn't bring a tie.
+      explanation: 'Прошлое — **didn''t bring**: не взял с собой; и не взял **костюм** — *a suit*.'
+  67080b330b10211aa995236c:
+    skip: bathing suit — купальник, другое значение, и сложная конструкция
+  67060b0cd8952c5abc6af79b:
+    skip: непонятно без контекста фильма (беременность), сложная конструкция
+  67187f7dc1401c4d23d19116:
+    skip: странная, непонятная реплика (got into a t-shirt)
+  670826edf16264009860b814:
+    translation: В майке и шарфе.
+    gap: '**tank top** — майка без рукавов. *and* соединяет две вещи: *a tank top and a scarf*.'
+    dictation: '*In a* сливается: [ɪnə]. *top and a* — [tɒpənə], *and* звучит как [ən].'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - In a tank top and a hat.
+      - In a crop top and a scarf.
+      - In a T-shirt and a scarf.
+      explanation: Одежда — **майка** (*tank top*) и **шарф** (*scarf*).
+  666d0f3fab721a61ab9bec76:
+    skip: идиома on top of it (держать под контролем) — не топ-одежда
+  6721499280c1bd22cee2e477:
+    skip: on top of — «поверх», не топ-одежда; бессмысленная реплика
+  6751f5ae443d220d38ad4c22:
+    skip: tracksuit pants — штаны, не костюм; ошибка where's + множественное число
+  671aa0a6de4b973cebbbb28d:
+    skip: идиомы Tell you what / I've got to, слишком сложно
+  6702cc097d5d0c697ab119b3:
+    translation: Тебе бы тоже надеть брюки.
+    gap: '**trousers** — брюки (британское слово), всегда во множественном числе: *some trousers*.'
+    dictation: '*You''d better* — «тебе лучше»: *''d* почти не слышно, [jʊˈbetə]. *get into* — надеть, влезть в одежду.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - You'd better get into some shoes, too.
+      - You'd better get into some trousers, now.
+      - You'd better get out of some trousers, too.
+      explanation: Совет **надеть** (*get into*) **брюки** — *trousers*, и тоже — *too* в конце.
+  665b4a84e7d77a68b54299af:
+    translation: У неё день свадьбы.
+    gap: '**wedding** — свадьба. *wedding day* — день свадьбы.'
+    dictation: '*It''s her* — *her* слабое, почти без *h*: [ɪtsə]. *wedding day* — ударение на *wedding*.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - It's his wedding day.
+      - It's her birthday.
+      - It's my wedding day.
+      explanation: День **свадьбы** (*wedding day*), и свадьба **её** — *her*.
+  66721d73ab721a61aba18c54:
+    translation: Я никогда не хочу забыть, как ты выглядела в день нашей свадьбы.
+    gap: '**wedding day** — день свадьбы. *on our wedding day* — в день нашей свадьбы (с днём — предлог *on*).'
+  66f4ba7541c0387b72dc54d2:
+    translation: Всё, кроме сапог, капитан.
+    gap: '**boots** — сапоги, ботинки, во множественном числе. *except* — кроме.'
+    dictation: '*except the* сливается: [ɪkˈseptðə]. *boots* — долгое [uː].'
+    choice:
+      question: Что сказала героиня?
+      wrong:
+      - Everything, except the shoes, Captain.
+      - Everything, and the boots, Captain.
+      - Everything, except the coat, Captain.
+      explanation: Всё, **кроме** (*except*) **сапог** — *the boots*.
+  671a9e1ecb403c43d441c33d:
+    translation: Ну а как тебе это пальто?
+    gap: '**coat** — пальто. *how about…?* — а как насчёт…?'
+    dictation: '*how about* сливается: [haʊəbaʊt]. *that coat* — *t* в *that* почти не слышно.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - So how about this coat?
+      - So how about that hat?
+      - So what about that coat?
+      explanation: Пальто далеко — **that**, а вопрос — **how about…?**
+  666a4b10ab721a61ab997280:
+    translation: Ты оставил пальто у меня.
+    gap: '**coat** — пальто. *your coat* — твоё пальто.'
+    dictation: '*left your* сливается: [leftʃə]. *at my place* — «у меня дома», *at* слабое.'
+    choice:
+      question: Что сказала героиня?
+      wrong:
+      - You left your hat at my place.
+      - You left my coat at your place.
+      - You leave your coat at my place.
+      explanation: Прошлое — **left** (оставил), вещь — **пальто** (*your coat*), а место — *at my place*.
+  67112e26ea43c55f02859472:
+    skip: речь о шерсти животного, а не о шубе
+  6733bda9619490728388a5ad:
+    translation: Это всего лишь шуба.
+    gap: '**fur coat** — шуба: *fur* (мех) + *coat* (пальто).'
+    dictation: '*It''s only a* сливается: [ɪtsəʊnliə]. *fur coat* — [fɜːkəʊt], *r* не слышно.'
+    choice:
+      question: Что сказала героиня?
+      wrong:
+      - It's only a coat.
+      - It's only my fur coat.
+      - It's not a fur coat.
+      explanation: 'Она говорит: **всего лишь** (*only*) **шуба** — *a fur coat*.'
+  670e57e1b77c3e7541a9b8b5:
+    translation: Осторожно, куртка!
+    gap: '**jacket** — куртка, пиджак. *Watch the jacket* — «осторожнее с курткой»: *watch* здесь — следи.'
+    dictation: '*Watch the* сливается: [wɒtʃðə]. *jacket* — ударение на первый слог: **JACK**-et.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - Watch the jeans.
+      - Watch your jacket.
+      - Wash the jacket.
+      explanation: '*Watch* [wɒtʃ] — «осторожно», не *wash* (стирать); и речь о **куртке** — *the jacket*.'
+  67117f42ea43c55f0287620d:
+    skip: сцена перед убийством в «Американском психопате»
+  672d069b8d27cd7d44608f28:
+    translation: Та, что в плаще.
+    gap: '**raincoat** — плащ, дождевик: *rain* (дождь) + *coat*. *in the raincoat* — в плаще.'
+    dictation: '*The one in the* — слова сливаются: [ðəwʌnɪnðə]. *raincoat* — ударение на *rain*.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - The one in the coat.
+      - The one with the raincoat.
+      - The one in the red coat.
+      explanation: '*in the raincoat* — **в плаще**: о том, что на человеке надето, говорят *in*.'
+  667ddff085f37b1f9f4c8519:
+    translation: Вернуть туфли?
+    gap: '**shoes** — туфли, обувь, во множественном числе.'
+    dictation: '*Return the* — *n* и *th* сливаются: [rɪˈtɜːnðə]. *shoes* — [ʃuːz], звонкое [z] на конце.'
+    choice:
+      question: Что сказала героиня?
+      wrong:
+      - Return the boots?
+      - Return these shoes?
+      - Return the socks?
+      explanation: Она переспрашивает — вопрос, и речь именно о **туфлях** — *the shoes*.
+  6767137543cc673af1e88cff:
+    skip: идиома big shoes to fill (трудно заменить), не про обувь
+  66f85f922ba4cf3201901443:
+    translation: Как пара кроссовок медсестры.
+    gap: '**sneakers** — кроссовки (в американском; в британском — *trainers*). *a pair of sneakers* — пара кроссовок.'
+    dictation: '*Like a pair of* сливается: [laɪkəpeərəv]. *nurses''* — [ˈnɜːsɪz].'
+    choice:
+      question: Что сказала героиня?
+      wrong:
+      - Like a pair of nurses' shoes.
+      - Like a pair of nurses' trainers.
+      - Like a pair of doctors' sneakers.
+      explanation: Сравнивает с **кроссовками** — *sneakers* — именно **медсестёр** (*nurses'*).
+  6700bbf38d68ec1959c05d52:
+    skip: сексуальный подтекст (G-string)
+  6769d01c32bc1011dd367d0f:
+    skip: personal trainers — тренеры, а не кроссовки
+  6718ce02c1401c4d23d3c1c1:
+    skip: carry on — «продолжать», другое значение
+  66f84b6eeff0f73d356287ee:
+    translation: Можешь отнести это ко мне в машину?
+    gap: '**carry** — нести в руках. *carry this to my car* — отнести это к машине.'
+  6721055da14d421d9cc9574f:
+    translation: Давай, Сандра, одевайся.
+    gap: '**get dressed** — одеться (действие прямо сейчас). Не *dress*: *dress* — привычка одеваться.'
+    dictation: '*Come on* сливается: [kʌmɒn]. *get dressed* — [getdrest]: *-ed* звучит как [t], а *t* в *get* почти пропадает.'
+    choice:
+      question: Что ей сказали?
+      wrong:
+      - Come on, Sandra, get up.
+      - Come on, Sandra, get ready.
+      - Come on, Sandra, get undressed.
+      explanation: Её торопят **одеться** — *get dressed*.
+  66f453cb00164f676665ccd3:
+    skip: фильм с откровенным контекстом (The Naked Mile)
+  672b481fb6f492238742f742:
+    translation: Мне нужно надеть красивое платье.
+    gap: '**put on** — надеть (действие). *put on a nice dress* — надеть красивое платье.'
+    dictation: '*have to* — [hæftə], *v* звучит как [f]. *put on a* сливается: [pʊtɒnə].'
+    choice:
+      question: Что сказала героиня?
+      wrong:
+      - I have to put on a nice suit.
+      - I have to take off a nice dress.
+      - I want to put on a nice dress.
+      explanation: '*have to* — «нужно»; действие — **надеть** (*put on*), а вещь — **платье**.'
+  67218d5293939d77ede8a04f:
+    translation: Поправь макияж и надень платье.
+    gap: '**put on** — надеть: *put on your dress*. *Fix your face* — поправь лицо, то есть макияж.'
+    dictation: '*Fix your* сливается: [fɪksjə]. *put on your* — [pʊtɒnjə], *t* почти не слышно.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - Fix your face and take off your dress.
+      - Fix your face and put on your coat.
+      - Wash your face and put on your dress.
+      explanation: Действие — **надеть** (*put on*) **платье**; а с лицом — *fix* (поправить).
+  6709a971768542691926f01d:
+    translation: Я не могу это носить.
+    gap: '**wear** — носить (быть одетым во что-то). *these* — эти вещи.'
+    dictation: '*cannot* — одно слово, ударение на *can*. *wear these* — [weəðiːz].'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - I can wear these.
+      - I cannot wear this.
+      - I cannot carry these.
+      explanation: Отказ — **cannot**; глагол **wear** (носить), вещей несколько — *these*.
+  665b4659e7d77a68b54284ad:
+    translation: Фиби, дело не в том, что ты носишь.
+    gap: '**wear** — носить одежду. *what you wear* — то, что ты носишь (в общем, по привычке).'
+    dictation: '*it''s not* — [ɪtsnɒt]. *what you* сливается: [wɒtʃu].'
+    choice:
+      question: Что сказала героиня?
+      wrong:
+      - Phoebe, it's not what you say.
+      - Phoebe, it's not what you're wearing.
+      - Phoebe, it's what you wear.
+      explanation: Дело **не** (*not*) в том, что ты **носишь** вообще — Present Simple *wear*.
+  666e1b74ab721a61ab9e212e:
+    skip: Present Perfect (has been) ещё не пройден на этом шаге
+  665c1cefe7d77a68b5479640:
+    skip: Present Perfect (has always been) ещё не пройден на этом шаге
+  670d23b6fe4ef3706a346102:
+    translation: Почти никогда, Гай.
+    gap: '**hardly ever** — почти никогда: реже, чем *rarely*, но не *never*.'
+    dictation: '*Hardly ever* сливается: [hɑːdlɪˈevə], *r* не произносится.'
+    choice:
+      question: Что ответил герой?
+      wrong:
+      - Hardly anything, Guy.
+      - Never ever, Guy.
+      - Hardly never, Guy.
+      explanation: '*hardly ever* — **почти никогда**; *hardly never* — ошибка, *never ever* — «никогда-никогда».'
+  6716dffa482733276a853c6a:
+    translation: Я правда почти никогда не вижу маму.
+    gap: '**hardly ever** — почти никогда; стоит перед основным глаголом: *I hardly ever see*. Без *don''t*.'
+    dictation: '*really hardly ever* — три слова подряд с [l] и [r]: [ˈrɪəli ˈhɑːdli ˈevə]. *Mother* — мама.'
+    choice:
+      question: Что сказала героиня?
+      wrong:
+      - I really never see Mother.
+      - I really hardly ever see Father.
+      - I really often see Mother.
+      explanation: Она видит маму **почти никогда** — *hardly ever* — не *never* и не *often*.
+  6671c786ab721a61aba15691:
+    skip: Present Perfect (have never had) не пройден; фильм с откровенным названием
+  670932863b21f421b1007679:
+    translation: Но твой друг часто так делает?
+    gap: '**often** — часто; в вопросе стоит после подлежащего, перед глаголом: *does your friend **often** do*.'
+    dictation: '*does your* сливается: [dəzjə]. *often* — [ˈɒfn], *t* обычно не произносится.'
+    choice:
+      question: Что спросил герой?
+      wrong:
+      - But does your friend always do that?
+      - But do your friends often do that?
+      - But does your friend often say that?
+      explanation: Вопрос о частоте — **often**; друг один — **does** your friend.
+  6721746a98aa7b2bcb27054a:
+    skip: странный порядок слов, реплика непонятна сама по себе
+  6725188d7d80151ffe3c6195:
+    translation: Я редко вижу, чтобы ты поднимал глаза.
+    gap: '**rarely** — редко; стоит перед глаголом, без *don''t*: *I **rarely** see*.'
+    dictation: '*rarely* — [ˈreəli], оба *r* мягкие. *looking up* сливается: [lʊkɪŋʌp].'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - I often see you looking up.
+      - I rarely see you looking down.
+      - I really see you looking up.
+      explanation: '*rarely* (редко) и *really* (правда) похожи на слух, но здесь — **rarely**, о частоте.'
+  6700f15ae4482f4f23bca88b:
+    skip: книжная, сложная фраза (For it is true… those closest to us)
+  6659fff8e7d77a68b53ae63d:
+    translation: Он только иногда приезжает на выходные.
+    gap: '**sometimes** — иногда; может стоять в конце фразы: *…for weekends **sometimes***.'
+    dictation: '*comes down* — «приезжает», [kʌmzdaʊn]. *for weekends* — *for* слабое [fə].'
+    choice:
+      question: Что сказала героиня?
+      wrong:
+      - He only comes down for weekends usually.
+      - He only comes down for weekend sometimes.
+      - He often comes down for weekends sometimes.
+      explanation: Частота — **sometimes** (иногда), а не *usually*.
+  666a41bcab721a61ab996831:
+    translation: Я знаю, ты не хочешь обидеть родителей, но иногда они забывают.
+    gap: '**sometimes** — иногда; в начале части предложения — для акцента: *but **sometimes** they forget*.'
+  6717eb9c2ddee743134f7cce:
+    translation: Раз в неделю.
+    gap: '**once a week** — раз в неделю: *once* (один раз) + *a week* (в неделю, артикль *a*, без предлога).'
+    dictation: '*Once* — [wʌns], начинается с [w]. *a week* сливается: [əwiːk].'
+    choice:
+      question: Что ответил герой?
+      wrong:
+      - Twice a week.
+      - Once a day.
+      - Once a year.
+      explanation: '**Once** — один раз, и **в неделю** — *a week*.'
+  6712c936b7b0fd393b8b5e9c:
+    translation: Два раза в неделю.
+    gap: '**twice a week** — два раза в неделю: *twice* = *two times*, а «в неделю» — *a week*, без предлога.'
+    dictation: '*Twice* — [twaɪs]. *a week* сливается: [əwiːk].'
+    choice:
+      question: Что ответил герой?
+      wrong:
+      - Once a week.
+      - Twice a day.
+      - Three times a week.
+      explanation: '**Twice** — два раза, и **в неделю** — *a week*.'
+  6659b5a7e7d77a68b53943bb:
+    skip: идиома memory serves непонятна
+  665fc189877ad250fbbc8abf:
+    skip: субтитр, похоже, искажён (gets up to feet)
+  665af8ade7d77a68b540b277:
+    skip: go behind my back — идиома «за спиной», не про место
+  67096746768542691925319a:
+    skip: Past Continuous (was riding) не пройден; имена и контекст непонятны
+  6767137443cc673af1e88c5a:
+    skip: between в переносном смысле (отношения)
+  673383ae619490728386d49f:
+    translation: Простите, я нервничаю перед камерой.
+    gap: '**in front of** — перед чем-то, лицом к нему: *in front of the camera*. Противоположное — *behind*.'
+  665afc34e7d77a68b540c813:
+    translation: Но вообще-то я не плачу при людях, или…
+    gap: '**in front of** — перед кем-то: *in front of people* — при людях, у всех на глазах.'
+  671b0eba24859c1869f57d0e:
+    translation: Посреди ночи.
+    gap: '**in the middle of** — посередине, посреди; бывает и о времени: *in the middle of the night* — посреди ночи.'
+    dictation: '*In the middle of the* — *of* слабое [əv], *the* [ðə]: [ɪnðəˈmɪdləvðə]. *middle* — [ˈmɪdl].'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - In the middle of the day.
+      - At the end of the night.
+      - In the middle of the room.
+      explanation: '**In the middle of** — посреди, а именно **ночи** — *the night*.'
+  6711772f14e7a06655d7da5c:
+    skip: in the middle of all this — переносный смысл, не про место
+  6701f211ea2a2d2de0f750b8:
+    skip: сложная конструкция (have you both living so near)
+  665b5dfce7d77a68b5430231:
+    translation: Но разве ты не… Мне надо просто радоваться, что я рядом с тобой.
+    gap: '**near** — рядом, близко: *near you* — рядом с тобой. Без *to*.'
+  665b4499e7d77a68b5427b4e:
+    translation: И проследи, чтобы наш номер был не рядом с их.
+    gap: '**next to** — рядом, вплотную: *next to theirs* — рядом с их номером. Не путай с *near* (неподалёку).'
+  671b6fda69908d4484f073e0:
+    translation: Тот, что справа.
+    gap: '**on the right** — справа: предлог *on* и артикль *the*.'
+    dictation: '*The one on the* сливается: [ðəwʌnɒnðə]. *right* — [raɪt], *t* почти не слышно.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - The one on the left.
+      - The one in the right.
+      - The one on the bright.
+      explanation: '**on the right** — справа; с *in* так не говорят, а *left* — слева.'
+  666dae16ab721a61ab9d33e3:
+    skip: идиома on the right track; Present Perfect
+  672a17a7401180476236858d:
+    skip: opposite здесь «противоположный», а карточка — про «напротив»
+  67291b7d40118047622cd784:
+    skip: the opposite of — «противоположность», а карточка — про «напротив»
+  6709bc6d9982174de4c11d2c:
+    translation: Расскажем тебе в автобусе.
+    gap: '**on the bus** — в автобусе: про автобус, поезд, самолёт говорят *on*, про машину — *in the car*.'
+    dictation: '*We''ll* — [wiːl], не *We will*. *tell you* сливается; *on the bus* — [ɒnðəbʌs].'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - We'll tell you in the bus.
+      - We'll tell you on the plane.
+      - We tell you on the bus.
+      explanation: В автобусе — **on the bus**, не *in*; и обещание на будущее — **We'll**.
+  66f87eeeeff0f73d35643ca3:
+    translation: Давайте погрузим вещи в автобус.
+    gap: '**on the bus** — в автобус, в автобусе: с автобусом предлог *on*, не *in*.'
+    dictation: '*Let''s get our* сливается: [letsgetaʊə]. *stuff* — вещи; *on the bus* — [ɒnðəbʌs].'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - Let's get our stuff in the bus.
+      - Let's get our stuff on the train.
+      - Let's get your stuff on the bus.
+      explanation: С автобусом — **on the bus**; и вещи **наши** — *our stuff*.
+  67294c744c81a01be2b1c219:
+    translation: Можно я передвину ваш стул под зонтик?
+    gap: '**under** — под: *under the umbrella* — под зонтиком.'
+    dictation: '*Can I* — [kənaɪ], *can* слабое. *chair under the* сливается: [tʃeərʌndəðə].'
+    choice:
+      question: Что спросил герой?
+      wrong:
+      - Can I move your chair near the umbrella?
+      - Can I move my chair under the umbrella?
+      - Can I move your chair under the tree?
+      explanation: Стул — **ваш** (*your*), и передвинуть его **под** (*under*) зонтик.
+  671179b214e7a06655d7ef7f:
+    translation: Покажи нам эти большие голубые глаза.
+    gap: '**Порядок прилагательных**: сначала размер (**big**), потом цвет (**blue**), затем существительное — **big blue
+      eyes**.'
+    dictation: '**Show us** сливается в «шоуас», **those** — со звонким th. **big blue** произносятся почти слитно.'
+    choice:
+      wrong:
+      - Show us those blue big eyes.
+      - Show us those big eyes blue.
+      explanation: 'Порядок прилагательных: **размер → цвет → существительное**. Поэтому только **big blue eyes**.'
+  6701017f8d68ec1959c085da:
+    translation: Длинные чёрные волосы — чуть ли не до пояса.
+    gap: '**Порядок прилагательных**: длина (**long**) идёт перед цветом (**black**) — **long black hair**, а не «black long».'
+    choice:
+      wrong:
+      - Black long hair reaching way down her back.
+      - Long hair black reaching way down her back.
+      explanation: 'Длина/размер ставится **перед** цветом, а оба прилагательных — **перед** существительным: **long black
+        hair**.'
+  672111ce33a9b13a1d74bf74:
+    skip: обрывок фразы (без подлежащего) — непонятен сам по себе
+  672b4bfbb6f4922387431d3e:
+    translation: Этот автобус вечно опаздывает.
+    gap: '**Наречие частоты после to be**: с **is / am / are** наречие ставится после глагола — **is always late**.'
+    dictation: '**is always** сливается в «изолвэйз»; **bus is** тоже звучит слитно.'
+    choice:
+      wrong:
+      - That bus always is late.
+      - That bus is late always.
+      explanation: 'С глаголом **to be** наречие частоты идёт **после** него: **is always**, а не «always is».'
+  6720ec6780c1bd22cee0cbc5:
+    skip: субтитр выглядит неверным (calls me loud), фильм с откровенным контекстом
+  6707f3fb0b10211aa994bcbc:
+    translation: А когда она обычно заходит?
+    gap: '**Наречие частоты перед смысловым глаголом**: **she usually come**. В вопросе с **does** наречие стоит после подлежащего,
+      перед глаголом.'
+    dictation: '**does she** сливается в «дазши», **come around** — «камэраунд». После **does** глагол без -s: **come**.'
+    choice:
+      wrong:
+      - When does usually she come around?
+      - When does she come usually around?
+      explanation: 'Наречие частоты стоит **между подлежащим и смысловым глаголом**: **she usually come**.'
+  665b62dce7d77a68b5431c2b:
+    translation: И как часто такое бывает?
+    gap: '**How often** — «как часто?». Вопрос о частоте: **How often** + **do / does** + подлежащее + глагол.'
+    dictation: '**How often** — «хауофн», t не произносится. **does that** сливается в «дазэт».'
+    choice:
+      wrong:
+      - How long does that happen?
+      - How much does that happen?
+      explanation: О частоте спрашивают **How often** — «как часто». How long — «как долго», how much — «сколько».
+  67024580b07b1551df6d7649:
+    skip: интимная тема
+  672a14404011804762367494:
+    translation: Всё снова как новенькое.
+    gap: '**as + прилагательное + as** — «такой же …, как»: **as good as new** — «не хуже нового, как новый».'
+    dictation: '**Everything''s** = everything is, слышно только «-з». **as good as** звучит слабо: «эзгудэз».'
+    choice:
+      wrong:
+      - Everything's just so good as new.
+      - Everything's just as good than new.
+      explanation: 'Равенство — **as … as**: **as good as**. После as не бывает than.'
+  66f3f20bc5114b74c5f3e03c:
+    translation: Он мой ровесник.
+    gap: '**the same + существительное + as** — «такой же, как»: **the same age as me** — «того же возраста, что и я».'
+    dictation: '**He''s** = he is. **same age as** сливается в «сэймэйджэз».'
+    choice:
+      wrong:
+      - He's the same age than me.
+      - He's the same age like me.
+      explanation: 'После **the same …** ставится **as**: **the same age as**, а не than или like.'
+  6717b36728eba13fc740b097:
+    translation: Мой сын выше тебя.
+    gap: '**Сравнение коротких слов**: **tall → taller** (+ -er), а «чем» — **than**: **taller than**.'
+    dictation: '**son''s** = son is, слышно только «-з». **than** звучит слабо: «зэн».'
+    choice:
+      wrong:
+      - My son's tall than you.
+      - My son's taller that you.
+      explanation: 'Короткое прилагательное + **-er**, а «чем» — **than**: **taller than**.'
+  66606375877ad250fbbd044f:
+    translation: Ну, вообще-то я старше, чем выгляжу.
+    gap: '**old → older** (+ -er) и **than** — «чем»: **older than I look** — «старше, чем выгляжу».'
+    dictation: '**I''m** = I am. **older than I** сливается в «олдэзэнай».'
+    choice:
+      wrong:
+      - Well, I'm actually old than I look.
+      - Well, I'm actually more old than I look.
+      explanation: 'Короткое прилагательное сравнивается с **-er**: **older**, без more.'
+  670bc36c3c3b8f1ce8ed1c58:
+    translation: Всё лучше и лучше.
+    gap: '**сравнение + and + сравнение** — «всё … и …»: **better and better** — «всё лучше и лучше».'
+    dictation: '**and** звучит как короткое «эн»: «бэтэрэнбэтэр».'
+    choice:
+      wrong:
+      - Better or better.
+      - Good and better.
+      explanation: 'Усиливающееся изменение: одно и то же сравнение дважды через **and** — **better and better**.'
+  670969f79982174de4be0ce1:
+    translation: Становится холоднее.
+    gap: '**getting + сравнение** — «становится …»: **is getting colder** — «становится холоднее».'
+    dictation: '**It''s** = it is, слышно «итс». **getting** — t между гласными звучит мягко, почти «гедин».'
+    choice:
+      wrong:
+      - It's getting cold.
+      - It's getting more cold.
+      explanation: 'Изменение: **getting** + сравнительная степень. Короткое слово — с -er: **colder**, а не cold или more
+        cold.'
+  675402bc0cba12738383b6ee:
+    translation: Кажется, сегодня ей хуже.
+    gap: '**Особая форма**: **bad → worse** — «хуже». Здесь о самочувствии: **she is worse today**.'
+    dictation: '**that she** сливается в «зэтши»; **worse** — с долгим «ё», не путать с **was**.'
+    choice:
+      wrong:
+      - I think that she is bad today.
+      - I think that she is badder today.
+      explanation: Сравнение от **bad** — особая форма **worse**, «badder» не бывает.
+  6709f031768542691927d246:
+    skip: could have + V3 — конструкция, которой нет к этому шагу
+  6705f3ffd8952c5abc6a9001:
+    translation: Так интереснее.
+    gap: '**Длинное прилагательное**: **more + interesting** — «интереснее». Окончание -er к нему не добавляется.'
+    dictation: '**It''s more** сливается в «итсмо»; в **interesting** обычно три слога: «интрэстин».'
+    choice:
+      wrong:
+      - It's interestinger.
+      - It's most interesting.
+      explanation: 'Длинные слова сравниваются через **more**: **more interesting**. Most — это уже «самый».'
+  67531e63a41dbb7f52daea48:
+    translation: Тут удобнее, чем на диване.
+    gap: '**more + длинное прилагательное**: **more comfortable** — «удобнее», и **than** — «чем».'
+    dictation: '**comfortable** звучит как «камфтэбл» — середина проглатывается; **than the** — «зэнзэ».'
+    choice:
+      wrong:
+      - It's comfortabler than the sofa.
+      - It's more comfortable that the sofa.
+      explanation: Длинное прилагательное — **more comfortable**, а «чем» — **than**.
+  6748cdbcd5fd834884a3f79f:
+    translation: Может, чуть повыше?
+    gap: '**a bit + сравнение** — маленькая разница: **a bit taller** — «чуть выше».'
+    dictation: '**A bit** сливается в «эбит», **taller** — t звучит отчётливо.'
+    choice:
+      wrong:
+      - Much taller, maybe?
+      - A bit tall, maybe?
+      explanation: 'Маленькая разница — **a bit** + сравнительная степень: **a bit taller**.'
+  67047dec8c034c154f3d95c8:
+    translation: Вживую он гораздо выше.
+    gap: '**much + сравнение** — большая разница: **much taller** — «намного выше».'
+    dictation: '**He''s** = he is. **in person** — «вживую», сливается в «инпёрсн».'
+    choice:
+      wrong:
+      - He's a bit taller in person.
+      - He's very taller in person.
+      explanation: 'Большую разницу передаёт **much**: **much taller**. «very taller» не говорят.'
+  66f856347d264d32dfb701e1:
+    translation: Все больше тебя.
+    gap: '**Удвоение согласной**: **big → bigger** (гласная + согласная в конце → согласная удваивается), и **than** — «чем».'
+    dictation: '**Everyone''s** = everyone is. **bigger than** — «бигэзэн».'
+    choice:
+      wrong:
+      - Everyone's big than you.
+      - Everyone's more big than you.
+      explanation: Короткое слово — **bigger** (с удвоенной g) + **than**.
+  6726de73572cff2ebf4bf5aa:
+    translation: Эта штука больше меня.
+    gap: '**big → bigger**: g удваивается перед -er. «Чем» — **than**: **bigger than me**.'
+    dictation: '**thing''s** = thing is, слышно «-з». **than me** — «зэнми».'
+    choice:
+      wrong:
+      - That thing's big than me.
+      - That thing's bigger that me.
+      explanation: Сравнение — **bigger**, «чем» — **than**.
+  665b066fe7d77a68b54102b3:
+    translation: Это ты сделал?
+    gap: '**Вопрос в прошедшем**: **Did** + подлежащее + глагол в начальной форме — **Did you make**, а не «made».'
+    dictation: '**Did you** сливается в «диджу». После did — **make**, не made.'
+    choice:
+      wrong:
+      - Do you make those?
+      - Did you made those?
+      explanation: 'О прошлом спрашивают с **Did**, а глагол остаётся в начальной форме: **Did you make**.'
+  674e6b3cdcc84d61dcc73a99:
+    translation: Она тебя видела?
+    gap: '**Вопрос в прошедшем**: **Did she** + глагол без изменений — **Did she see**, а не «saw».'
+    dictation: '**Did she** сливается в «дидши». После did — начальная форма **see**.'
+    choice:
+      wrong:
+      - Does she see you?
+      - Did she saw you?
+      explanation: 'Прошлое — **Did**, глагол в начальной форме: **Did she see**.'
+  6721078fa14d421d9cc9667e:
+    translation: Я учился в Колумбийском университете.
+    gap: '**Неправильный глагол**: **go → went**. **went to** + место учёбы — «учился в».'
+    dictation: '**went to** сливается — t почти одно: «вэнтэ». **Columbia** — университет в Нью-Йорке.'
+    choice:
+      wrong:
+      - I go to Columbia.
+      - I goed to Columbia.
+      explanation: Прошедшее от **go** — неправильная форма **went**; «goed» не бывает.
+  66f4968bc5114b74c5fa0d26:
+    translation: Я недавно купил циркулярную пилу.
+    gap: '**Неправильный глагол**: **buy → bought** — «купил».'
+    dictation: '**bought a** сливается в «бо:тэ»; **gh** в bought не читается. **table saw** — циркулярная пила.'
+    choice:
+      wrong:
+      - I recently buy a table saw.
+      - I recently buyed a table saw.
+      explanation: Прошедшее от **buy** — **bought**, правило -ed здесь не работает.
+  666feecaab721a61ab9ffbc0:
+    translation: Мы вчера говорили.
+    gap: '**Правильный глагол**: **talk + -ed = talked**. Окончание звучит как «т»: «токт».'
+    dictation: '**talked** звучит «токт» — -ed после k даёт «т», и l не читается.'
+    choice:
+      wrong:
+      - We talk yesterday.
+      - We're talking yesterday.
+      explanation: '**yesterday** — прошлое: **talked** с окончанием -ed.'
+  6720eb6ca14d421d9cc8bf59:
+    translation: Я видел, как это случилось.
+    gap: '**Правильный глагол**: **watch + -ed = watched** — «смотрел, видел». -ed звучит как «т»: «вочт».'
+    dictation: '**watched** — «вочт», -ed после ch звучит «т»; **it happen** сливается в «итхэпн».'
+    choice:
+      wrong:
+      - I watch it happen.
+      - I'm watching it happen.
+      explanation: Речь о прошлом событии — **watched** с окончанием -ed (слышно «т» на конце).
+  670909d17e212d61d0d97167:
+    translation: Ты был пьян?
+    gap: '**to be в прошедшем**: you / we / they → **were**. Вопрос — **Were** на первом месте: **Were you**.'
+    dictation: '**Were you** сливается в «вёю».'
+    choice:
+      wrong:
+      - Was you drunk?
+      - Are you drunk?
+      explanation: 'С **you** прошедшее от to be — всегда **were**: **Were you**.'
+  6707448300b72b5b5483f108:
+    translation: Где ты был сегодня вечером?
+    gap: '**to be в прошедшем** с **you** — **were**. В вопросе он перед подлежащим: **Where were you**.'
+    dictation: '**Where were** звучат почти одинаково: «вэ вё». **were you** — «вёю».'
+    choice:
+      wrong:
+      - Where was you tonight?
+      - Where are you tonight?
+      explanation: С **you** только **were**, «was you» — ошибка.
+  67336cb76194907283861844:
+    translation: Он работает на Джастина.
+    gap: '**-s у he / she / it**: в Present Simple глагол получает окончание: **he works**.'
+    dictation: '**works** — слышно «-с» на конце; **works for** сливается в «вёксфо».'
+    choice:
+      wrong:
+      - He work for Justin.
+      - He's work for Justin.
+      explanation: 'После **he** в Present Simple — глагол с **-s**: **works**.'
+  6709186bafdac43db60dbdbd:
+    translation: Он живёт в Изумрудном городе, а это далеко отсюда.
+    gap: '**-s у he / she / it**: **he lives** — окончание -s звучит как «з»: «ливз».'
+    choice:
+      wrong:
+      - He live in the Emerald City, and that's a long journey from here.
+      - He living in the Emerald City, and that's a long journey from here.
+      explanation: 'С **he** глагол в Present Simple — с **-s**: **lives**.'
+  67031c8745cfb3109ff40fc6:
+    translation: Не знаю.
+    gap: '**Отрицание в Present Simple**: **don''t** + глагол — **I don''t know**.'
+    dictation: '**don''t know** — t почти не слышно: «доуноу».'
+    choice:
+      wrong:
+      - I doesn't know.
+      - I not know.
+      explanation: 'С **I** отрицание — **don''t** + глагол: **don''t know**. Doesn''t — только для he / she / it.'
+  6712489714e7a06655dafd3c:
+    translation: Не знаю кто.
+    gap: '**Отрицание**: с I / you / we / they — **don''t** + глагол: **don''t know**.'
+    dictation: '**don''t know** звучит «доуноу», t проглатывается.'
+    choice:
+      wrong:
+      - I doesn't know who.
+      - I no know who.
+      explanation: С **I** — **don't**, а не doesn't или no.
+  6751aa02443d220d38ac46a2:
+    skip: оборванная фраза, «you people» звучит грубо
+  6752b33c577fe15785ec480b:
+    translation: Нет, а как она его называет?
+    gap: '**Вопрос с he / she / it**: вспомогательный **does** + подлежащее + глагол без -s: **does she call**.'
+    dictation: '**does she** сливается в «дазши». После does — **call** без -s.'
+    choice:
+      wrong:
+      - No, what do she call him?
+      - No, what does she calls him?
+      explanation: 'С **she** вопрос строится с **does**, а глагол теряет -s: **does she call**.'
+  66f467f0c5114b74c5f85603:
+    translation: Где ты живёшь?
+    gap: '**Вопрос со словом where**: вопросительное слово + **do** + подлежащее + глагол — **Where do you live**.'
+    dictation: '**do you** сливается в «дью»: «вэрдьюлив».'
+    choice:
+      wrong:
+      - Where you live?
+      - Where are you live?
+      explanation: 'Порядок: **Where + do + you + live**. Без do или с are — ошибка.'
+  672305e82f2ebf1d686f735b:
+    translation: Сколько тебе лет?
+    gap: '**Вопрос о возрасте**: **How old** + **are** + подлежащее — **How old are you**. По-английски возраст — через to
+      be.'
+    dictation: '**old are you** сливается в «оулдарью».'
+    choice:
+      wrong:
+      - How old do you?
+      - How old you are?
+      explanation: 'Возраст — с **to be**, и в вопросе **are** стоит перед **you**: **How old are you**.'
+  67213d268bdb3513f30e393e:
+    translation: Ты уверен?
+    gap: '**Вопрос с to be**: **Are** выходит на первое место — **Are you sure**.'
+    dictation: '**Are you** сливается в «аю», **sure** — «шо».'
+    choice:
+      wrong:
+      - Is you sure?
+      - You are sure?
+      explanation: 'С **you** — **are**, и в вопросе он стоит **перед** подлежащим: **Are you sure**.'
+  672820bc9663f07be055f13f:
+    translation: Он уже здесь?
+    gap: '**Вопрос с to be**: **Is** + **he** + где — **Is he here**. Is ставится в начало.'
+    dictation: '**Is he** сливается в «изи» — h почти пропадает. **yet** в конце — «уже?».'
+    choice:
+      wrong:
+      - Are he here yet?
+      - He is here yet?
+      explanation: 'С **he** — **is**, и в вопросе он идёт **первым**: **Is he here**.'
+  665b066fe7d77a68b5410277:
+    translation: Это самая высокая гора в Канаде.
+    gap: '**Превосходная степень**: **the** + прилагательное + **-est** — **the tallest** — «самая высокая».'
+    dictation: '**It''s the** — «итсзэ», **tallest** — «толэст», t в конце едва слышно.'
+    choice:
+      wrong:
+      - It's the taller mountain in Canada.
+      - It's the most tall mountain in Canada.
+      explanation: «Самый» у короткого слова — **the tallest** (-est). Taller — «выше», most tall не говорят.
+  67291dad40118047622cee8a:
+    translation: И самый щедрый человек, кого я знаю.
+    gap: '**Превосходная степень длинного слова**: **the most** + прилагательное — **the most generous**.'
+    dictation: '**the most** — «зэмоус», t почти не слышно; **generous** — «джэнэрэс».'
+    choice:
+      wrong:
+      - And the more generous person I know.
+      - And the generousest person I know.
+      explanation: Длинное слово — **the most generous**. More — «более», а -est к длинным словам не добавляют.
+  665bd581e7d77a68b545b9da:
+    translation: Какие-то проблемы?
+    gap: '**Вопрос с there is**: **is** выходит вперёд — **Is there a** + существительное в единственном числе.'
+    dictation: '**Is there a** сливается в «изэрэ».'
+    choice:
+      wrong:
+      - Are there a problem?
+      - There is a problem?
+      explanation: 'Один предмет — **is**, и в вопросе он перед **there**: **Is there a problem**.'
+  6729cb61401180476233ae0d:
+    translation: Тут есть полотенце?
+    gap: '**Is there a …?** — «есть ли …?». Для одного предмета — **is**, и он стоит перед **there**.'
+    dictation: '**Is there a** — «изэрэ», всё в одно слово.'
+    choice:
+      wrong:
+      - Are there a towel?
+      - Is it a towel?
+      explanation: «Есть ли» — **Is there a**. Is it — «это …?», другой смысл.
+  672a02ef401180476235e43b:
+    translation: Я сяду здесь.
+    gap: '**will для решения прямо сейчас**: **I''ll** = I will + глагол без to — **I''ll sit**.'
+    dictation: '**I''ll** звучит как «ал» — will сжат до «-л».'
+    choice:
+      wrong:
+      - I sit here.
+      - I'm sit here.
+      explanation: 'Решение в момент речи — **I''ll** + глагол: **I''ll sit**. Слышно «л» после I.'
+  6729ccd0401180476233be24:
+    translation: Я присяду.
+    gap: '**will для решения прямо сейчас**: **I''ll sit down** — «я сяду». **''ll** — короткая форма will.'
+    dictation: '**I''ll** — «ал», **sit down** — t почти не слышно: «сидаун».'
+    choice:
+      wrong:
+      - I sit down.
+      - I'll sat down.
+      explanation: 'Решение в момент речи — **I''ll** + начальная форма: **I''ll sit down**.'
+  681a49abb994ff64a7fff872:
+    skip: 'She''s always around — это be + always + наречие («она всегда рядом»), а не always + -ing с раздражением: другое
+      значение, чем учит карточка'
+  66f835f536332a22fb950afb:
+    translation: Ты вечно меня выгоняешь.
+    gap: '**always + Present Continuous** — «вечно ты…»: действие повторяется слишком часто и раздражает. **always** стоит
+      между **''re** и **-ing**.'
+    dictation: '**You''re** сливается в одно короткое [jɔː]; **throwing me out** звучит слитно — *throwin'' me out*, конечное
+      **-ng** почти не слышно.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - You always throw me out.
+      - You're always throw me out.
+      - You were always throwing me out.
+      explanation: 'Герой жалуется: «вечно ты меня выгоняешь» — это **always + am/is/are + -ing**. *You always throw me out*
+        — нейтральный факт, без эмоции; *You''re always throw* — нет -ing; *were* — прошлое, а жалоба про сейчас.'
+  66f4846730407f347b0bd66e:
+    translation: Ладно, уже поздно.
+    gap: '**It''s getting late** — «становится поздно»: ситуация **меняется** прямо сейчас. Глаголы перемены (*getting, changing,
+      growing*) почти всегда в **Continuous**.'
+    dictation: '**it''s getting** звучит как одно слово — *itsgetting*, **t** в *getting* мягкое, почти [d]. **Anyway** в
+      начале — «ладно, в общем».'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - Anyway, it gets late.
+      - Anyway, it's late.
+      - Anyway, it was getting late.
+      explanation: Время идёт, становится всё позднее — это **меняющаяся ситуация**, поэтому **it's getting late** (Continuous).
+        *It gets late* звучит как общий факт, *it's late* — без процесса, *was getting* — прошлое.
+  66f4b06541c0387b72dc1650:
+    skip: в реплике нет Continuous (is hard to find), these days здесь при обычном is — пример не показывает правило карточки;
+      good stuff — разговорное
+  672852029663f07be057d7ae:
+    skip: в титрах фильма ругательство (These Mother Fxxkers…); та же фраза есть в клипе из Doctor Sleep
+  670d12bafe4ef3706a33f806:
+    translation: Я думаю о папе.
+    gap: '**think** — глагол с двумя значениями. *I think…* = «я считаю» (Simple), а **I''m thinking about** = «я обдумываю,
+      думаю о…» прямо сейчас — это действие, поэтому **Continuous**.'
+    dictation: '**I''m** — короткое [aɪm]; **thinking about** сливается — *thinkin'' about*, **about** начинается со слабого
+      [ə]. **dad** — с открытым [æ].'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - I think about my dad.
+      - I'm thinking of my dad.
+      - I was thinking about my dad.
+      explanation: 'Герой говорит, о чём думает в эту минуту: **I''m thinking about** — Continuous, думать = обдумывать. *I
+        think about* — так бывает вообще, часто; *of* — другой предлог; *was* — прошлое.'
+  67114d3314e7a06655d6ca78:
+    translation: Что ты здесь делаешь?
+    gap: 'Вопрос в **Present Continuous**: вопросительное слово + **are** + подлежащее + **-ing**. Спрашивают, что человек
+      делает **прямо сейчас**, а не чем занимается вообще (*What do you do?* — кем работаешь).'
+    dictation: '**What are you** сливается — *Whatcha* / *What''re ya*, **are** почти исчезает до [ə]. Ударение на **doing**
+      и **here**.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - What do you do here?
+      - What are you doing there?
+      - What were you doing here?
+      explanation: Герой удивлён, что видит человека здесь и сейчас — **What are you doing here?** (Continuous). *What do
+        you do here?* — «чем ты тут занимаешься обычно»; *there* — «там»; *were* — прошлое.
+  672d10ac8d27cd7d4460ef98:
+    skip: look forward to + -ing — устойчивое выражение с герундием после to, это не «смотрю сейчас»; на шаге 12 такая конструкция
+      не изучена
+  66f44951d0dc487c5d0adf13:
+    translation: Я завтра уезжаю.
+    gap: '**Present Continuous + время в будущем** = **уже решено, договорились**: билет куплен, отъезд назначен. Без **tomorrow**
+      фраза значила бы «я ухожу сейчас».'
+    dictation: '**I''m leaving** — *I''m leavin''*, конечное **-ng** почти не слышно. **tomorrow** — ударение на второй слог:
+      [təˈmɒrəʊ], первое **o** — слабое [ə].'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - I leave tomorrow.
+      - I'm living tomorrow.
+      - I'm leaving today.
+      explanation: 'Это личный план, который уже решён: **I''m leaving tomorrow** (Continuous о договорённости). *I leave*
+        — звучит как расписание; *living* (жить) — похоже на слух, но не то слово: у **leave** долгое [iː]; *today* — другое
+        время.'
+  6702d9463bb6920d44955309:
+    translation: Я завтра уезжаю.
+    gap: '**Present Continuous + время в будущем** = **уже решено, договорились**: отъезд назначен. Без **tomorrow** фраза
+      значила бы «я ухожу сейчас».'
+    dictation: '**I''m leaving** — *I''m leavin''*, конечное **-ng** почти не слышно. **tomorrow** — ударение на второй слог:
+      [təˈmɒrəʊ], первое **o** — слабое [ə].'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - I leave tomorrow.
+      - I'm living tomorrow.
+      - I'm leaving tonight.
+      explanation: 'Это решённый личный план: **I''m leaving tomorrow** (Continuous о договорённости). *I leave* — звучит
+        как расписание; *living* (жить) — похоже на слух, но у **leave** долгое [iː]; *tonight* — «сегодня вечером».'
+  67114d0a14e7a06655d6c295:
+    translation: Лекс, сейчас идёт дождь.
+    gap: '**It''s raining** — дождь идёт **в момент речи**, рядом маркер **now**: это **Present Continuous**. *It rains* —
+      про погоду вообще (часто, обычно).'
+    dictation: '**Lex** — имя. **it''s raining** звучит как *itsraining*, конечное **-ng** слабое. Ударение на **raining**
+      и **now**.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - Lex, it rains now.
+      - Lex, it's raining here.
+      - Lex, it was raining now.
+      explanation: Дождь идёт прямо сейчас — **it's raining now** (Continuous). *It rains now* — так не говорят о том, что
+        происходит в эту минуту; *here* — «здесь», другое слово; *was* — прошлое.
+  670791cc0ea8974796b09833:
+    translation: Ты на что смотришь?
+    gap: 'Спрашивают, что человек делает **прямо сейчас**: **are you looking at** — **Present Continuous**. **look at** =
+      смотреть на, предлог **at** уходит в конец вопроса.'
+    dictation: '**What are you** сливается в *Whatcha* / *What''re ya*; **looking at** — *lookin'' at*, **at** короткое и
+      почти без [t] в конце.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - What do you look at?
+      - What are you looking for?
+      - What are you laughing at?
+      explanation: Вопрос про эту минуту — **What are you looking at?** (Continuous). *What do you look at?* — «на что ты
+        обычно смотришь»; *looking for* — «что ищешь»; *laughing* — «над чем смеёшься», другое слово.
+  6711636eea43c55f0286c9eb:
+    translation: Она тебе улыбается.
+    gap: 'Описываем, что человек делает у нас на глазах (как на фото или картинке): **is smiling** — **Present Continuous**.
+      *She smiles* было бы про привычку.'
+    dictation: '**She is** здесь сказано полностью, не *she''s* — услышь отдельное **is**. **smiling at you** сливается: *smilin''
+      at ya*.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - She smiles at you.
+      - She is looking at you.
+      - She was smiling at you.
+      explanation: Герой описывает, что происходит прямо сейчас — **She is smiling at you** (Continuous). *She smiles* — привычка
+        («она тебе улыбается обычно»); *looking* — «смотрит», другое слово; *was* — прошлое.
+  67186bd91ce73f35c5f1322f:
+    skip: Alla = Аллах, религиозная реплика; smiling down on me — образное выражение, его трудно понять
+  672b3462debb743e125cb8c4:
+    translation: Ты врёшь?
+    gap: '**lie → lying**: у глаголов на **-ie** окончание меняется на **-ying** (*die → dying, tie → tying*). Вопрос в Continuous:
+      **Are** + подлежащее + **-ing** — врёшь прямо сейчас?'
+    dictation: 'Три коротких слова: **Are you** сливается в *Are ya*. Пиши **lying** через **y**: lie → l**y**ing.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - Do you lie?
+      - Are you lie?
+      - Are you leaving?
+      explanation: 'Спрашивают про то, что человек говорит сейчас: **Are you lying?** *Do you lie?* — «ты (вообще) врёшь?»;
+        *Are you lie* — нет -ing; *leaving* — «уходишь», другое слово.'
+  67071b14d572b125636d6171:
+    translation: Зачем ты врёшь?
+    gap: '**lie → lying**: у глаголов на **-ie** окончание меняется на **-ying**. Вопрос в Continuous: **Why are you** + **-ing**
+      — почему ты врёшь сейчас, в этом разговоре.'
+    dictation: '**Why are you** звучит слитно — *Why''re ya*, **are** почти пропадает. Пиши **lying** через **y**: lie → l**y**ing.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - Why do you lie?
+      - Why are you lie?
+      - Why are you leaving?
+      explanation: Упрёк про этот момент — **Why are you lying?** (Continuous). *Why do you lie?* — «почему ты (вообще) врёшь»;
+        *are you lie* — нет -ing; *leaving* — «уходишь», другое слово.
+  6703e70c2be9c34c61ea1893:
+    translation: Что это значит?
+    gap: '**mean** — глагол состояния: его **не ставят в Continuous**, даже если спрашиваешь про «сейчас». Поэтому вопрос
+      в **Present Simple**: **What does it mean?**'
+    dictation: '**What does it** сливается — *Whaddzit*, **does** звучит слабо [dəz]. После **does** глагол без -s: **mean**.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - What is it meaning?
+      - What does it means?
+      - What did it mean?
+      explanation: '**mean** — состояние, поэтому Simple: **What does it mean?** *Is it meaning* — так не говорят; после **does**
+        нужен глагол без -s; *did* — прошлое.'
+  6728f56940118047622b63d9:
+    translation: Что это значит?
+    gap: '**mean** — глагол состояния: его **не ставят в Continuous**, даже если спрашиваешь про «сейчас». Поэтому вопрос
+      в **Present Simple**: **What does it mean?**'
+    dictation: '**What does it** сливается — *Whaddzit*, **does** звучит слабо [dəz]. После **does** глагол без -s: **mean**.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - What is it meaning?
+      - What does it means?
+      - What does he mean?
+      explanation: '**mean** — состояние, поэтому Simple: **What does it mean?** *Is it meaning* — так не говорят; после **does**
+        нужен глагол без -s; *he* — «что он имеет в виду», другое слово.'
+  671878f4c1401c4d23d1619f:
+    translation: Я над этим работаю.
+    gap: '**I''m working on** — работаю над этим **сейчас, в этот период**, дело ещё не закончено: временная ситуация → **Continuous**.
+      *I work on…* — постоянная работа.'
+    dictation: '**I''m working on** — *I''m workin'' on*, **-ng** почти не слышно и сливается с **on**. В конце — **that**,
+      а не *it*.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - I work on that.
+      - I'm working on it.
+      - I was working on that.
+      explanation: Дело идёт сейчас и ещё не готово — **I'm working on that** (Continuous). *I work on that* — постоянное
+        занятие; *it* — другое слово в конце; *was* — прошлое.
+  67073c0ae9a3ee0ecadc99c4:
+    translation: Я живу у Крейга.
+    gap: '**I''m living with** — живу **временно**, пока так (*I live* — мой постоянный дом). «Пока, на время» → **Continuous**.'
+    dictation: '**I''m living with** — *I''m livin'' with*, **-ng** сливается с **with**. **Craig** — имя, с большой буквы.
+      У **living** короткое [ɪ], не долгое, как в *leaving*.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - I live with Craig.
+      - I'm leaving with Craig.
+      - I'm living near Craig.
+      explanation: Герой живёт у Крейга временно — **I'm living with Craig** (Continuous). *I live with Craig* — постоянно;
+        *leaving* — «уезжаю», у него долгое [iː]; *near* — «рядом с», другой предлог.
+  67505a3ea9e09c213cf1d823:
+    translation: Что на тебе надето?
+    gap: '**wear** про одежду, которая на человеке **сейчас**, — **Continuous**: **What are you wearing?** *What do you wear?*
+      — что ты носишь вообще, обычно.'
+    dictation: '**What are you** сливается в *Whatcha* / *What''re ya*; **wearing** — *wearin''*, начинается с [w], не путай
+      с *where*.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - What do you wear?
+      - Where are you going?
+      - What were you wearing?
+      explanation: Спрашивают, что на человеке сейчас — **What are you wearing?** (Continuous). *What do you wear?* — что
+        носишь обычно; *Where are you going* — «куда ты идёшь»; *were* — прошлое.
+  671ad20a24859c1869f506b0:
+    translation: Да, ты обычно так и делаешь.
+    gap: '**usually** — привычка, «обычно» → **Present Simple**. **do** здесь заменяет глагол из прошлой реплики, как в кратком
+      ответе *Yes, I do*.'
+    dictation: '**you usually** сливается — *yuh-yoozhully*, звук [ʒ] как русское «ж». **do** в конце — с ударением.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - Yes, you usually are.
+      - Yes, you always do.
+      - Yes, you usually did.
+      explanation: 'Речь о привычке — Simple, поэтому краткий ответ на **do**: **Yes, you usually do.** *are* — ответ на Continuous;
+        *always* — «всегда», другое слово; *did* — прошлое.'
+  67473d3fc2d5183297a46033:
+    translation: Во сколько ты уезжаешь?
+    gap: 'Спрашивают о **личном плане**, который уже решён: **What time are you** + **-ing** — Continuous о договорённости.
+      *What time does…?* — про расписание (поезд, фильм).'
+    dictation: '**What time are you** — *What time''re ya*, **are** почти исчезает. **leaving** — долгое [iː], *leavin''*.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - What time do you leave?
+      - What time are you living?
+      - What time is it leaving?
+      explanation: Это вопрос о планах человека — **What time are you leaving?** (Continuous). *do you leave* — звучит как
+        про ежедневный распорядок; *living* — «жить», не то слово; *is it leaving* — про поезд или автобус.
+  672947124c81a01be2b1a603:
+    translation: Во сколько ты придёшь домой?
+    gap: 'Спрашивают о **личном плане** на сегодня: **What time are you** + **-ing** — Continuous о договорённости. *What
+      time does…?* — про расписание (поезд, урок).'
+    dictation: '**What time are you** — *What time''re ya*, **are** почти пропадает. **coming home** сливается: *comin'' home*.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - What time do you come home?
+      - What time are you going home?
+      - What time did you come home?
+      explanation: Речь о плане на сегодня — **What time are you coming home?** (Continuous). *do you come home* — обычно,
+        каждый день; *going* — «уходишь домой» (говорящий не дома); *did* — прошлое.
+  6764ba5b1bb2992d08d4ee24:
+    translation: А во что ты сейчас одет?
+    gap: 'Вопрос про **сейчас**: что на человеке в эту минуту — **are you wearing** (Continuous). *Do you wear…?* — что носишь
+      вообще.'
+    dictation: '**And what are you** звучит слитно — *An'' whatcha*; **wearing** — *wearin''*, начинается с [w].'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - And what do you wear?
+      - And where are you going?
+      - And what were you wearing?
+      explanation: Спрашивают, что надето сейчас — **are you wearing** (Continuous). *do you wear* — обычно; *where are you
+        going* — «куда идёшь»; *were* — прошлое.
+  67214da18bdb3513f30ee099:
+    translation: Каждое утро я читаю «Backstage West» (журнал про кино и театр).
+    gap: '**Every morning** — регулярно, привычка → **Present Simple**: *I read*, а не *I''m reading*.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - Every morning, I'm reading Backstage West.
+      - This morning, I read Backstage West.
+      - Every evening, I read Backstage West.
+      explanation: '**Every morning** — привычка, поэтому **I read** (Simple). *I''m reading* с every morning не говорят;
+        *This morning* — «сегодня утром», а не каждый день; *evening* — «вечер», другое слово.'
+  66f45ba5d0dc487c5d0b6024:
+    translation: Ну что, тебе нравится в Тойленде?
+    gap: '**enjoy** = наслаждаться **процессом**, который идёт сейчас, — обычно в **Continuous**: **Are you enjoying…?** —
+      тебе сейчас тут нравится?'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - So, do you enjoy Toyland?
+      - So, are you enjoying the land?
+      - So, did you enjoy Toyland?
+      explanation: Человек ещё в Тойленде, спрашивают про его впечатления сейчас — **are you enjoying** (Continuous). *do
+        you enjoy* — вообще, обычно; *the land* — другое слово; *did* — уже уехал, прошлое.
+  674feec4a9e09c213ceec871:
+    translation: Тебе нравится в Барселоне?
+    gap: '**enjoy** = наслаждаться **процессом**, который ещё идёт (человек сейчас в Барселоне) — обычно в **Continuous**:
+      **Are you enjoying…?**'
+    dictation: '**Are you enjoying** — *Are ya enjoyin''*, **you** слабое [jə]. **your time in** сливается; **Barcelona**
+      — имя собственное, с большой буквы.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - Do you enjoy your time in Barcelona?
+      - Did you enjoy your time in Barcelona?
+      - Are you enjoying your stay in Barcelona?
+      explanation: 'Человек ещё в Барселоне — спрашивают про впечатления сейчас: **Are you enjoying** (Continuous). *Do you
+        enjoy* — вообще; *Did* — поездка уже закончилась; *stay* — другое слово вместо *time*.'
+  67064bf3d8952c5abc6c29ec:
+    translation: Не получается. / Не работает.
+    gap: 'Отрицание в **Continuous**: **isn''t + -ing** — не работает **сейчас**, в эту минуту. *It doesn''t work* — не работает
+      вообще, сломано.'
+    dictation: '**It isn''t** сливается в *Itizn''t*, конечное **t** почти не слышно. **working** — *workin''*.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - It doesn't work.
+      - It isn't work.
+      - It wasn't working.
+      explanation: Речь о том, что не получается прямо сейчас — **It isn't working** (Continuous). *doesn't work* — вообще
+        не работает; *isn't work* — без -ing так нельзя; *wasn't* — прошлое.
+  666bf774ab721a61ab9adbc1:
+    translation: Я не понимаю.
+    gap: '**understand** — глагол состояния: даже про «сейчас» — **Simple**. Отрицание Simple — **don''t** + глагол: **I don''t
+      understand**, а не *I''m not understanding*.'
+    dictation: '**I don''t** — **t** перед **understand** почти пропадает: *I don'' understand*. Ударение на **-stand**.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - I'm not understanding.
+      - I didn't understand.
+      - I don't understand it.
+      explanation: '**understand** — состояние, поэтому Simple: **I don''t understand.** *I''m not understanding* — так не
+        говорят; *didn''t* — прошлое; *it* в конце не было.'
+  67295c4c40118047622f58fb:
+    skip: реплика без глагола (This week, enough surprises) — не показывает времени и непонятна без контекста
+  671a610afd35e01448ce6fba:
+    translation: Ты пьёшь слишком много кофе.
+    gap: '**too much coffee** — «слишком много кофе» (**much** — с тем, что не считают). Здесь **Simple** (*You drink*): это
+      привычка вообще, без *these days*; про новую, временную привычку сказали бы *You''re drinking too much coffee these
+      days*.'
+    dictation: '**too much** — два ударных слова подряд; **coffee** — ударение на первый слог [ˈkɒfi]. Слышно **drink**, без
+      *-ing*.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - You're drinking too much coffee.
+      - You drink too many coffee.
+      - You drank too much coffee.
+      explanation: Герой говорит о привычке вообще — **You drink** (Simple). *You're drinking* — была бы новая, временная
+        привычка (и слышно было бы -ing); *many* — для того, что считают; *drank* — прошлое.
+  671848dec1401c4d23d07428:
+    translation: Так где ты остановился?
+    gap: '**staying** — живёшь **временно** (отель, у друзей): временная ситуация → **Continuous**. *Where do you live?* —
+      где твой постоянный дом.'
+    dictation: '**where are you** сливается — *where''re ya*, **are** почти не слышно. **staying** — *stayin''*.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - So where do you stay?
+      - So where do you live?
+      - So where are you going?
+      explanation: 'Человек приехал на время — спрашивают, где он **сейчас** живёт: **where are you staying** (Continuous).
+        *do you stay* — где останавливаешься обычно; *do you live* — постоянный дом; *going* — «куда идёшь».'
+  670d018bc2acf21e7b80b99e:
+    translation: Ну а где ты остановился?
+    gap: '**staying** — живёшь **временно** (отель, у друзей): временная ситуация → **Continuous**. *Where do you live?* —
+      где твой постоянный дом.'
+    dictation: '**Well** в начале — «ну». **where are you** сливается — *where''re ya*, **are** почти не слышно. **staying**
+      — *stayin''*.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - Well, where do you stay?
+      - Well, where do you live?
+      - Well, where are you going?
+      explanation: 'Спрашивают, где человек живёт **сейчас, на время**: **where are you staying** (Continuous). *do you stay*
+        — обычно; *do you live* — постоянный дом; *going* — «куда идёшь».'
+  6723888b2f2ebf1d68745309:
+    translation: Вы здесь работаете?
+    gap: 'Спрашивают о работе **вообще**, постоянно — **Do you work here?** (Simple: **Do** + подлежащее + глагол). *Are you
+      working?* — работаешь сейчас, в эту минуту.'
+    dictation: '**Do you** сливается в *D''you* [djə]; **work here** — **k** и **h** рядом, [ɜː] в *work* как в *bird*.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - Are you working here?
+      - Do you walk here?
+      - Did you work here?
+      explanation: Спрашивают, работает ли человек здесь вообще — **Do you work here?** (Simple). *Are you working* — сейчас,
+        в эту минуту; *walk* (гулять) — похоже на слух, но в **work** звук [ɜː]; *Did* — прошлое.
+  6703165945cfb3109ff40cd0:
+    translation: Как вы себя чувствуете?
+    gap: '**How are you feeling?** — про самочувствие **сейчас** (**feel** = чувствовать себя — можно в Continuous). *How
+      do you feel about…?* — как ты относишься к чему-то.'
+    dictation: '**How are you** сливается — *How''re ya*; **feeling** — *feelin''*, долгое [iː].'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - How do you feel?
+      - How are you filling?
+      - How were you feeling?
+      explanation: Спрашивают о самочувствии сейчас — **How are you feeling?** (Continuous). *How do you feel?* — тоже бывает,
+        но герой сказал **are** и **-ing**; *filling* (наполнять) — короткое [ɪ]; *were* — прошлое.
+  670a15aa3b21f421b104431e:
+    translation: Когда захочешь.
+    gap: '**Whenever** = «когда угодно, каждый раз когда» — подсказка для **Present Simple**: *whenever you want*, а не *you''re
+      wanting* (**want** — ещё и глагол состояния).'
+    dictation: '**Whenever** — ударение на **-ev-**: [wenˈevə]; **you want** сливается — *ya want*.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - Whenever you're wanting.
+      - Wherever you want.
+      - Whatever you want.
+      explanation: 'После **whenever** — Simple, и **want** — глагол состояния: **Whenever you want.** *you''re wanting* —
+        так не говорят; *Wherever* — «где угодно»; *Whatever* — «что угодно».'
+  66f7e14340e866077cae091b:
+    skip: get to it — фразовый глагол «дойти руки», непонятен на этом уровне
+  674f4074a9e09c213ce9d9d7:
+    translation: Но оно же туда помещается.
+    gap: '**fit** = подходить по размеру, помещаться — **глагол состояния**: остаётся в **Simple** (*it fits*) даже про «сейчас».'
+    dictation: '**But it** сливается — *Bu''it*, **t** почти не слышно. **fits** — короткое [ɪ] и **-s** на конце: *it fits*.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - But it's fitting there.
+      - But it fitted there.
+      - But it fits here.
+      explanation: '**fit** — состояние, поэтому Simple с **-s**: **it fits**. *it''s fitting* — так не говорят; *fitted*
+        — прошлое; *here* — «сюда», другое слово.'
+  66f4c158c5114b74c5fbb18a:
+    translation: Я хочу одну вещь.
+    gap: '**want** — глагол состояния: даже про «сейчас» — **Simple**: **I want**, а не *I''m wanting*.'
+    dictation: '**want a** сливается — *wanna* [ˈwɒnə]: это **want a**, не *want to*. **thing** — [θ], язык между зубами.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - I'm wanting a thing.
+      - I want a think.
+      - I wanted a thing.
+      explanation: '**want** — состояние, поэтому Simple: **I want a thing.** *I''m wanting* — так не говорят; *think* (думать)
+        — похоже на слух, но это глагол; *wanted* — прошлое.'
+  670721cee9f32b69bba48ac1:
+    translation: А вот и начальник идёт.
+    gap: '**Here comes** — устойчивая конструкция «вот идёт»: **Simple + обратный порядок слов** (глагол перед подлежащим),
+      хотя это происходит прямо сейчас.'
+    dictation: '**Here comes the** — *Here comz the*: **-s** в *comes* звучит как [z] и сливается с **the**. **boss** — короткое
+      [ɒ].'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - Here's coming the boss.
+      - Here come the boss.
+      - There goes the boss.
+      explanation: Это устойчивое **Here comes…** — Simple, глагол с **-s** (*the boss* — один). *Here's coming* — так не
+        говорят; *come* без -s — неверно для одного; *There goes* — «вон уходит».
+  6750db841949b508a21800e3:
+    translation: А вот и чай.
+    gap: '**Here comes** — устойчивая конструкция «вот идёт / вот и…»: **Simple + обратный порядок слов**, хотя всё происходит
+      прямо сейчас.'
+    dictation: '**Here comes** — **-s** звучит как [z] и сливается с **some**: *comzsum*. **some** — слабое [səm].'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - Here's coming some tea.
+      - Here come some tea.
+      - Here's some tea.
+      explanation: Это устойчивое **Here comes…** — Simple, глагол с **-s**. *Here's coming* — так не говорят; *come* без
+        -s — неверно (tea — одно); *Here's some tea* — «вот чай», без *comes*.
+  6672fe33ab721a61aba23126:
+    translation: Мам, я сплю.
+    gap: '**I''m sleeping** — сплю (пытаюсь спать) **прямо сейчас** → **Continuous**. *I sleep* — про привычку (*I sleep eight
+      hours*).'
+    dictation: '**Mom** — обращение. **I''m sleeping** — *I''m sleepin''*, долгое [iː], конечное **-ng** почти не слышно.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - Mom, I sleep.
+      - Mom, I'm sleepy.
+      - Mom, I was sleeping.
+      explanation: Герой говорит о том, что происходит сейчас — **I'm sleeping** (Continuous). *I sleep* — привычка; *sleepy*
+        — «сонный», прилагательное; *was* — прошлое.
+  6720f4c933a9b13a1d741203:
+    translation: Чем вы занимаетесь? (Кем вы работаете?)
+    gap: '**What do you do?** — вопрос о **работе, занятии вообще** → **Present Simple**. *What are you doing?* — что ты делаешь
+      прямо сейчас.'
+    dictation: '**What do you** сливается в *Whaddaya* [ˈwɒdəjə]: два **do** подряд — первое слабое, второе ударное.'
+    choice:
+      question: Что сказал герой?
+      wrong:
+      - What are you doing?
+      - What did you do?
+      - What do you want?
+      explanation: Спрашивают про работу — **What do you do?** (Simple). *What are you doing?* — что делаешь сейчас; *did*
+        — прошлое; *want* — «чего ты хочешь».

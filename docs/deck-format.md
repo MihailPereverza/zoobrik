@@ -192,15 +192,19 @@ by the learner, or self-checked against `model_answer`). Authoring rules: `docs/
 ## Movie clips (playphrase.me)
 
 `clip-type` and `clip-choice` exercises play a short scene of a film or a TV series found on
-[playphrase.me](https://www.playphrase.me). **The deck stores references only**: the clip's video URL
-(`https://www.playphrase.me/video/eng/<movie>/<id>.mp4`), its subtitle line with word timings and the film credit. The
-app streams the video from playphrase.me when the exercise is shown; no video, frame or audio of a clip is ever
-downloaded into the deck or the repository (`validate_deck.py` accepts nothing but a playphrase.me URL in `video`).
-Offline or when a clip is gone, the exercise shows «Видео недоступно» and «Пропустить».
+[playphrase.me](https://www.playphrase.me). The card keeps the clip's subtitle line with word timings, the film credit
+and **a compressed copy of the video** in `<card>/clips/pp-<phrase id>.mp4`: the whole clip as the site serves it (not
+trimmed, so the timings stay valid), 640×360 H.264 CRF 30 (softer, CRF 33/36, only while over 180 KB), at most 24 fps,
+mono AAC 64 kbit/s levelled to −16 LUFS with peaks under −1.5 dBTP, no subtitles or metadata — about 30–150 KB a clip.
+The app hands the file to the exercise like audio, so clips play offline. **The fragments are copyrighted: the deck is
+for the learner's own study**; the app never puts `clips/` into an exported package, and a deck with clips is not
+published or shared. A `video` that is still a playphrase.me URL (`https://www.playphrase.me/video/eng/<movie>/<id>.mp4`)
+streams from the site; `tools/clips.py localize` turns it into a local copy. When a clip cannot play, the exercise
+shows «Видео недоступно» and «Пропустить».
 
 | param | |
 |---|---|
-| `video` | playphrase.me video URL |
+| `video` | `clips/pp-<id>.mp4` (the copy in the card), or a playphrase.me video URL not localized yet |
 | `text` | the whole line as subtitled; Rule B and Rule G apply to it |
 | `words` | `[[word, start ms, end ms], …]` relative to the clip: the line lights up word by word after the answer |
 | `source` | `{ title: "Film (year)", url: <IMDb page> }`, shown small under the video |
@@ -213,7 +217,7 @@ Offline or when a clip is gone, the exercise shows «Видео недоступ
 `video`, `words`, `source` and `focus` are not learner text and never lock an exercise; `text`, `gap`, `answer` and the
 options do (unknown words and untaught grammar wait as usual). A dictation should `accept` the line without punctuation.
 
-`tools/playphrase.py <deck> [--cards a,b] [--topics t1,t2] [--per-card N] [--dry-run]` adds them: it searches
+`tools/playphrase.py <deck> [--cards a,b] [--topics t1,t2] [--per-card N] [--dry-run] [--localize]` adds them: it searches
 playphrase.me for each card (word and phrase cards: the term; grammar cards: phrases its `detect` finds in the examples,
 or `queries:` in `tools/playphrase-clips.yaml`), keeps clips that are not sensitive, 3–14 words, at most 7 s, clearly
 spoken (word scores ≥ 0.6 on average), checks each line against the words and rules known at the card's teaching step
@@ -221,9 +225,16 @@ spoken (word scores ≥ 0.6 on average), checks each line against the words and 
 films and appends `v1, v2, …` to the card: a `clip-type` gap on the target words (difficulty 3), a dictation of a line up
 to 8 words (difficulty 4) and a `clip-choice` (difficulty 2). Existing exercises and `progress` stay as they are. The Russian
 side (translation, explanations, wrong options) is written by hand in `tools/playphrase-clips.yaml` under the clip id; a
-picked clip without notes is listed in `tools/.cache/playphrase/todo.yaml`. Searching is polite: an anonymous session
-like a browser visit (kept in memory only), one request per 2 s, at most `--max-searches` (150) per run, every answer
-cached in `tools/.cache/playphrase/` and never asked again.
+picked clip without notes is listed in `tools/.cache/playphrase/todo.yaml`. With `--localize` the new clips are
+downloaded and stored as above right away. Searching is polite: an anonymous session like a browser visit (kept in
+memory only), one request per 2 s, at most `--max-searches` (150) per run, every answer cached in
+`tools/.cache/playphrase/` and never asked again.
+
+`tools/clips.py localize <deck> [--cards id …]` does the same for exercises already in the deck: every `video` that is a
+playphrase.me URL is downloaded once (raw files cached in `tools/.cache/playphrase/raw/`), encoded into the card's
+`clips/` and the exercise's `video:` line rewritten to the file; the rest of card.yaml, `progress` included, stays byte
+for byte, and exercises sharing a clip share one file. A second run changes nothing; it prints the total size. Both
+tools need ffmpeg and `tools/.venv-voice`.
 
 ## Several voices
 

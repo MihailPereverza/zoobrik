@@ -129,7 +129,9 @@ export const RUNTIME = String.raw`(function () {
     if (m.type === 'theme') document.documentElement.dataset.theme = m.theme;
     if (m.type === 'gloss-result') showTip(m);
     if (m.type === 'media') (m.files || []).forEach(function (f) {
-      media[f.url] = URL.createObjectURL(new Blob([f.buffer], { type: f.type || 'audio/mpeg' }));
+      var video = /\.(mp4|m4v|webm)$/i.test(f.url);
+      media[f.url] = URL.createObjectURL(new Blob([f.buffer], { type: video ? 'video/mp4' : f.type || 'audio/mpeg' }));
+      $$('video[data-zb-video]').forEach(function (v) { if (v.dataset.zbVideo === f.url) v.src = media[f.url] + '#t=0.001'; });
       zb.log('media received', { src: tail(f.url), bytes: f.buffer && f.buffer.byteLength, type: f.type });
     });
     if (m.type === 'focus') { var first = inputs[0]; if (first && !answered) first.focus(); else document.body.focus(); }
@@ -229,7 +231,7 @@ export const RUNTIME = String.raw`(function () {
   new ResizeObserver(report).observe(document.body);
   window.addEventListener('load', report);
   document.body.tabIndex = -1;
-  var sources = $$('[data-zb="play"]').map(function (b) { return b.dataset.src; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; });
+  var sources = $$('[data-zb="play"]').map(function (b) { return b.dataset.src; }).concat($$('video[data-zb-video]').map(function (v) { return v.dataset.zbVideo; })).filter(function (v, i, a) { return v && a.indexOf(v) === i; });
   if (sources.length) { post('need-media', { urls: sources }); zb.log('requested media', sources.map(tail)); }
   if (document.body.dataset.autoplay) { var p = $('[data-zb="play"]'); if (p) post('play', { src: p.dataset.src, rate: 1, auto: true }); }
   setTimeout(function () { if (inputs[0]) inputs[0].focus(); else document.body.focus(); report(); }, 30);

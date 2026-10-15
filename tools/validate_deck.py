@@ -28,8 +28,8 @@ TEMPLATE_PARAMS: dict[str, set[str]] = {
     'clip-choice': {'video', 'text', 'words', 'source', 'question', 'answer', 'options'},
 }
 CLIP_TEMPLATES = {'clip-type', 'clip-choice'}
-# A movie clip is a reference: the app streams it from playphrase.me, the deck never holds the video.
-CLIP_VIDEO = re.compile(r'^https://www\.playphrase\.me/video/[a-z]{3}/[0-9a-f]+/[0-9a-f]+\.mp4$')
+# A movie clip is a compressed copy in the card's clips/ (tools/clips.py localize) or a playphrase.me link to stream.
+CLIP_VIDEO = re.compile(r'^(?:https://www\.playphrase\.me/video/[a-z]{3}/[0-9a-f]+/[0-9a-f]+\.mp4|clips/pp-[0-9a-f]+\.mp4)$')
 # Ids from before decks became language-neutral; the app maps them to the new templates.
 LEGACY_TEMPLATES: dict[str, str] = {
     'en-ru-choice': 'meaning-choice', 'en-ru-flip': 'meaning-flip', 'ru-en-choice': 'term-choice', 'ru-en-type': 'term-type',
@@ -165,7 +165,7 @@ def check_gap(*, where: str, template: str, params: dict[str, Any], report: Repo
 def clip_problems(params: dict[str, Any]) -> list[str]:
     problems = []
     if not CLIP_VIDEO.match(str(params.get('video', ''))):
-        problems.append('video must be a playphrase.me video URL (clips are never stored in the deck)')
+        problems.append('video must be clips/pp-<id>.mp4 or a playphrase.me video URL')
     words = params.get('words') or []
     timed = all(isinstance(w, list) and len(w) == 3 and all(isinstance(t, int) for t in w[1:]) for w in words)
     if not words or not timed:
