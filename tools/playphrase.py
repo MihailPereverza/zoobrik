@@ -464,7 +464,9 @@ def plan(*, chosen: dict[str, list[tuple[Clip, str]]], cards: dict[str, CardRef]
         card = cards[key]
         index = next_index(card)
         # A clip its note rejects (offensive, another meaning, too hard) gives way to the next best one.
-        usable = [(clip, focus) for clip, focus in clips if not rejected(note=clip_notes.get(clip.id), card=key)]
+        have = ' '.join(clip_videos(card))
+        # A clip the card already has (as a link or as clips/pp-<id>.mp4) is never added twice.
+        usable = [(clip, focus) for clip, focus in clips if clip.id not in have and not rejected(note=clip_notes.get(clip.id), card=key)]
         for clip, focus in best(clips=usable, count=room(card=card, per_card=per_card)):
             pick = Pick(card=card, clip=clip, focus=focus)
             note = clip_notes.get(clip.id)

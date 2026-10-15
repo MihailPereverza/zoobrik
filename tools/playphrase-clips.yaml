@@ -2482,3 +2482,42 @@ clips:
       - What do you want?
       explanation: Спрашивают про работу — **What do you do?** (Simple). *What are you doing?* — что делаешь сейчас; *did*
         — прошлое; *want* — «чего ты хочешь».
+  666c7672ab721a61ab9b54a8:
+    skip: идиома on your high horse — «важничать, задирать нос», не «высокий» из карточки
+  671ab30bde4b973cebbc75f6:
+    skip: Slim — имя персонажа, а не «стройный»
+  670c05e49236b6777d44d3ea:
+    skip: red curly hair — цвет перед формой, против порядка прилагательных из карточки (curly red hair)
+  666fc781ab721a61ab9fe3b0:
+    skip: Ginger — имя персонажа, а не «рыжий»
+  665b3619e7d77a68b54228c9:
+    skip: make up for — «загладить вину», другое значение (карточка — «помириться»); ещё прошедшее и seven years ago
+  6763fb867a2b11041ee89e65:
+    skip: make up his mind — «решиться», другое значение (карточка — «помириться»); ещё прошедшее
+  672a916ec3d34760ffe25b51:
+    skip: change the subject — «сменить тему», ни «подлежащее», ни «школьный предмет»; get off of me — сленг
+  67078f180ea8974796b07ba5:
+    skip: tie — глагол «связать», а карточка — галстук; ещё насилие (связать человека)
+  67093fe19982174de4bc6b3c:
+    skip: tie — глагол «связать (жизнь)», а карточка — галстук; be about to — сложно для шага
+  6717ea594f3dca269d5e5498:
+    skip: dress — существительное «платье», а карточка — глагол «одеваться»
+  667bfe505f13e90515e45d3d:
+    translation: Она всегда что-нибудь просит, но мне всё равно.
+    gap: '**always** — всегда, 100 %. Стоит **перед смысловым глаголом**: *She always asks*, не ~~She asks always~~.'
+    choice:
+      wrong:
+      - She usually asks for something, but I don't care.
+      - She sometimes asks for something, but I don't care.
+      explanation: 'Героиня говорит **always** — «всегда», без исключений, а не *usually* — «обычно» и не *sometimes* — «иногда».
+        Наречие стоит перед глаголом: *always asks*.'
+  670962d33b21f421b10198df:
+    skip: present perfect (I've always been) — для шага карточки ещё не пройдено
+  67560e98d078c666a05d1519:
+    skip: past perfect (I'd realised I'd become) — слишком сложная грамматика для шага
+  67281cf59663f07be055cc19:
+    skip: the opposite of — существительное «противоположность», а карточка — предлог «напротив»
+  670e6935d112bf4b0bf5d405:
+    skip: go to bed with — сексуальный подтекст, не «ложиться спать»
+  6681afe81a266d06dff333ce:
+    skip: go to bed with — сексуальный подтекст, не «ложиться спать»
