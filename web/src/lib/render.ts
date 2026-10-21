@@ -5,6 +5,7 @@ import { zubrikSvg, type Mood } from './mascot';
 import { fontFaceCss } from './fonts';
 import { deckLangs } from './lang';
 import { outsideDeck } from './lexicon';
+import { isUnavailable } from './senses';
 import type { Card, DeckData, Exercise, Mode, TemplateSource, Topic } from './types';
 
 export interface Rendered {
@@ -215,8 +216,9 @@ export function render(data: DeckData, card: Card, exercise: Exercise, mode: Mod
     const e = environment(data);
     const html = template.scope === 'inline' ? e.renderString(template.view, context) : e.render(scopeName(template), context);
     const attrs: Record<string, string> = { template: template.id, card: card.id, topic: topic.id, mode };
-    if (template.manifest.autoplay && mode !== 'intro') attrs.autoplay = '1';
-    if (template.manifest.autoplay && mode === 'intro' && template.id === 'intro') attrs.autoplay = '1';
+    // With the sound off nothing starts playing by itself; a tap on ▶ still plays.
+    const autoplay = template.manifest.autoplay && !isUnavailable('audio');
+    if (autoplay && (mode !== 'intro' || template.id === 'intro')) attrs.autoplay = '1';
     const css = `${data.baseCss}\n${template.scope === 'core' ? '' : coreStyle(data, template.id)}\n${template.style}\n${exercise.style ?? ''}`;
     return { srcdoc: frame(data, template, exercise, html, attrs, theme), html, css, template, md };
   } catch (error) {

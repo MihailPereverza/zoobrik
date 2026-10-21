@@ -310,8 +310,18 @@ Audio rule: the only audio files are `word.mp3` (from `content.en`, voiced by IP
   skill: context                 # one skill or a list
   status: ready                  # draft | ready | off
   from: examples.ex1             # optional: the content the exercise was built from
+  uses: [audio]                  # optional: what it needs from the learner (overrides the template's `uses`)
   params: { ... }                # exactly the params of the template
 ```
+
+`uses` says what an exercise cannot be done without: `audio` (answered by ear) or `voice` (answered aloud). A template
+declares it for all its exercises in `manifest.yaml` (`listen-type`, `listen-choice`, `clip-type`, `clip-choice` use
+`audio`); every exercise of a listening card uses `audio` unless it says `uses: []`. A sentence with an optional ▶ button
+needs nothing. On the home screen and in the session menu the learner says what they can do right now («Без звука» on a
+bus): the schedule then asks only exercises that do without it — a word on the `listen` rung gets the nearest format it
+can do and climbs on, a card with nothing doable waits, nothing plays by itself. «Сейчас не могу слушать» under an
+exercise swaps it and the rest of the session's listening items at once. The switch for `voice` appears only when the
+deck has exercises that use it.
 
 Every param value is literal data that is shown to the learner. Options/extra words must be plausible but unambiguously wrong. Markdown is allowed in `explanation`, `instruction`, `hint`, `note`.
 

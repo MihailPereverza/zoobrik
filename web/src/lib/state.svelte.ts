@@ -5,7 +5,8 @@ import type { RepoConfig } from './github';
 import { deckLangs } from './lang';
 import { freeModels, type AiConfig, type TierEntry } from './ai';
 import { dayKey } from './progress';
-import type { DeckData } from './types';
+import { setUnavailable } from './senses';
+import type { DeckData, Need } from './types';
 import { log } from './log';
 
 export type ThemeId = 'pushcha' | 'night' | 'snow' | 'contrast';
@@ -44,6 +45,21 @@ export async function loadAiModels() {
   if (!app.ai.model && app.aiModels[0]) app.ai = { ...app.ai, model: app.aiModels[0] };
 }
 
+function storedUnavailable(): Need[] {
+  let needs: Need[] = [];
+  try { needs = JSON.parse(stored('zb.unavailable', '[]')).filter((n: string) => n === 'audio' || n === 'voice'); } catch { /* broken value: everything available */ }
+  setUnavailable(needs);
+  return needs;
+}
+
+/** Switch hearing or speaking off or on for now: the scheduler then asks only exercises that do without it. */
+export function setAvailable(need: Need, on: boolean) {
+  app.unavailable = on ? app.unavailable.filter((n) => n !== need) : [...new Set([...app.unavailable, need])];
+  setUnavailable(app.unavailable);
+  store('zb.unavailable', app.unavailable.length ? JSON.stringify(app.unavailable) : null);
+  touch();
+}
+
 function storedRepo(): RepoConfig | null {
   try { return JSON.parse(stored('zb.github', 'null')); } catch { return null; }
 }
@@ -67,6 +83,7 @@ export const app = $state({
   activity: {} as Record<string, number>,
   decks: [] as DeckRef[],
   ai: storedAi(),
+  unavailable: storedUnavailable(),
   aiModels: [] as string[],
   deckKey: stored('zb.deck', ''),
   scanned: false,

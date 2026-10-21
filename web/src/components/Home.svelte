@@ -2,7 +2,8 @@
   import { onDestroy } from 'svelte';
   import Ring from './Ring.svelte';
   import Zubrik from './Zubrik.svelte';
-  import { activeDeck, app } from '../lib/state.svelte';
+  import { activeDeck, app, setAvailable } from '../lib/state.svelte';
+  import { deckUses } from '../lib/senses';
   import { deckSummary } from '../lib/summary';
   import { dayStats, greeting, plural } from '../lib/activity';
 
@@ -14,6 +15,11 @@
   const newCount = $derived(summary.batch?.cards.length ?? 0);
   const minutes = $derived(Math.max(1, Math.round(summary.due * 0.5 + newCount * 1.5)));
   const deck = $derived(activeDeck());
+  // A switch only for what the deck has exercises for: no «Вслух» while nothing is answered aloud.
+  const senses = $derived([
+    { need: 'audio' as const, label: 'Со звуком', off: 'Без звука' },
+    { need: 'voice' as const, label: 'Вслух', off: 'Без голоса' },
+  ].filter((s) => deckUses(data, s.need)));
   const others = $derived(app.decks.filter((d) => d.key !== deck?.key));
 
   let taps = $state(0);
@@ -64,6 +70,21 @@
       {/if}
     </section>
   </div>
+
+  {#if senses.length}
+    <section class="senses appear" aria-label="Что можно сейчас">
+      <span class="muted">Задания сейчас</span>
+      {#each senses as s (s.need)}
+        {@const on = !app.unavailable.includes(s.need)}
+        <button class="sense" class:off={!on} type="button" aria-pressed={on} onclick={() => setAvailable(s.need, !on)}>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            {#if s.need === 'audio'}<path d="M4 9v6h4l5 4V5L8 9H4z" />{#if on}<path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" />{:else}<path d="M16 9l5 6M21 9l-5 6" />{/if}
+            {:else}<rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" />{#if !on}<path d="M4 4l16 16" />{/if}{/if}
+          </svg>{on ? s.label : s.off}
+        </button>
+      {/each}
+    </section>
+  {/if}
 
   {#if data.placement?.length && (!data.known || data.known.test)}
     <a class="panel placement appear" href="#/placement">
@@ -130,4 +151,9 @@
   .goal-text b { font-size: 16px; font-weight: 600; }
   .goal-text span { font-size: 13px; }
   .list { display: grid; gap: 10px; }
+  .senses { margin-top: 12px; display: flex; align-items: center; gap: 8px; padding: 0 2px 0 6px; font-size: 14px; }
+  .senses .muted { margin-right: auto; }
+  .sense { height: 36px; padding: 0 12px 0 10px; border-radius: 18px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font: 500 14px/1 var(--font-body); display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+  .sense.off { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .sense svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 </style>

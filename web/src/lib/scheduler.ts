@@ -4,6 +4,7 @@ import { cardWaits, grammarLocked, ruleLearned } from './grammar';
 import { cardLocked, exerciseLocked } from './lexicon';
 import { dayKey, gradedToday, isBuried, isLearned, ladderOf, MAX_LEARNING_PER_DAY, maxPerDay, memoryOf, rungOf } from './progress';
 import { resolveTemplate } from './render';
+import { doable } from './senses';
 import type { Card, DeckData, Exercise, Grade, Mode, QueueItem, Skill, SkillState, TemplateManifest, Topic } from './types';
 
 const LEARN_AHEAD_MS = 20 * 60 * 1000;
@@ -43,10 +44,10 @@ function usable(data: DeckData, card: Card, exercise: Exercise, mode: Mode): boo
   return !exerciseLocked(data, card, exercise) && !grammarLocked(data, card, exercise);
 }
 
-/** Exercises the schedule can ask, with their rungs. */
-function ladderPool(data: DeckData, card: Card, mode: Mode): { exercise: Exercise; rung: number }[] {
+/** Exercises the schedule can ask, with their rungs; `doableNow` keeps only those the learner can do at the moment. */
+function ladderPool(data: DeckData, card: Card, mode: Mode, doableNow = false): { exercise: Exercise; rung: number }[] {
   return card.exercises
-    .filter((e) => usable(data, card, e, mode))
+    .filter((e) => usable(data, card, e, mode) && (!doableNow || doable(data, card, e)))
     .map((exercise) => ({ exercise, rung: exerciseRung(data, card, exercise) }))
     .filter((x): x is { exercise: Exercise; rung: number } => x.rung !== null);
 }
@@ -72,7 +73,7 @@ export const LEARN_AHEAD = LEARN_AHEAD_MS;
 /** A started card is due when its memory is due (learning steps up to `aheadMs` early) and today's cap is not used up. */
 export function isDue(data: DeckData, card: Card, now: Date, aheadMs = 0): boolean {
   if (!isIntroduced(card) || isSuspended(card) || isBuried(card, now) || atDailyCap(data, card, now)) return false;
-  if (!ladderPool(data, card, 'review').length) return false;
+  if (!ladderPool(data, card, 'review', true).length) return false;
   const memory = memoryOf(card.progress);
   if (!memory) return true;
   // Sent to long intervals before finishing the ladder (earlier scheduler): back to learning right away.
@@ -112,7 +113,8 @@ function preferEffort(data: DeckData, card: Card, pool: Ladder, candidates: Ladd
 type Ladder = { exercise: Exercise; rung: number }[];
 
 function pickExercise(data: DeckData, card: Card, target: number, mode: Mode, used: Set<string> = new Set()): { exercise: Exercise; rung: number } | null {
-  const pool = ladderPool(data, card, mode).filter((x) => !used.has(x.exercise.id));
+  // Without sound a word on the «listen» rung gets the nearest format it can do, and climbs on.
+  const pool = ladderPool(data, card, mode, true).filter((x) => !used.has(x.exercise.id));
   if (!pool.length) return null;
   const top = ladderOf(data.deck).length - 1;
   // At the top rung the formats rotate through the upper half of the ladder.
@@ -164,6 +166,21 @@ export function followUp(data: DeckData, card: Card, now: Date): QueueItem | nul
   return reviewItems(data, card)[0] ?? null;
 }
 
+/**
+ * The queue once the learner can no longer do something (put the sound off mid-session): from `from` on, each item they
+ * cannot do now gets another format of the same card, or leaves the queue when the card has none.
+ */
+export function withoutUndoable(data: DeckData, queue: QueueItem[], from: number): QueueItem[] {
+  const later = queue.slice(from).flatMap((q) => {
+    if (q.mode === 'intro' || doable(data, q.card, q.exercise)) return [q];
+    if (q.topicCards || q.mode === 'practice') return [];
+    const target = q.mode === 'learn' && !q.card.progress?.introduced ? 0 : rungOf(q.card.progress, ladderOf(data.deck));
+    const other = ladderItem(data, q.card, target, q.mode);
+    return other ? [other] : [];
+  });
+  return [...queue.slice(0, from), ...later];
+}
+
 /** Topic exercises (one item over several cards) and practice are extra training: they never move a card's schedule. */
 export const movesSchedule = (item: QueueItem) => item.mode !== 'practice' && !item.topicCards;
 
@@ -203,7 +220,7 @@ export function spread(lists: QueueItem[][], minGap: number, staggered: boolean)
 function topicExerciseItems(data: DeckData, topic: Topic, cards: Card[]): QueueItem[] {
   const ids = new Set(cards.map((c) => c.id));
   return topic.exercises
-    .filter((e) => e.status === 'ready' && e.cards && Object.keys(e.cards).filter((id) => ids.has(id)).length >= 3)
+    .filter((e) => e.status === 'ready' && e.cards && Object.keys(e.cards).filter((id) => ids.has(id)).length >= 3 && doable(data, cards[0], e))
     .slice(0, 1)
     .map((e) => {
       const members = topic.cards.filter((c) => Boolean(e.cards![c.id]) && (ids.has(c.id) || isIntroduced(c)));
@@ -252,7 +269,7 @@ export function orderedCards(topic: Topic): Card[] {
 function firstOpen(data: DeckData, now: Date, rules: boolean, limit: number): { topic: Topic; cards: Card[] } | null {
   if (limit <= 0) return null;
   for (const topic of data.topics.filter((t) => isRuleTopic(t) === rules)) {
-    const fresh = orderedCards(topic).filter((c) => !isIntroduced(c) && !isSuspended(c) && !isBuried(c, now) && !cardLocked(data, c) && !cardWaits(data, c) && ladderPool(data, c, 'learn').length > 0);
+    const fresh = orderedCards(topic).filter((c) => !isIntroduced(c) && !isSuspended(c) && !isBuried(c, now) && !cardLocked(data, c) && !cardWaits(data, c) && ladderPool(data, c, 'learn', true).length > 0);
     if (!fresh.length || !topicIsOpen(data, topic) || !gateOpen(data, topic)) continue;
     return { topic, cards: fresh.slice(0, Math.min(topic.batch ?? 4, limit)) };
   }
@@ -379,7 +396,7 @@ export function balanceDue(data: DeckData, card: Card, state: SkillState): Skill
 export function practiceSession(data: DeckData, chosen: Card[], _now: Date): QueueItem[] {
   const cards = chosen.filter((c) => isIntroduced(c) && !isSuspended(c));
   const lists = cards.map((card) => {
-    const pool = card.exercises.filter((e) => usable(data, card, e, 'practice'));
+    const pool = card.exercises.filter((e) => usable(data, card, e, 'practice') && doable(data, card, e));
     const picked = [...pool].sort(() => Math.random() - 0.5).slice(0, 2);
     return picked.map((exercise) => ({ key: `${card.id}:${exercise.id}:p${Math.random().toString(36).slice(2, 6)}`, card, exercise, skills: [exerciseSkill(data, card, exercise)].filter((x): x is Skill => Boolean(x)), mode: 'practice' as Mode }));
   });

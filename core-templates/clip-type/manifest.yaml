@@ -1,6 +1,7 @@
 id: clip-type
 name: Фрагмент фильма — напиши услышанное
 trains: [listen, spell]
+uses: [audio]
 difficulty: 3
 modes: [learn, review, practice]
 check: { type: fuzzy }

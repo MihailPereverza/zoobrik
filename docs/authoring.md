@@ -362,6 +362,7 @@ clip: { media: clips/pp-<id>.mp4, text: "Ask me again in the morning.", words: [
 id: article-pick              # для людей; id = имя папки
 name: a или an                # название в превью и сессии
 trains: [apply]               # навыки по умолчанию (если у задания нет skill)
+uses: []                      # без чего задание не сделать: audio (на слух), voice (вслух); задание может переопределить
 difficulty: 3                 # 1–5, порядок при изучении (задание может переопределить)
 modes: [learn, review, practice]  # где спрашивать; без поля — везде
 check: { type: custom }       # как проверять ответ, см. Б5

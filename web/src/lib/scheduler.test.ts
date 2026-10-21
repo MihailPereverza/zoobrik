@@ -3,7 +3,8 @@ import YAML from 'yaml';
 import { CORE } from './core';
 import { review } from './fsrs';
 import { applyIntro, bury, dayKey, suspend } from './progress';
-import { balanceDue, buildSession, effortful, interleave, cardSkills, exerciseRung, gateOpen, isDue, isPrimed, learnItems, limitReviews, movesSchedule, nextBatch, nextDueDate, practiceSession, queueAfter, reviewItems, spread, topicIsOpen } from './scheduler';
+import { balanceDue, buildSession, effortful, interleave, cardSkills, exerciseRung, gateOpen, isDue, isPrimed, learnItems, limitReviews, movesSchedule, nextBatch, nextDueDate, practiceSession, queueAfter, reviewItems, spread, topicIsOpen, withoutUndoable } from './scheduler';
+import { setUnavailable } from './senses';
 import { answerItem, runSession } from './sessionsim';
 import type { Card, DeckConfig, DeckData, Exercise, Grade, Progress, QueueItem, SkillState, Topic } from './types';
 
@@ -13,7 +14,7 @@ vi.mock('./lexicon', () => ({
   cardLocked: (_d: unknown, card: Card) => locks.cards.has(card.id),
   cardCoverage: () => 1,
 }));
-beforeEach(() => { locks.exercises.clear(); locks.cards.clear(); });
+beforeEach(() => { locks.exercises.clear(); locks.cards.clear(); setUnavailable([]); });
 
 const NOW = new Date('2026-05-04T09:00:00Z');
 const DAY = 86_400_000;
@@ -129,6 +130,55 @@ describe('ladder and due', () => {
     const data = mkDeck([mkTopic('a', 1)], { ladder: ['apply', 'recognize'] });
     const card = data.topics[0].cards[0];
     expect(learnItems(data, card)[1].exercise.id).toBe('e5');
+  });
+});
+
+describe('without sound', () => {
+  // A dictation (listen + spell) sits on the recall rung; here it is the only exercise there.
+  const heard = (data: DeckData, card = data.topics[0].cards[0]) => {
+    mature(card, -1, 1);
+    card.progress!.memory!.reps = 3;
+    card.exercises = card.exercises.filter((e) => e.id !== 'e2').map((e) => (e.id === 'e4' ? { ...e, status: 'ready' } : e));
+    return card;
+  };
+
+  it('asks a word the nearest format that needs no sound', () => {
+    const data = mkDeck([mkTopic('a', 1)]);
+    const card = heard(data);
+    expect(reviewItems(data, card)[0].exercise.id).toBe('e4');
+    setUnavailable(['audio']);
+    expect(reviewItems(data, card)[0].exercise.id).toBe('e1');
+  });
+
+  it('a card with nothing but listening is neither due nor introduced', () => {
+    const data = mkDeck([mkTopic('a', 2)]);
+    for (const card of data.topics[0].cards) card.exercises = card.exercises.filter((e) => e.template === 'intro' || e.id === 'e4').map((e) => ({ ...e, status: 'ready' }));
+    const due = mature(data.topics[0].cards[0], -1, 1);
+    setUnavailable(['audio']);
+    expect(isDue(data, due, NOW)).toBe(false);
+    expect(nextBatch(data, NOW, 0)).toBeNull();
+    setUnavailable([]);
+    expect(isDue(data, due, NOW)).toBe(true);
+  });
+
+  it('an exercise may say what it needs, overriding its template', () => {
+    const data = mkDeck([mkTopic('a', 1)]);
+    const card = heard(data);
+    card.exercises.find((e) => e.id === 'e1')!.uses = ['audio'];
+    card.exercises.find((e) => e.id === 'e3')!.uses = ['audio'];
+    card.exercises.find((e) => e.id === 'e4')!.uses = [];
+    setUnavailable(['audio']);
+    expect(reviewItems(data, card)[0].exercise.id).toBe('e4');
+  });
+
+  it('switching the sound off mid-session swaps the listening items that are left', () => {
+    const data = mkDeck([mkTopic('a', 2)]);
+    const [a, b] = data.topics[0].cards.map((c) => heard(data, c));
+    const queue = [...reviewItems(data, a), ...reviewItems(data, b)];
+    expect(queue.map((q) => q.exercise.id)).toEqual(['e4', 'e4']);
+    setUnavailable(['audio']);
+    const after = withoutUndoable(data, queue, 1);
+    expect(after.map((q) => [q.card.id, q.exercise.id])).toEqual([[a.id, 'e4'], [b.id, 'e1']]);
   });
 });
 

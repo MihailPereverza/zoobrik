@@ -13,13 +13,15 @@
   import { moodFor } from '../lib/mascot';
   import { typoLetters } from '../lib/typo';
   import { dayStats, plural } from '../lib/activity';
-  import { app, backend, bumpActivity, goalMet, refreshPending, scheduleSync, sync, touch } from '../lib/state.svelte';
+  import { app, backend, bumpActivity, goalMet, refreshPending, scheduleSync, setAvailable, sync, touch } from '../lib/state.svelte';
+  import { deckUses, exerciseUses } from '../lib/senses';
   import { check } from '../lib/check';
   import { formatInterval } from '../lib/fsrs';
   import { applyAnswer, applyIntro, bury, previewNext, suspend } from '../lib/progress';
   import { audioVariants, mediaUrl, render, type Rendered } from '../lib/render';
   import { filterCards, queryToFilter } from '../lib/words';
-  import { balanceDue, buildSession, effortful, exerciseRung, isPrimed, learningSoon, manifestOf, movesSchedule, nextBatch, practiceSession, queueAfter } from '../lib/scheduler';
+  import { balanceDue, buildSession, effortful, exerciseRung, isPrimed, learningSoon, manifestOf, movesSchedule, nextBatch, practiceSession, queueAfter, withoutUndoable } from '../lib/scheduler';
+  import type { Need } from '../lib/types';
   import type { CheckResult, Grade, QueueItem, Skill } from '../lib/types';
 
   type Phase = 'answer' | 'reveal' | 'graded' | 'flipped' | 'wait' | 'done';
@@ -222,6 +224,21 @@
     if (!item || phase !== 'answer') return;
     queue.push({ ...item, key: `${item.key}:skip` });
     advance();
+  }
+
+  const NEED_OFF: Record<Need, string> = { audio: 'Сейчас не могу слушать', voice: 'Сейчас не могу говорить' };
+  const needs = $derived(item && item.mode !== 'intro' ? exerciseUses(data, item.card, item.exercise) : []);
+
+  // Switching hearing or speaking off swaps this and every later exercise that needs it for one the learner can do now.
+  function setNeed(need: Need, on: boolean) {
+    setAvailable(need, on);
+    menuOpen = false;
+    log('session', on ? 'need on' : 'need off', need);
+    if (on) return;
+    audio.pause();
+    queue = withoutUndoable(data, queue, phase === 'answer' ? index : index + 1);
+    if (phase !== 'answer') return;
+    if (index < queue.length) show(); else start();
   }
 
   function persist(updates: { cardPath: string; progress: any }[], lines: string[]) {
@@ -495,6 +512,12 @@
         {#if menuOpen}
           <div class="menu" role="menu">
             <button type="button" role="menuitem" disabled={!history.length} onclick={undo}>Отменить последний ответ <span class="kbd">U</span></button>
+            {#each ['audio', 'voice'] as const as need (need)}
+              {#if deckUses(data, need)}
+                {@const off = app.unavailable.includes(need)}
+                <button type="button" role="menuitem" onclick={() => setNeed(need, off)}>{off ? 'Включить' : 'Отключить'} задания {need === 'audio' ? 'на слух' : 'голосом'}</button>
+              {/if}
+            {/each}
             <button type="button" role="menuitem" onclick={() => setAside('bury')}>Отложить до завтра</button>
             <button type="button" role="menuitem" onclick={() => setAside('suspend')}>Приостановить карточку</button>
             <a role="menuitem" href="#/card/{item.card.topic}/{item.card.id}">Открыть карточку</a>
@@ -611,6 +634,9 @@
         <button class="btn ghost dontknow" type="button" onclick={giveUp}>Не знаю</button>
         <button class="link" type="button" onclick={skip}>Пропустить</button>
       </div>
+      {#each needs as need (need)}
+        <button class="link cant" type="button" onclick={() => setNeed(need, false)}>{NEED_OFF[need]}</button>
+      {/each}
     {/if}
     </div>
     {#if saveError}<p class="toast">{saveError}</p>{/if}
@@ -643,6 +669,7 @@
   .tools .dontknow { grid-column: 1 / -1; width: 100%; }
   .link { background: none; border: 0; color: var(--ink-3); font-size: 14px; cursor: pointer; padding: 8px 4px; border-radius: 8px; }
   .link:hover { color: var(--ink); }
+  .cant { display: block; margin: 0 auto; text-decoration: underline; text-underline-offset: 3px; }
   .explain { margin-top: 4px; padding: 16px 20px; display: grid; gap: 6px; font-size: 15px; }
   .explain p { margin: 0; }
   .explain .sentence { font-size: 18px; font-weight: 500; }

@@ -1,6 +1,7 @@
 id: listen-choice
 name: Послушай и выбери перевод
 trains: [listen]
+uses: [audio]
 reveals: [meaning, audio]
 asks: [meaning]
 difficulty: 2

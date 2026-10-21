@@ -1,4 +1,6 @@
 export type Skill = 'recognize' | 'recall' | 'listen' | 'spell' | 'context' | 'apply';
+/** What an exercise needs from the learner beyond reading and typing: hearing sound, speaking aloud. */
+export type Need = 'audio' | 'voice';
 export type Grade = 1 | 2 | 3 | 4;
 export type Mode = 'intro' | 'learn' | 'review' | 'practice';
 export type ExerciseStatus = 'draft' | 'ready' | 'off';
@@ -75,6 +77,8 @@ export interface Exercise {
   allow?: string[];
   /** Rule cards (ids) whose construction this exercise may use before the rule is learned: a false match of `detect`. */
   allow_rules?: string[];
+  /** What the exercise needs (overrides the template's `uses`); `[]` for one that works without sound on a listening card. */
+  uses?: Need[];
 }
 
 export interface TemplateSource {
@@ -90,6 +94,8 @@ export interface TemplateManifest {
   id: string;
   name?: string;
   trains?: Skill[];
+  /** What every exercise of this template needs: `audio` (it is answered by ear), `voice` (by speaking). */
+  uses?: Need[];
   reveals?: string[];
   asks?: string[];
   difficulty?: number;

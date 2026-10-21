@@ -1,6 +1,7 @@
 id: clip-choice
 name: Фрагмент фильма — выбери
 trains: [listen]
+uses: [audio]
 difficulty: 2
 modes: [learn, review, practice]
 check: { type: choice }

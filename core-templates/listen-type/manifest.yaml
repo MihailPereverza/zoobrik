@@ -1,6 +1,7 @@
 id: listen-type
 name: Напиши услышанное
 trains: [listen, spell]
+uses: [audio]
 reveals: [term, audio]
 asks: [term]
 difficulty: 4
