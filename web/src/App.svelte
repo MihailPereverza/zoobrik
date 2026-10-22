@@ -9,6 +9,7 @@
   import Welcome from './components/Welcome.svelte';
   import Session from './components/Session.svelte';
   import Placement from './components/Placement.svelte';
+  import Speed from './components/Speed.svelte';
   import CardView from './components/CardView.svelte';
   import Stats from './components/Stats.svelte';
   import Settings from './components/Settings.svelte';
@@ -28,7 +29,7 @@
   const query = $derived(route.split('?')[1] ?? '');
   const parts = $derived(path.split('/').filter(Boolean));
   const section = $derived(parts[0] ?? '');
-  const inSession = $derived(section === 'session' || section === 'placement');
+  const inSession = $derived(section === 'session' || section === 'placement' || section === 'speed');
   const streak = $derived(dayStats(app.activity).streak);
   const backendKind = () => { void app.deckKey; void app.decks; return app.decks.length ? backend().kind : ''; };
   const tabs = [
@@ -84,6 +85,8 @@
     {#key route}<Session practice={parts[1] === 'practice'} practiceQuery={query} />{/key}
   {:else if section === 'placement'}
     <Placement />
+  {:else if section === 'speed'}
+    <Speed />
   {:else if section === 'words'}
     <Words {query} />
   {:else if section === 'decks'}

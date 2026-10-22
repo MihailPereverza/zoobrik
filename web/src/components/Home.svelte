@@ -105,6 +105,11 @@
     </div>
   </section>
 
+  <a class="panel find appear" href="#/speed">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2.5 2M10 2h4" /></svg>
+    <span>Пары на время</span>
+  </a>
+
   <a class="panel find appear" href="#/words">
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
     <span>Найти слово или потренировать трудные</span>
